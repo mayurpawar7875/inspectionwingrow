@@ -22,11 +22,15 @@ export default function Auth() {
   useEffect(() => {
     // Wait for auth to finish loading
     if (authLoading) {
+      console.log('Auth still loading...');
       return;
     }
 
+    console.log('Auth loaded - User:', user?.email, 'Role:', currentRole);
+
     if (user && currentRole) {
       // Redirect based on role
+      console.log('Redirecting user with role:', currentRole);
       if (currentRole === 'admin') {
         navigate('/admin');
       } else if (currentRole === 'market_manager') {
@@ -37,6 +41,9 @@ export default function Auth() {
         // employee, bms_executive, or other roles
         navigate('/dashboard');
       }
+    } else if (user) {
+      // User exists but no role yet - give it a moment
+      console.log('User exists but waiting for role to load...');
     }
   }, [user, currentRole, authLoading, navigate]);
 
