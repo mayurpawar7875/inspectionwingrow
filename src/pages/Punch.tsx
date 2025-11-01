@@ -27,7 +27,15 @@ export default function Punch() {
     if (!user) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use IST date for session validation
+      const getISTDateString = (date: Date) => {
+        const ist = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const y = ist.getFullYear();
+        const m = String(ist.getMonth() + 1).padStart(2, '0');
+        const d = String(ist.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+      const today = getISTDateString(new Date());
       const { data, error } = await supabase
         .from('sessions')
         .select('*')

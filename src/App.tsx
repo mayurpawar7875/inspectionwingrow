@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "./lib/auth";
 import { AdminLayout } from "./components/AdminLayout";
 import Auth from "./pages/Auth";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import MarketSelection from "./pages/MarketSelection";
 import Punch from "./pages/Punch";
@@ -24,6 +25,9 @@ import Settings from "./pages/admin/Settings";
 import LeaveRequests from "./pages/admin/LeaveRequests";
 import NotFound from "./pages/NotFound";
 import Collections from "./pages/admin/Collections";
+import MySessions from "./pages/MySessions";
+import MarketManagerDashboard from "./pages/MarketManagerDashboard";
+import BDODashboard from "./pages/BDODashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,16 +47,19 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/install" element={<Install />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/manager-dashboard" element={<ProtectedRoute><MarketManagerDashboard /></ProtectedRoute>} />
+              <Route path="/bdo-dashboard" element={<ProtectedRoute><BDODashboard /></ProtectedRoute>} />
               <Route path="/market-selection" element={<ProtectedRoute><MarketSelection /></ProtectedRoute>} />
               <Route path="/punch" element={<ProtectedRoute><Punch /></ProtectedRoute>} />
               <Route path="/stalls" element={<ProtectedRoute><Stalls /></ProtectedRoute>} />
               <Route path="/media-upload" element={<ProtectedRoute><MediaUpload /></ProtectedRoute>} />
               <Route path="/finalize" element={<ProtectedRoute><Finalize /></ProtectedRoute>} />
               <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
+              <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-market" element={<ProtectedRoute><AdminLayout><LiveMarket /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-markets" element={<ProtectedRoute><AdminLayout><LiveMarkets /></AdminLayout></ProtectedRoute>} />

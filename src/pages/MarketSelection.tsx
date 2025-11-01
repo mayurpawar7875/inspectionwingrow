@@ -24,7 +24,39 @@ export default function MarketSelection() {
 
   useEffect(() => {
     fetchMarkets();
+    checkExistingSession();
   }, []);
+
+  const checkExistingSession = async () => {
+    if (!user) return;
+
+    try {
+      const getISTDateString = (date: Date) => {
+        const ist = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const y = ist.getFullYear();
+        const m = String(ist.getMonth() + 1).padStart(2, '0');
+        const d = String(ist.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+      const today = getISTDateString(new Date());
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('session_date', today)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      // If session exists for today, redirect to dashboard
+      if (data) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+    }
+  };
 
   const fetchMarkets = async () => {
     try {
@@ -80,7 +112,15 @@ export default function MarketSelection() {
 
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use IST date for session creation
+      const getISTDateString = (date: Date) => {
+        const ist = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const y = ist.getFullYear();
+        const m = String(ist.getMonth() + 1).padStart(2, '0');
+        const d = String(ist.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+      const today = getISTDateString(new Date());
 
       const { data, error } = await supabase
         .from('sessions')

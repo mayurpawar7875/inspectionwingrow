@@ -5,14 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Building2 } from 'lucide-react';
 
 const Index = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, currentRole, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate(isAdmin ? '/admin' : '/dashboard');
+    // Wait for auth to finish loading
+    if (loading) {
+      return;
     }
-  }, [user, isAdmin, navigate]);
+
+    if (user && currentRole) {
+      if (currentRole === 'admin') {
+        navigate('/admin');
+      } else if (currentRole === 'market_manager') {
+        navigate('/manager-dashboard');
+      } else if (currentRole === 'bdo') {
+        navigate('/bdo-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, currentRole, loading, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -17,6 +17,7 @@ interface User {
   status: string;
   created_at: string;
   email?: string;
+  username?: string;
   roles: string[];
 }
 
@@ -28,6 +29,7 @@ export default function Users() {
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
+    username: '',
     phone: '',
     password: '',
     status: 'active',
@@ -41,7 +43,7 @@ export default function Users() {
     try {
       const { data: employees, error: employeesError } = await supabase
         .from('employees')
-        .select('*')
+        .select('id, full_name, phone, status, created_at, email, username')
         .order('created_at', { ascending: false });
 
       if (employeesError) throw employeesError;
@@ -73,26 +75,26 @@ export default function Users() {
     }
   };
 
-  const toggleAdminRole = async (userId: string, currentRoles: string[]) => {
+  const toggleRole = async (userId: string, role: string, currentRoles: string[]) => {
     try {
-      const hasAdmin = currentRoles.includes('admin');
+      const hasRole = currentRoles.includes(role);
 
-      if (hasAdmin) {
+      if (hasRole) {
         const { error } = await supabase
           .from('user_roles')
           .delete()
           .eq('user_id', userId)
-          .eq('role', 'admin');
+          .eq('role', role);
 
         if (error) throw error;
-        toast.success('Admin role removed');
+        toast.success(`${role} role removed`);
       } else {
         const { error } = await supabase
           .from('user_roles')
-          .insert({ user_id: userId, role: 'admin' });
+          .insert({ user_id: userId, role });
 
         if (error) throw error;
-        toast.success('Admin role granted');
+        toast.success(`${role} role granted`);
       }
 
       fetchUsers();
@@ -123,8 +125,20 @@ export default function Users() {
 
   const handleAddUser = async () => {
     try {
-      if (!formData.full_name || !formData.email || !formData.password) {
+      if (!formData.full_name || !formData.email || !formData.password || !formData.username) {
         toast.error('Please fill in all required fields');
+        return;
+      }
+
+      // Check if username already exists
+      const { data: existingUser } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('username', formData.username)
+        .maybeSingle();
+
+      if (existingUser) {
+        toast.error('Username already exists. Please choose another.');
         return;
       }
 
@@ -137,6 +151,7 @@ export default function Users() {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: formData.full_name,
+            username: formData.username,
           },
         },
       });
@@ -149,13 +164,14 @@ export default function Users() {
           .update({ 
             phone: formData.phone || null,
             status: formData.status,
+            username: formData.username,
           })
           .eq('id', data.user.id);
       }
 
       toast.success('Employee added successfully');
       setDialogOpen(false);
-      setFormData({ full_name: '', email: '', phone: '', password: '', status: 'active' });
+      setFormData({ full_name: '', email: '', username: '', phone: '', password: '', status: 'active' });
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message || 'Failed to add employee');
@@ -210,6 +226,16 @@ export default function Users() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
+              </div>
+              <div>
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s+/g, '') })}
+                  placeholder="johndoe"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Username must be unique and will be used for login</p>
               </div>
               <div>
                 <Label htmlFor="phone">Phone</Label>
@@ -298,21 +324,29 @@ export default function Users() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
+                      {user.username && <p className="text-sm text-muted-foreground">Username: {user.username}</p>}
                       {user.phone && <p className="text-sm text-muted-foreground">{user.phone}</p>}
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2">
                         {user.roles.map((role) => (
                           <Badge
                             key={role}
                             className={
-                              role === 'admin' ? 'bg-accent text-accent-foreground' : 'bg-muted'
+                              role === 'admin' ? 'bg-destructive text-destructive-foreground' :
+                              role === 'bdo' ? 'bg-blue-600 text-white' :
+                              role === 'bms_executive' ? 'bg-purple-600 text-white' :
+                              role === 'market_manager' ? 'bg-green-600 text-white' :
+                              'bg-muted'
                             }
                           >
-                            {role}
+                            {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Badge>
                         ))}
+                        {user.roles.length === 0 && (
+                          <Badge variant="outline">No role assigned</Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -324,14 +358,36 @@ export default function Users() {
                           <><UserCheck className="mr-2 h-4 w-4" /> Activate</>
                         )}
                       </Button>
-                      <Button
-                        variant={user.roles.includes('admin') ? 'destructive' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleAdminRole(user.id, user.roles)}
+                      <Select
+                        value="assign_role"
+                        onValueChange={(value) => {
+                          if (value !== 'assign_role') {
+                            toggleRole(user.id, value, user.roles);
+                          }
+                        }}
                       >
-                        <Shield className="mr-2 h-4 w-4" />
-                        {user.roles.includes('admin') ? 'Remove Admin' : 'Make Admin'}
-                      </Button>
+                        <SelectTrigger className="w-[160px]">
+                          <SelectValue placeholder="Assign Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="assign_role" disabled>Assign Role</SelectItem>
+                          <SelectItem value="employee">
+                            {user.roles.includes('employee') ? '✓ Employee' : 'Employee'}
+                          </SelectItem>
+                          <SelectItem value="market_manager">
+                            {user.roles.includes('market_manager') ? '✓ Market Manager' : 'Market Manager'}
+                          </SelectItem>
+                          <SelectItem value="bms_executive">
+                            {user.roles.includes('bms_executive') ? '✓ BMS Executive' : 'BMS Executive'}
+                          </SelectItem>
+                          <SelectItem value="bdo">
+                            {user.roles.includes('bdo') ? '✓ BDO' : 'BDO'}
+                          </SelectItem>
+                          <SelectItem value="admin">
+                            {user.roles.includes('admin') ? '✓ Admin' : 'Admin'}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>

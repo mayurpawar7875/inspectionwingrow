@@ -21,6 +21,7 @@ import {
   ClipboardCheck,
   ExternalLink,
   Umbrella,
+  History,
 } from 'lucide-react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { Textarea } from '@/components/ui/textarea';
@@ -56,7 +57,7 @@ interface SessionSummary {
 }
 
 export default function Dashboard() {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, currentRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [todaySession, setTodaySession] = useState<Session | null>(null);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
@@ -76,13 +77,50 @@ export default function Dashboard() {
   const [collectionSheetUrl, setCollectionSheetUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Redirect admins to admin dashboard
-    if (isAdmin) {
+    console.log('Dashboard useEffect:', { authLoading, currentRole, user: !!user });
+    
+    // Wait for auth to finish loading before checking roles
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+
+    // If no user after auth loads, redirect to login
+    if (!user) {
+      console.log('No user found, redirecting to auth');
+      navigate('/auth');
+      setLoading(false);
+      return;
+    }
+
+    console.log('User found, checking role:', currentRole);
+
+    // Redirect based on role only if role is determined
+    if (currentRole === 'admin') {
+      console.log('Redirecting to admin dashboard');
       navigate('/admin');
       return;
     }
-    fetchTodaySession();
-    fetchCollectionSheetUrl();
+    if (currentRole === 'market_manager') {
+      console.log('Redirecting to market manager dashboard');
+      navigate('/manager-dashboard');
+      return;
+    }
+    if (currentRole === 'bdo') {
+      console.log('Redirecting to BDO dashboard');
+      navigate('/bdo-dashboard');
+      return;
+    }
+    
+    // Only fetch if we're staying on employee dashboard and user is available
+    if (currentRole === 'employee' || currentRole === 'bms_executive' || !currentRole) {
+      console.log('Fetching employee dashboard data');
+      fetchTodaySession();
+      fetchCollectionSheetUrl();
+    } else {
+      console.log('Unknown role or no role, setting loading to false');
+      setLoading(false);
+    }
 
     // Subscribe to notifications for this user and broadcasts
     if (user) {
@@ -112,7 +150,7 @@ export default function Dashboard() {
         supabase.removeChannel(channel);
       };
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, authLoading, currentRole, navigate]);
 
   const fetchCollectionSheetUrl = async () => {
     try {
@@ -133,10 +171,15 @@ export default function Dashboard() {
   };
 
   const fetchTodaySession = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      setLoading(true);
+      // Use IST date for session validation
+      const today = getISTDateString(new Date());
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -148,34 +191,47 @@ export default function Dashboard() {
         .eq('session_date', today)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching session:', error);
+        throw error;
+      }
       setTodaySession(data);
       
       // Also compute stalls count from stall_confirmations using IST date to match triggers
       if (data) {
         const dateStr = getISTDateString(new Date());
-        const { count } = await supabase
+        const { count, error: countError } = await supabase
           .from('stall_confirmations')
           .select('*', { count: 'exact', head: true })
           .eq('market_id', data.market_id)
           .eq('market_date', dateStr);
-        setStallsCount(count || 0);
+        
+        if (countError) {
+          console.error('Error fetching stalls count:', countError);
+        } else {
+          setStallsCount(count || 0);
+        }
       } else {
         setStallsCount(0);
       }
       
       // If session is completed, fetch summary
       if (data && (data.status === 'completed' || data.status === 'finalized')) {
-        const { data: summary } = await supabase
+        const { data: summary, error: summaryError } = await supabase
           .from('session_summaries')
           .select('*')
           .eq('session_id', data.id)
           .maybeSingle();
         
-        setSessionSummary(summary);
+        if (summaryError) {
+          console.error('Error fetching session summary:', summaryError);
+        } else {
+          setSessionSummary(summary);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching session:', error);
+      toast.error('Failed to load session data');
     } finally {
       setLoading(false);
     }
@@ -247,12 +303,24 @@ export default function Dashboard() {
     );
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if we're redirecting to another dashboard
+  if (currentRole === 'admin' || currentRole === 'market_manager' || currentRole === 'bdo') {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Redirecting...</p>
         </div>
       </div>
     );
@@ -268,6 +336,10 @@ export default function Dashboard() {
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
+              <History className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">My Sessions</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/install')}>
               Install App
             </Button>
@@ -282,20 +354,39 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         {!todaySession ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Start Your Daily Report</CardTitle>
-              <CardDescription>
-                You haven't started a reporting session for today. Click below to begin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/market-selection')} size="lg">
-                <MapPin className="mr-2 h-5 w-5" />
-                Start New Session
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Start Your Daily Report</CardTitle>
+                <CardDescription>
+                  You haven't started a reporting session for today. Click below to begin.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => navigate('/market-selection')} size="lg">
+                  <MapPin className="mr-2 h-5 w-5" />
+                  Start New Session
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  View Your Session History
+                </CardTitle>
+                <CardDescription>
+                  See all the markets you've attended and track your past sessions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => navigate('/my-sessions')} variant="outline" size="lg">
+                  <History className="mr-2 h-5 w-5" />
+                  View Session History
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Session Info */}

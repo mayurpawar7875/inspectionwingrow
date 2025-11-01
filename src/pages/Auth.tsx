@@ -10,52 +10,88 @@ import { Building2 } from 'lucide-react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user, isAdmin } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { signIn, signUp, user, currentRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in based on role
   useEffect(() => {
-    if (user) {
-      navigate(isAdmin ? '/admin' : '/dashboard');
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
     }
-  }, [user, isAdmin, navigate]);
+
+    if (user && currentRole) {
+      // Redirect based on role
+      if (currentRole === 'admin') {
+        navigate('/admin');
+      } else if (currentRole === 'market_manager') {
+        navigate('/manager-dashboard');
+      } else if (currentRole === 'bdo') {
+        navigate('/bdo-dashboard');
+      } else {
+        // employee, bms_executive, or other roles
+        navigate('/dashboard');
+      }
+    }
+  }, [user, currentRole, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast.error(error.message);
-        } else {
-          toast.success('Logged in successfully');
-          // Navigation will be handled by useEffect based on role
-        }
+    setSubmitting(true);
+      try {
+        if (isLogin) {
+          if (!username.trim()) {
+            toast.error('Please enter your username');
+            setSubmitting(false);
+            return;
+          }
+          
+          if (!password.trim()) {
+            toast.error('Please enter your password');
+            setSubmitting(false);
+            return;
+          }
+          
+          try {
+            const result = await signIn(username, password);
+            
+            if (result.error) {
+              toast.error(result.error.message || 'Login failed');
+            } else {
+              toast.success('Logged in successfully');
+              // Navigation will be handled by useEffect based on role
+            }
+          } catch (error: any) {
+            toast.error(error.message || 'An error occurred during login. Please try again.');
+          }
       } else {
-        if (!fullName.trim()) {
-          toast.error('Please enter your full name');
-          setLoading(false);
+        if (!fullName.trim() || !username.trim()) {
+          toast.error('Please fill in all required fields');
+          setSubmitting(false);
           return;
         }
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, username);
         if (error) {
           toast.error(error.message);
         } else {
           toast.success('Account created successfully! You can now log in.');
           setIsLogin(true);
+          setUsername('');
+          setEmail('');
+          setPassword('');
+          setFullName('');
         }
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'An error occurred. Please try again.');
+      } finally {
+        setSubmitting(false);
       }
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -79,28 +115,52 @@ export default function Auth() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="johndoe"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+              </>
+            )}
+            {isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="fullName"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
+                  id="username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -113,8 +173,8 @@ export default function Auth() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
