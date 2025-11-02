@@ -293,8 +293,43 @@ export default function MediaUpload() {
   const handleBDOPanVideoSubmit = async () => {
     if (!user) return;
 
-    if (marketsQueue.length === 0) {
-      toast.error('Please add at least one market to the queue');
+    // Prepare the list of markets to submit
+    let marketsToSubmit = [...marketsQueue];
+    
+    // If current form has data, validate and add it to the submission list
+    if (bdoPanVideoFile) {
+      // Validate required fields
+      if (!bdoPanVideoForm.marketName.trim()) {
+        toast.error('Market name is required');
+        return;
+      }
+      if (!bdoPanVideoForm.marketOpeningDate) {
+        toast.error('Market opening date is required');
+        return;
+      }
+      if (!bdoPanVideoForm.customerReach.trim()) {
+        toast.error('Customer reach is required');
+        return;
+      }
+      if (bdoPanVideoForm.locationType === 'society' && !bdoPanVideoForm.flatsOccupancy.trim()) {
+        toast.error('Flats occupancy is required for society locations');
+        return;
+      }
+      if (!bdoPanVideoForm.googleMapLocation.trim()) {
+        toast.error('Market Google Map location is required');
+        return;
+      }
+
+      // Add current form data to markets to submit
+      marketsToSubmit.push({
+        ...bdoPanVideoForm,
+        videoFile: bdoPanVideoFile,
+      });
+    }
+
+    // Check if there's anything to submit
+    if (marketsToSubmit.length === 0) {
+      toast.error('Please fill in the market details and select a video');
       return;
     }
 
@@ -303,7 +338,7 @@ export default function MediaUpload() {
     let errorCount = 0;
 
     try {
-      for (const marketData of marketsQueue) {
+      for (const marketData of marketsToSubmit) {
         try {
           // Get market ID from name (only use existing markets, don't create new ones due to RLS)
           let marketId: string | null = null;
@@ -770,18 +805,35 @@ export default function MediaUpload() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={handleAddToQueue}
-                    disabled={uploading || !bdoPanVideoFile}
-                  >
-                    Add to Queue
-                  </Button>
+                  {marketsQueue.length > 0 && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleAddToQueue}
+                      disabled={uploading || !bdoPanVideoFile}
+                    >
+                      Add More to Queue
+                    </Button>
+                  )}
+                  {marketsQueue.length === 0 && bdoPanVideoFile && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleAddToQueue}
+                      disabled={uploading}
+                    >
+                      Add to Queue
+                    </Button>
+                  )}
                   <Button
                     onClick={handleBDOPanVideoSubmit}
-                    disabled={uploading || marketsQueue.length === 0}
+                    disabled={uploading || (!bdoPanVideoFile && marketsQueue.length === 0)}
                   >
-                    {uploading ? 'Submitting...' : `Submit All (${marketsQueue.length})`}
+                    {uploading 
+                      ? 'Submitting...' 
+                      : marketsQueue.length > 0 && bdoPanVideoFile
+                        ? `Submit All (${marketsQueue.length + 1})`
+                        : marketsQueue.length > 0
+                          ? `Submit All (${marketsQueue.length})`
+                          : 'Submit'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
