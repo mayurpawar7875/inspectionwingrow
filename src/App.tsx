@@ -28,6 +28,7 @@ import Collections from "./pages/admin/Collections";
 import MySessions from "./pages/MySessions";
 import MarketManagerDashboard from "./pages/MarketManagerDashboard";
 import BDODashboard from "./pages/BDODashboard";
+import BDOSession from "./pages/BDOSession";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/manager-dashboard" element={<ProtectedRoute><MarketManagerDashboard /></ProtectedRoute>} />
               <Route path="/bdo-dashboard" element={<ProtectedRoute><BDODashboard /></ProtectedRoute>} />
+              <Route path="/bdo-session" element={<ProtectedRoute><BDOSession /></ProtectedRoute>} />
               <Route path="/market-selection" element={<ProtectedRoute><MarketSelection /></ProtectedRoute>} />
               <Route path="/punch" element={<ProtectedRoute><Punch /></ProtectedRoute>} />
               <Route path="/stalls" element={<ProtectedRoute><Stalls /></ProtectedRoute>} />

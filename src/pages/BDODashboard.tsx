@@ -352,9 +352,13 @@ export default function BDODashboard() {
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="default" size="sm" onClick={() => navigate('/bdo-session')}>
+              <Clock className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">My Session</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
               <FileText className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">My Sessions</span>
+              <span className="hidden sm:inline">View Sessions</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 sm:mr-2" />
