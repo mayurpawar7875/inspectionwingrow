@@ -71,9 +71,30 @@ export default function EmployeeTimeline({ marketId }: EmployeeTimelineProps) {
 
   const fetchEvents = async () => {
     try {
+      // First, get sessions matching the market filter
+      let sessionsQuery = supabase
+        .from('sessions')
+        .select('id, user_id, market_id');
+
+      if (selectedMarket && selectedMarket !== 'all') {
+        sessionsQuery = sessionsQuery.eq('market_id', selectedMarket);
+      }
+
+      const { data: sessions } = await sessionsQuery;
+      
+      if (!sessions || sessions.length === 0) {
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      const sessionIds = sessions.map(s => s.id);
+
+      // Now fetch events only for those sessions
       const { data, error } = await supabase
         .from('task_events')
         .select('*')
+        .in('session_id', sessionIds)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -86,26 +107,11 @@ export default function EmployeeTimeline({ marketId }: EmployeeTimelineProps) {
         return;
       }
 
-      // Get unique session IDs
-      const sessionIds = [...new Set(events.map(e => e.session_id).filter(Boolean))];
-
-      // Fetch sessions with optional market filter
-      let sessionQuery = supabase
-        .from('sessions')
-        .select('id, user_id, market_id')
-        .in('id', sessionIds);
-
-      if (selectedMarket && selectedMarket !== 'all') {
-        sessionQuery = sessionQuery.eq('market_id', selectedMarket);
-      }
-
-      const { data: sessions } = await sessionQuery;
-
-      const sessionsById = Object.fromEntries((sessions || []).map((s: any) => [s.id, s]));
+      const sessionsById = Object.fromEntries(sessions.map((s: any) => [s.id, s]));
 
       // Get unique user and market IDs
-      const userIds = [...new Set((sessions || []).map((s: any) => s.user_id).filter(Boolean))];
-      const marketIds = [...new Set((sessions || []).map((s: any) => s.market_id).filter(Boolean))];
+      const userIds = [...new Set(sessions.map((s: any) => s.user_id).filter(Boolean))];
+      const marketIds = [...new Set(sessions.map((s: any) => s.market_id).filter(Boolean))];
 
       // Fetch employees and markets
       const [{ data: employees }, { data: markets }] = await Promise.all([
