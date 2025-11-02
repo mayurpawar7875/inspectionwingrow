@@ -194,7 +194,7 @@ export default function AdminDashboard() {
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <CardTitle className="text-2xl mt-4">Market Reporting</CardTitle>
+              <CardTitle className="text-2xl mt-4">Market Manager Reporting</CardTitle>
               <CardDescription>Live market operations and analytics</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
