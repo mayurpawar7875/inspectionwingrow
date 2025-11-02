@@ -31,6 +31,8 @@ import BDODashboard from "./pages/BDODashboard";
 import BDOSession from "./pages/BDOSession";
 import BDOReporting from "./pages/admin/BDOReporting";
 import EmployeeReporting from "./pages/admin/EmployeeReporting";
+import EmployeeCitySelection from "./pages/admin/EmployeeCitySelection";
+import EmployeeMarketsList from "./pages/admin/EmployeeMarketsList";
 import MarketManagerReporting from "./pages/admin/MarketManagerReporting";
 
 const queryClient = new QueryClient({
@@ -67,7 +69,9 @@ const App = () => (
               <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/bdo-reporting" element={<ProtectedRoute><AdminLayout><BDOReporting /></AdminLayout></ProtectedRoute>} />
-              <Route path="/admin/employee-reporting" element={<ProtectedRoute><AdminLayout><EmployeeReporting /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/employee-reporting" element={<ProtectedRoute><AdminLayout><EmployeeCitySelection /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/employee-reporting/city/:city" element={<ProtectedRoute><AdminLayout><EmployeeMarketsList /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/employee-reporting/market/:marketId" element={<ProtectedRoute><AdminLayout><EmployeeReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/market-reporting" element={<ProtectedRoute><AdminLayout><MarketManagerReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-market" element={<ProtectedRoute><AdminLayout><LiveMarket /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-markets" element={<ProtectedRoute><AdminLayout><LiveMarkets /></AdminLayout></ProtectedRoute>} />
