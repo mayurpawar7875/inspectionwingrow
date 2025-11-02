@@ -195,7 +195,7 @@ export default function EmployeeReporting() {
         </Card>
       </div>
 
-      <RealtimeMediaFeed />
+      <RealtimeMediaFeed marketId={marketId} />
 
       <EmployeeTimeline />
 

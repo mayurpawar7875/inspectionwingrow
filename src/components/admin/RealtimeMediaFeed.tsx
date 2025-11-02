@@ -15,7 +15,11 @@ interface MediaUpload {
   file_url: string;
 }
 
-export default function RealtimeMediaFeed() {
+interface RealtimeMediaFeedProps {
+  marketId?: string;
+}
+
+export default function RealtimeMediaFeed({ marketId }: RealtimeMediaFeedProps) {
   const [uploads, setUploads] = useState<MediaUpload[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,11 +40,11 @@ export default function RealtimeMediaFeed() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [marketId]);
 
   const fetchRecentUploads = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('media')
         .select(`
           id,
@@ -53,6 +57,13 @@ export default function RealtimeMediaFeed() {
         `)
         .order('captured_at', { ascending: false })
         .limit(20);
+
+      // Filter by market if marketId is provided
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -117,7 +128,9 @@ export default function RealtimeMediaFeed() {
     <Card>
       <CardHeader>
         <CardTitle>Real-time Media Feed</CardTitle>
-        <CardDescription>Latest uploads across all markets</CardDescription>
+        <CardDescription>
+          {marketId ? 'Latest uploads for this market' : 'Latest uploads across all markets'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3 max-h-96 overflow-y-auto">
