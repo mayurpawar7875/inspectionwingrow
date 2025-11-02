@@ -72,6 +72,8 @@ export default function MySessions() {
   const [bdoMediaUploads, setBdoMediaUploads] = useState<BDOMediaUpload[]>([]);
   const [bdoStallSubmissions, setBdoStallSubmissions] = useState<any[]>([]);
   const [expandedSection, setExpandedSection] = useState<'media' | 'markets' | 'stalls' | null>(null);
+  const [showAddMarketDialog, setShowAddMarketDialog] = useState(false);
+  const [showAddStallDialog, setShowAddStallDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -451,30 +453,30 @@ export default function MySessions() {
               </Card>
 
               <Card 
-                className="cursor-pointer hover:bg-accent transition-colors border-dashed border-2"
-                onClick={() => navigate('/bdo-dashboard')}
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => setShowAddMarketDialog(true)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Add Market Location</CardTitle>
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">+</div>
-                  <p className="text-xs text-muted-foreground">Submit new location</p>
+                  <div className="text-2xl font-bold">{bdoMarketSubmissions.length}</div>
+                  <p className="text-xs text-muted-foreground">Submissions</p>
                 </CardContent>
               </Card>
 
               <Card 
-                className="cursor-pointer hover:bg-accent transition-colors border-dashed border-2"
-                onClick={() => navigate('/bdo-dashboard')}
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => setShowAddStallDialog(true)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Add Onboarded Stall</CardTitle>
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">+</div>
-                  <p className="text-xs text-muted-foreground">Onboard new stall</p>
+                  <div className="text-2xl font-bold">{bdoStallSubmissions.length}</div>
+                  <p className="text-xs text-muted-foreground">Onboarded stalls</p>
                 </CardContent>
               </Card>
             </div>
@@ -634,6 +636,52 @@ export default function MySessions() {
             )}
           </div>
         </main>
+
+        {/* Add Market Dialog */}
+        <Dialog open={showAddMarketDialog} onOpenChange={setShowAddMarketDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Market Location</DialogTitle>
+              <DialogDescription>
+                This feature opens in the BDO Dashboard. Redirecting...
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowAddMarketDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                setShowAddMarketDialog(false);
+                navigate('/bdo-dashboard');
+              }}>
+                Go to Dashboard
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Stall Dialog */}
+        <Dialog open={showAddStallDialog} onOpenChange={setShowAddStallDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Onboarded Stall</DialogTitle>
+              <DialogDescription>
+                This feature opens in the BDO Dashboard. Redirecting...
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowAddStallDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                setShowAddStallDialog(false);
+                navigate('/bdo-dashboard');
+              }}>
+                Go to Dashboard
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
