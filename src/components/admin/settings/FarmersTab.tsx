@@ -34,7 +34,7 @@ export function FarmersTab({ onChangeMade }: FarmersTabProps) {
 
   const fetchFarmers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('farmers')
         .select('*')
         .order('name');
@@ -74,14 +74,14 @@ export function FarmersTab({ onChangeMade }: FarmersTabProps) {
     setSaving(true);
     try {
       if (editing) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('farmers')
           .update({ name: name.trim(), is_active: active })
           .eq('id', editing.id);
         if (error) throw error;
         toast({ title: 'Updated', description: 'Farmer updated' });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('farmers')
           .insert({ name: name.trim(), is_active: active });
         if (error) throw error;

@@ -232,7 +232,7 @@ export default function BDODashboard() {
       const totalSessions = sessions?.length || 0;
       const activeSessions = sessions?.filter((s: any) => s.status === 'active').length || 0;
       const completedSessions = sessions?.filter((s: any) => ['completed', 'finalized'].includes(s.status)).length || 0;
-      const totalEmployees = employees?.count || 0;
+      const totalEmployees = (employees as any)?.length || 0;
       
       const stallConfirmations = liveMarkets.reduce((sum: number, m: any) => sum + (m.stall_confirmations_count || 0), 0) || 0;
       const mediaUploads = liveMarkets.reduce((sum: number, m: any) => sum + (m.media_uploads_count || 0), 0) || 0;

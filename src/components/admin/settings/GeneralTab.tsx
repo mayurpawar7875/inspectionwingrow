@@ -115,10 +115,10 @@ export function GeneralTab({ onChangeMade }: GeneralTabProps) {
                           const mm = String(now.getMonth() + 1).padStart(2, '0');
                           const mmm = now.toLocaleString(undefined, { month: 'short' });
                           return field.value
-                            .replaceAll('{YYYY}', yyyy)
-                            .replaceAll('{YY}', yy)
-                            .replaceAll('{MM}', mm)
-                            .replaceAll('{MMM}', mmm);
+                            .replace(/{YYYY}/g, yyyy)
+                            .replace(/{YY}/g, yy)
+                            .replace(/{MM}/g, mm)
+                            .replace(/{MMM}/g, mmm);
                         })()}
                       </span>
                     </div>

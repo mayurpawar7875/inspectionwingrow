@@ -80,18 +80,18 @@ export default function Users() {
       const hasRole = currentRoles.includes(role);
 
       if (hasRole) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('user_roles')
           .delete()
           .eq('user_id', userId)
-          .eq('role', role);
+          .eq('role', role as any);
 
         if (error) throw error;
         toast.success(`${role} role removed`);
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('user_roles')
-          .insert({ user_id: userId, role });
+          .insert({ user_id: userId, role: role as any });
 
         if (error) throw error;
         toast.success(`${role} role granted`);
@@ -131,7 +131,7 @@ export default function Users() {
       }
 
       // Check if username already exists
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = await (supabase as any)
         .from('employees')
         .select('id')
         .eq('username', formData.username)

@@ -28,7 +28,7 @@ export default function LeaveRequests() {
 
   const fetchLeaves = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('employee_leaves')
         .select('*')
         .order('created_at', { ascending: false });
@@ -43,7 +43,7 @@ export default function LeaveRequests() {
 
   const decide = async (leave: Leave, status: 'approved' | 'rejected') => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('employee_leaves')
         .update({ status, decided_at: new Date().toISOString() })
         .eq('id', leave.id);

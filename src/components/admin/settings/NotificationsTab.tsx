@@ -113,7 +113,7 @@ export function NotificationsTab({ onChangeMade }: NotificationsTabProps) {
                 }
                 setSending(true);
                 try {
-                  const { error } = await supabase
+                  const { error } = await (supabase as any)
                     .from('notifications')
                     .insert({ title: sendTitle.trim(), body: sendBody.trim(), target_user_id: null });
                   if (error) throw error;
