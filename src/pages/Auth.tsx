@@ -36,7 +36,7 @@ export default function Auth() {
       } else if (currentRole === 'market_manager') {
         navigate('/manager-dashboard');
       } else if (currentRole === 'bdo') {
-        navigate('/bdo-dashboard');
+        navigate('/punch'); // BDO goes to punch in page first
       } else {
         // employee, bms_executive, or other roles
         navigate('/dashboard');
@@ -71,9 +71,9 @@ export default function Auth() {
               toast.error(result.error.message || 'Login failed');
             } else {
               toast.success('Logged in successfully');
-              // Wait a moment for role to load, then redirect manually
+              // Wait a moment for role to load, then redirect based on role
               setTimeout(() => {
-                window.location.href = '/dashboard';
+                // The useEffect will handle the redirect based on role
               }, 500);
             }
           } catch (error: any) {
