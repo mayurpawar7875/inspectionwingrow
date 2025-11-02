@@ -71,7 +71,10 @@ export default function Auth() {
               toast.error(result.error.message || 'Login failed');
             } else {
               toast.success('Logged in successfully');
-              // Navigation will be handled by useEffect based on role
+              // Wait a moment for role to load, then redirect manually
+              setTimeout(() => {
+                window.location.href = '/dashboard';
+              }, 500);
             }
           } catch (error: any) {
             toast.error(error.message || 'An error occurred during login. Please try again.');
