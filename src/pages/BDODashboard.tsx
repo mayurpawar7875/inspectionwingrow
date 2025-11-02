@@ -742,64 +742,6 @@ export default function BDODashboard() {
           </Card>
         </div>
 
-        {/* Market Performance Table */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Market Performance Overview</CardTitle>
-            <CardDescription>District-wide market activity summary</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {marketSummaries.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No market data available for the selected date
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Market</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Active Sessions</TableHead>
-                    <TableHead>Employees</TableHead>
-                    <TableHead>Media</TableHead>
-                    <TableHead>Collections</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {marketSummaries.map((market) => (
-                    <TableRow key={market.market_id}>
-                      <TableCell className="font-medium">{market.market_name}</TableCell>
-                      <TableCell>{market.city}</TableCell>
-                      <TableCell>{market.active_sessions}</TableCell>
-                      <TableCell>{market.active_employees}</TableCell>
-                      <TableCell>{market.media_uploads}</TableCell>
-                      <TableCell>₹{market.collections_total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={market.active_sessions > 0 ? 'default' : 'secondary'}
-                          className={market.active_sessions > 0 ? 'bg-green-600' : ''}
-                        >
-                          {market.active_sessions > 0 ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Widgets */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <LiveMarketsWidget />
-          <TaskProgressWidget />
-        </div>
-
-        <div className="mt-6">
-          <CollectionsWidget />
-        </div>
       </main>
 
       {/* Add Market Location Dialog */}
