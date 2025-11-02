@@ -3,23 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, CheckCircle, Clock } from 'lucide-react';
-import LiveMarketsWidget from '@/components/admin/LiveMarketsWidget';
-import RealtimeMediaFeed from '@/components/admin/RealtimeMediaFeed';
-import CollectionsWidget from '@/components/admin/CollectionsWidget';
-import StallConfirmationsWidget from '@/components/admin/StallConfirmationsWidget';
-import EmployeeTimeline from '@/components/admin/EmployeeTimeline';
-import TaskProgressWidget from '@/components/admin/TaskProgressWidget';
-import BDOSubmissionsWidget from '@/components/admin/BDOSubmissionsWidget';
+import { Users, Building2, ClipboardList, MapPin, TrendingUp, Activity, ChevronRight } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalSessions: 0,
-    todaySessions: 0,
-    finalizedToday: 0,
+  const [bdoStats, setBdoStats] = useState({
+    pending: 0,
+    lastUpdate: '',
+  });
+  const [employeeStats, setEmployeeStats] = useState({
+    active: 0,
+    lastUpdate: '',
+  });
+  const [marketStats, setMarketStats] = useState({
+    live: 0,
+    lastUpdate: '',
   });
   const [loading, setLoading] = useState(true);
 
@@ -28,12 +27,14 @@ export default function AdminDashboard() {
       navigate('/dashboard');
       return;
     }
-    fetchStats();
+    fetchAllStats();
 
     const channel = supabase
-      .channel('dashboard-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, fetchStats)
+      .channel('dashboard-overview')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bdo_market_submissions' }, fetchAllStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bdo_stall_submissions' }, fetchAllStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, fetchAllStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'media' }, fetchAllStats)
       .subscribe();
 
     return () => {
@@ -41,26 +42,48 @@ export default function AdminDashboard() {
     };
   }, [isAdmin, navigate]);
 
-  const fetchStats = async () => {
+  const fetchAllStats = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      const [usersRes, sessionsRes, todaySessionsRes, finalizedRes] = await Promise.all([
-        supabase.from('employees').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('sessions').select('id', { count: 'exact', head: true }),
-        supabase.from('sessions').select('id', { count: 'exact', head: true }).eq('session_date', today),
+      const [
+        bdoMarketsRes,
+        bdoStallsRes,
+        activeSessionsRes,
+        liveMarketsRes,
+      ] = await Promise.all([
+        supabase.from('bdo_market_submissions').select('status, updated_at').eq('status', 'pending'),
+        supabase.from('bdo_stall_submissions').select('status, updated_at').eq('status', 'pending'),
         supabase
           .from('sessions')
-          .select('id', { count: 'exact', head: true })
-          .eq('session_date', today)
-          .in('status', ['completed', 'finalized']),
+          .select('id, updated_at', { count: 'exact' })
+          .eq('status', 'active')
+          .eq('session_date', today),
+        supabase.from('live_markets_today').select('*'),
       ]);
 
-      setStats({
-        totalUsers: usersRes.count || 0,
-        totalSessions: sessionsRes.count || 0,
-        todaySessions: todaySessionsRes.count || 0,
-        finalizedToday: finalizedRes.count || 0,
+      const bdoPending = (bdoMarketsRes.data?.length || 0) + (bdoStallsRes.data?.length || 0);
+      const bdoLatest = [...(bdoMarketsRes.data || []), ...(bdoStallsRes.data || [])]
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+
+      const activeSessions = activeSessionsRes.data || [];
+      const sessionLatest = activeSessions.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      )[0];
+
+      setBdoStats({
+        pending: bdoPending,
+        lastUpdate: bdoLatest?.updated_at || '',
+      });
+
+      setEmployeeStats({
+        active: activeSessions.length,
+        lastUpdate: sessionLatest?.updated_at || '',
+      });
+
+      setMarketStats({
+        live: liveMarketsRes.data?.length || 0,
+        lastUpdate: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -69,84 +92,186 @@ export default function AdminDashboard() {
     }
   };
 
-  const statCards = [
-    {
-      title: 'Active Employees',
-      value: stats.totalUsers,
-      icon: Users,
-      description: 'Total active users',
-      onClick: () => navigate('/admin/users'),
-    },
-    {
-      title: 'Total Sessions',
-      value: stats.totalSessions,
-      icon: FileText,
-      description: 'All-time sessions',
-      onClick: () => navigate('/admin/sessions'),
-    },
-    {
-      title: "Today's Sessions",
-      value: stats.todaySessions,
-      icon: Clock,
-      description: 'Active today',
-      onClick: () => navigate('/admin/sessions', { state: { filterToday: true } }),
-    },
-    {
-      title: 'Completed Today',
-      value: stats.finalizedToday,
-      icon: CheckCircle,
-      description: 'Sessions finalized',
-      onClick: () => navigate('/admin/sessions', { state: { filterCompleted: true } }),
-    },
-  ];
+  const getTimeAgo = (dateString: string) => {
+    if (!dateString) return 'No updates yet';
+    const now = new Date();
+    const then = new Date(dateString);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold">Dashboard Overview</h2>
-        <p className="text-muted-foreground">Real-time operations monitoring</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Wingrow Admin Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground">Real-time reporting and analytics</p>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {statCards.map((stat) => (
+        {/* Main Tiles Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* BDO Reporting Tile */}
           <Card 
-            key={stat.title} 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={stat.onClick}
+            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            onClick={() => navigate('/admin/bdo-reporting')}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                  <MapPin className="h-8 w-8 text-blue-500" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <CardTitle className="text-2xl mt-4">BDO Reporting</CardTitle>
+              <CardDescription>Block Development Officer submissions</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                <span className="text-sm font-medium text-muted-foreground">Pending Reviews</span>
+                <span className="text-2xl font-bold text-orange-500">{bdoStats.pending}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Activity className="h-3 w-3" />
+                <span>Last update: {getTimeAgo(bdoStats.lastUpdate)}</span>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      <LiveMarketsWidget />
-      
-      <BDOSubmissionsWidget />
-      
-      <RealtimeMediaFeed />
+          {/* Employee Reporting Tile */}
+          <Card 
+            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            onClick={() => navigate('/admin/employee-reporting')}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                  <Users className="h-8 w-8 text-green-500" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <CardTitle className="text-2xl mt-4">Employee Reporting</CardTitle>
+              <CardDescription>Field staff activities and submissions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                <span className="text-sm font-medium text-muted-foreground">Active Sessions</span>
+                <span className="text-2xl font-bold text-green-500">{employeeStats.active}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Activity className="h-3 w-3" />
+                <span>Last update: {getTimeAgo(employeeStats.lastUpdate)}</span>
+              </div>
+            </CardContent>
+          </Card>
 
-      <EmployeeTimeline />
-      
-      <TaskProgressWidget />
+          {/* Market Manager Reporting Tile */}
+          <Card 
+            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            onClick={() => navigate('/admin/market-reporting')}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                  <Building2 className="h-8 w-8 text-purple-500" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <CardTitle className="text-2xl mt-4">Market Reporting</CardTitle>
+              <CardDescription>Live market operations and analytics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                <span className="text-sm font-medium text-muted-foreground">Live Markets</span>
+                <span className="text-2xl font-bold text-purple-500">{marketStats.live}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Activity className="h-3 w-3" />
+                <span>Last update: {getTimeAgo(marketStats.lastUpdate)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-        <CollectionsWidget />
-        <StallConfirmationsWidget />
+        {/* Quick Access Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+            onClick={() => navigate('/admin/users')}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Manage employees</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+            onClick={() => navigate('/admin/sessions')}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Sessions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">View all sessions</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+            onClick={() => navigate('/admin/collections')}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Collections
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Financial tracking</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+            onClick={() => navigate('/admin/settings')}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Configure system</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

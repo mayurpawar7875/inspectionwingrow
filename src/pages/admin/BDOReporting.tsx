@@ -1,0 +1,107 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import BDOSubmissionsWidget from '@/components/admin/BDOSubmissionsWidget';
+
+export default function BDOReporting() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalSubmissions: 0,
+    pendingMarkets: 0,
+    pendingStalls: 0,
+    approvedMarkets: 0,
+  });
+
+  useEffect(() => {
+    fetchStats();
+
+    const channel = supabase
+      .channel('bdo-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bdo_market_submissions' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bdo_stall_submissions' }, fetchStats)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [marketsRes, stallsRes] = await Promise.all([
+        supabase.from('bdo_market_submissions').select('id, status', { count: 'exact' }),
+        supabase.from('bdo_stall_submissions').select('id, status', { count: 'exact' }),
+      ]);
+
+      const markets = marketsRes.data || [];
+      const stalls = stallsRes.data || [];
+
+      setStats({
+        totalSubmissions: markets.length + stalls.length,
+        pendingMarkets: markets.filter(m => m.status === 'pending').length,
+        pendingStalls: stalls.filter(s => s.status === 'pending').length,
+        approvedMarkets: markets.filter(m => m.status === 'approved').length,
+      });
+    } catch (error) {
+      console.error('Error fetching BDO stats:', error);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <div>
+          <h2 className="text-3xl font-bold">BDO Real-Time Reporting</h2>
+          <p className="text-muted-foreground">Monitor and review BDO submissions in real-time</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Submissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{stats.totalSubmissions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Markets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-500">{stats.pendingMarkets}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Stalls</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-500">{stats.pendingStalls}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Approved Markets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">{stats.approvedMarkets}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <BDOSubmissionsWidget />
+    </div>
+  );
+}

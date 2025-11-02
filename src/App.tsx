@@ -29,6 +29,9 @@ import MySessions from "./pages/MySessions";
 import MarketManagerDashboard from "./pages/MarketManagerDashboard";
 import BDODashboard from "./pages/BDODashboard";
 import BDOSession from "./pages/BDOSession";
+import BDOReporting from "./pages/admin/BDOReporting";
+import EmployeeReporting from "./pages/admin/EmployeeReporting";
+import MarketManagerReporting from "./pages/admin/MarketManagerReporting";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,11 +66,15 @@ const App = () => (
               <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
               <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/bdo-reporting" element={<ProtectedRoute><AdminLayout><BDOReporting /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/employee-reporting" element={<ProtectedRoute><AdminLayout><EmployeeReporting /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/market-reporting" element={<ProtectedRoute><AdminLayout><MarketManagerReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-market" element={<ProtectedRoute><AdminLayout><LiveMarket /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-markets" element={<ProtectedRoute><AdminLayout><LiveMarkets /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/sessions" element={<ProtectedRoute><AdminLayout><AllSessions /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AdminLayout><Users /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/leaves" element={<ProtectedRoute><AdminLayout><LeaveRequests /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/collections" element={<ProtectedRoute><AdminLayout><Collections /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin/market/:marketId" element={<ProtectedRoute><MarketDetail /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
