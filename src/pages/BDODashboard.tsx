@@ -429,6 +429,13 @@ export default function BDODashboard() {
             photoUrl = urlData.publicUrl;
           }
 
+          // Validate required fields
+          if (!market.location?.trim()) {
+            toast.error("Location is required for market: " + market.name);
+            errorCount++;
+            continue;
+          }
+
           // Submit to BDO market submissions table for admin review
           const { error: submissionError } = await supabase
             .from('bdo_market_submissions')
@@ -436,10 +443,10 @@ export default function BDODashboard() {
               name: market.name.trim(),
               location: market.location.trim(),
               address: market.address.trim(),
-              city: market.city.trim() || null,
+              city: market.city?.trim() || null,
               contact_person_name: market.contactPersonName.trim(),
               contact_phone: market.contactPhone.trim(),
-              contact_email: market.contactEmail.trim() || null,
+              contact_email: market.contactEmail?.trim() || null,
               opening_date: market.openingDate,
               photo_url: photoUrl,
               submitted_by: user.id,
