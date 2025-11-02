@@ -352,6 +352,120 @@ export default function MySessions() {
 
         <main className="container mx-auto px-4 py-8">
           <div className="space-y-6">
+            {/* Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="search">Search</Label>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder="Market name..."
+                        value={filters.searchQuery}
+                        onChange={(e) =>
+                          setFilters({ ...filters, searchQuery: e.target.value })
+                        }
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateFrom">From Date</Label>
+                    <Input
+                      id="dateFrom"
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) =>
+                        setFilters({ ...filters, dateFrom: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateTo">To Date</Label>
+                    <Input
+                      id="dateTo"
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) =>
+                        setFilters({ ...filters, dateTo: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      value={filters.status || 'all'}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, status: value === 'all' ? '' : value })
+                      }
+                    >
+                      <SelectTrigger id="status">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card 
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => navigate('/media-upload')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Finalised Market Data</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{bdoMediaUploads.length}</div>
+                  <p className="text-xs text-muted-foreground">Total uploads</p>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:bg-accent transition-colors border-dashed border-2"
+                onClick={() => navigate('/bdo-dashboard')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Add Market Location</CardTitle>
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">+</div>
+                  <p className="text-xs text-muted-foreground">Submit new location</p>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:bg-accent transition-colors border-dashed border-2"
+                onClick={() => navigate('/bdo-dashboard')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Add Onboarded Stall</CardTitle>
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">+</div>
+                  <p className="text-xs text-muted-foreground">Onboard new stall</p>
+                </CardContent>
+              </Card>
+            </div>
             {/* Market Submissions */}
             <Card>
               <CardHeader>
@@ -404,10 +518,10 @@ export default function MySessions() {
               </CardContent>
             </Card>
 
-            {/* Media Uploads */}
+            {/* Finalised Market Data */}
             <Card>
               <CardHeader>
-                <CardTitle>Media Uploads</CardTitle>
+                <CardTitle>Finalised Market Data</CardTitle>
                 <CardDescription>Videos and photos you've uploaded</CardDescription>
               </CardHeader>
               <CardContent>
