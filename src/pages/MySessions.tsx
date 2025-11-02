@@ -445,8 +445,10 @@ export default function MySessions() {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{bdoMediaUploads.length}</div>
-                  <p className="text-xs text-muted-foreground">Active market sessions</p>
+                  <div className="text-2xl font-bold">
+                    {bdoMarketSubmissions.filter(m => m.status === 'approved').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Approved markets</p>
                 </CardContent>
               </Card>
 
