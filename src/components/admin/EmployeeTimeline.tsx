@@ -19,14 +19,27 @@ interface TaskEvent {
   };
 }
 
-export default function EmployeeTimeline() {
+interface EmployeeTimelineProps {
+  marketId?: string;
+}
+
+export default function EmployeeTimeline({ marketId }: EmployeeTimelineProps) {
   const [events, setEvents] = useState<TaskEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMarket, setSelectedMarket] = useState<string>('all');
+  const [selectedMarket, setSelectedMarket] = useState<string>(marketId || 'all');
   const [markets, setMarkets] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchMarkets();
+    // Update selectedMarket when marketId prop changes
+    if (marketId) {
+      setSelectedMarket(marketId);
+    }
+  }, [marketId]);
+
+  useEffect(() => {
+    if (!marketId) {
+      fetchMarkets();
+    }
     fetchEvents();
     
     // Subscribe to real-time updates
@@ -44,7 +57,7 @@ export default function EmployeeTimeline() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedMarket]);
+  }, [selectedMarket, marketId]);
 
   const fetchMarkets = async () => {
     const { data } = await supabase
@@ -76,11 +89,17 @@ export default function EmployeeTimeline() {
       // Get unique session IDs
       const sessionIds = [...new Set(events.map(e => e.session_id).filter(Boolean))];
 
-      // Fetch sessions
-      const { data: sessions } = await supabase
+      // Fetch sessions with optional market filter
+      let sessionQuery = supabase
         .from('sessions')
         .select('id, user_id, market_id')
         .in('id', sessionIds);
+
+      if (selectedMarket && selectedMarket !== 'all') {
+        sessionQuery = sessionQuery.eq('market_id', selectedMarket);
+      }
+
+      const { data: sessions } = await sessionQuery;
 
       const sessionsById = Object.fromEntries((sessions || []).map((s: any) => [s.id, s]));
 
@@ -156,21 +175,25 @@ export default function EmployeeTimeline() {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle>Employee Live Timeline</CardTitle>
-            <CardDescription>Real-time task submissions across all markets</CardDescription>
+            <CardDescription>
+              {marketId ? 'Real-time task submissions for this market' : 'Real-time task submissions across all markets'}
+            </CardDescription>
           </div>
-          <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by market" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Markets</SelectItem>
-              {markets.map((market) => (
-                <SelectItem key={market.id} value={market.id}>
-                  {market.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!marketId && (
+            <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by market" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Markets</SelectItem>
+                {markets.map((market) => (
+                  <SelectItem key={market.id} value={market.id}>
+                    {market.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>

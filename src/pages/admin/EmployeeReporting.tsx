@@ -197,13 +197,13 @@ export default function EmployeeReporting() {
 
       <RealtimeMediaFeed marketId={marketId} />
 
-      <EmployeeTimeline />
+      <EmployeeTimeline marketId={marketId} />
 
-      <TaskProgressWidget />
+      <TaskProgressWidget marketId={marketId} />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <CollectionsWidget />
-        <StallConfirmationsWidget />
+        <CollectionsWidget marketId={marketId} />
+        <StallConfirmationsWidget marketId={marketId} />
       </div>
     </div>
   );

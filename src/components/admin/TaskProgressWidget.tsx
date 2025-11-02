@@ -18,7 +18,11 @@ interface Session {
   task_statuses: TaskStatus[];
 }
 
-export default function TaskProgressWidget() {
+interface TaskProgressWidgetProps {
+  marketId?: string;
+}
+
+export default function TaskProgressWidget({ marketId }: TaskProgressWidgetProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -54,11 +58,11 @@ export default function TaskProgressWidget() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedDate]);
+  }, [selectedDate, marketId]);
 
   const fetchSessions = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sessions')
         .select(`
           id,
@@ -68,6 +72,13 @@ export default function TaskProgressWidget() {
         `)
         .eq('session_date', selectedDate)
         .order('created_at', { ascending: false });
+
+      // Filter by market if marketId is provided
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

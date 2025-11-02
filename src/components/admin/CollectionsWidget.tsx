@@ -11,7 +11,11 @@ interface CollectionData {
   transaction_count: number;
 }
 
-export default function CollectionsWidget() {
+interface CollectionsWidgetProps {
+  marketId?: string;
+}
+
+export default function CollectionsWidget({ marketId }: CollectionsWidgetProps) {
   const [collections, setCollections] = useState<CollectionData[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
@@ -32,11 +36,11 @@ export default function CollectionsWidget() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedDate]);
+  }, [selectedDate, marketId]);
 
   const fetchCollections = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('collections')
         .select(`
           id,
@@ -45,6 +49,13 @@ export default function CollectionsWidget() {
           markets (name)
         `)
         .eq('market_date', selectedDate);
+
+      // Filter by market if marketId is provided
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

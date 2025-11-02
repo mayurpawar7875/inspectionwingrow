@@ -22,19 +22,32 @@ interface StallConfirmation {
   entered_by: string;
 }
 
-export default function StallConfirmationsWidget() {
+interface StallConfirmationsWidgetProps {
+  marketId?: string;
+}
+
+export default function StallConfirmationsWidget({ marketId }: StallConfirmationsWidgetProps) {
   const [confirmations, setConfirmations] = useState<StallConfirmation[]>([]);
   const [filteredConfirmations, setFilteredConfirmations] = useState<StallConfirmation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMarket, setSelectedMarket] = useState<string>('all');
+  const [selectedMarket, setSelectedMarket] = useState<string>(marketId || 'all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedFarmer, setSelectedFarmer] = useState<string>('all');
   const [markets, setMarkets] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchMarkets();
+    // Update selectedMarket when marketId prop changes
+    if (marketId) {
+      setSelectedMarket(marketId);
+    }
+  }, [marketId]);
+
+  useEffect(() => {
+    if (!marketId) {
+      fetchMarkets();
+    }
     fetchConfirmations();
     
     const channel = supabase
@@ -49,7 +62,7 @@ export default function StallConfirmationsWidget() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [marketId]);
 
   const fetchMarkets = async () => {
     try {
@@ -128,10 +141,17 @@ export default function StallConfirmationsWidget() {
       const sessionIds = [...new Set(confirmations.map(c => c.session_id).filter(Boolean))];
 
       // Fetch sessions to get market_id, market_date, and created_by (user_id)
-      const { data: sessions } = await supabase
+      let sessionQuery = supabase
         .from('sessions')
         .select('id, user_id, market_id, market_date, session_date')
         .in('id', sessionIds);
+
+      // Filter by market if marketId prop is provided
+      if (marketId) {
+        sessionQuery = sessionQuery.eq('market_id', marketId);
+      }
+
+      const { data: sessions } = await sessionQuery;
 
       const sessionById = Object.fromEntries((sessions || []).map((s: any) => [s.id, s]));
 
@@ -222,22 +242,24 @@ export default function StallConfirmationsWidget() {
         </div>
         <div className="mt-4 space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Market</label>
-              <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All markets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Markets</SelectItem>
-                  {markets.map((market) => (
-                    <SelectItem key={market.id} value={market.name}>
-                      {market.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!marketId && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Market</label>
+                <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All markets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Markets</SelectItem>
+                    {markets.map((market) => (
+                      <SelectItem key={market.id} value={market.id}>
+                        {market.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Date</label>
               <Popover>
