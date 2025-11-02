@@ -40,6 +40,16 @@ export default function MediaUpload() {
     googleMapLocation: '',
     rent: '',
   });
+  const [marketsQueue, setMarketsQueue] = useState<Array<{
+    marketName: string;
+    marketOpeningDate: string;
+    customerReach: string;
+    locationType: 'society' | 'residential_colony';
+    flatsOccupancy: string;
+    googleMapLocation: string;
+    rent: string;
+    videoFile: File;
+  }>>([]);
   useEffect(() => {
     fetchData();
   }, [user, currentRole]);
@@ -178,8 +188,11 @@ export default function MediaUpload() {
     await handleFileUpload(file, 'market_video');
   };
 
-  const handleBDOPanVideoSubmit = async () => {
-    if (!user || !bdoPanVideoFile) return;
+  const handleAddToQueue = () => {
+    if (!bdoPanVideoFile) {
+      toast.error('Please select a video file');
+      return;
+    }
 
     // Validate required fields
     if (!bdoPanVideoForm.marketName.trim()) {
@@ -203,189 +216,161 @@ export default function MediaUpload() {
       return;
     }
 
+    // Add to queue
+    setMarketsQueue([...marketsQueue, {
+      ...bdoPanVideoForm,
+      videoFile: bdoPanVideoFile,
+    }]);
+
+    // Reset form
+    setBdoPanVideoFile(null);
+    setBdoPanVideoForm({
+      marketName: '',
+      marketOpeningDate: '',
+      customerReach: '',
+      locationType: 'society',
+      flatsOccupancy: '',
+      googleMapLocation: '',
+      rent: '',
+    });
+
+    toast.success('Market added to queue. Add more or submit all.');
+  };
+
+  const handleRemoveFromQueue = (index: number) => {
+    setMarketsQueue(marketsQueue.filter((_, i) => i !== index));
+    toast.success('Market removed from queue');
+  };
+
+  const handleBDOPanVideoSubmit = async () => {
+    if (!user) return;
+
+    if (marketsQueue.length === 0) {
+      toast.error('Please add at least one market to the queue');
+      return;
+    }
+
     setUploading(true);
+    let successCount = 0;
+    let errorCount = 0;
+
     try {
-      // Get market ID from name (only use existing markets, don't create new ones due to RLS)
-      let marketId: string | null = null;
-      
-      // Check if market exists by name (case-insensitive search)
-      const marketNameTrimmed = bdoPanVideoForm.marketName.trim();
-      let existingMarket: { id: string; name: string } | null = null;
-      
-      // Try exact match first (case-insensitive)
-      const { data: exactMatch, error: exactError } = await supabase
-        .from('markets')
-        .select('id, name')
-        .ilike('name', marketNameTrimmed);
-      
-      if (exactError) {
-        console.error('Error searching for market:', exactError);
-        toast.error(`Error checking for existing market: ${exactError.message}`);
-        setUploading(false);
-        return;
-      }
-      
-      if (exactMatch && exactMatch.length > 0) {
-        existingMarket = exactMatch[0];
-        marketId = existingMarket.id;
-        console.log('Found existing market:', existingMarket.id, existingMarket.name);
-      } else {
-        // Market doesn't exist - we can't create it due to RLS
-        // We'll proceed without market_id and store market name in metadata
-        // Admin can create the market later and link it
-        console.log('Market does not exist. Will store market name in metadata for admin review.');
-        toast.info('Market does not exist. Submission will be saved with market details for admin review.');
-      }
-
-      const fileName = `${user.id}/${Date.now()}-${bdoPanVideoFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('employee-media')
-        .upload(fileName, bdoPanVideoFile);
-
-      if (uploadError) {
-        console.error('File upload error:', uploadError);
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
-      const today = new Date().toISOString().split('T')[0];
-      let sessionId: string | null = null;
-
-      // Only create session if market exists (sessions require market_id)
-      if (marketId) {
-        // Check if session exists
-        const { data: existingSession } = await supabase
-          .from('sessions')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('market_id', marketId)
-          .eq('session_date', today)
-          .maybeSingle();
-
-        if (existingSession) {
-          sessionId = existingSession.id;
-        } else {
-          // Create a new session for BDO
-          const { data: newSession, error: sessionError } = await supabase
-            .from('sessions')
-            .insert({
-              user_id: user.id,
-              market_id: marketId,
-              session_date: today,
-              status: 'active',
-            } as any)
-            .select('id')
-            .single();
-
-          if (sessionError) {
-            console.error('Session creation error:', sessionError);
-            // Continue anyway - we'll store media without session
-            console.log('Will proceed without session due to error');
-          } else {
-            sessionId = newSession?.id || null;
-          }
-        }
-      }
-
-      // Store metadata - we'll store it as JSON in a way that can be retrieved
-      // Since media table might not have a metadata field, we'll log it for now
-      // and can extend the table later if needed
-      const metadata = {
-        market_name: bdoPanVideoForm.marketName.trim(),
-        market_opening_date: bdoPanVideoForm.marketOpeningDate,
-        customer_reach: bdoPanVideoForm.customerReach.trim(),
-        location_type: bdoPanVideoForm.locationType,
-        flats_occupancy: bdoPanVideoForm.locationType === 'society' ? bdoPanVideoForm.flatsOccupancy.trim() : null,
-        google_map_location: bdoPanVideoForm.googleMapLocation.trim(),
-        rent: bdoPanVideoForm.rent.trim() || null,
-      };
-
-      // Insert media - use market_id if available, otherwise null (media table might allow nullable market_id)
-      // Store all market info in metadata for admin review
-      const mediaPayload: any = {
-        user_id: user.id,
-        market_date: today,
-        media_type: 'market_video',
-        file_url: urlData.publicUrl,
-        file_name: bdoPanVideoFile.name,
-        content_type: bdoPanVideoFile.type,
-        captured_at: new Date().toISOString(),
-      };
-
-      // Add market_id and session_id only if they exist
-      if (marketId) {
-        mediaPayload.market_id = marketId;
-      }
-      if (sessionId) {
-        mediaPayload.session_id = sessionId;
-      }
-
-      const { error: insertError } = await supabase.from('media').insert(mediaPayload);
-
-      if (insertError) {
-        console.error('Media insert error:', insertError);
-        throw insertError;
-      }
-
-      // Store BDO market submission in separate reporting table
-      // This is separate from employee reporting/tasks
-      try {
-        const submissionData = {
-          bdo_user_id: user.id,
-          submission_date: today,
-          market_name: marketNameTrimmed,
-          market_opening_date: bdoPanVideoForm.marketOpeningDate || null,
-          google_map_location: bdoPanVideoForm.googleMapLocation.trim(),
-          location_type: bdoPanVideoForm.locationType,
-          flats_occupancy: bdoPanVideoForm.locationType === 'society' ? bdoPanVideoForm.flatsOccupancy.trim() : null,
-          customer_reach: bdoPanVideoForm.customerReach.trim(),
-          rent: bdoPanVideoForm.rent.trim() || null,
-          video_url: urlData.publicUrl,
-          video_file_name: bdoPanVideoFile.name,
-          market_id: marketId || null,
-          status: marketId ? 'market_created' : 'pending_review',
-          submission_metadata: {
-            media_id: null,
-            uploaded_at: new Date().toISOString(),
-            ...metadata,
-          },
-        };
-
-        const { data: submissionDataResult, error: submissionError } = await (supabase as any)
-          .from('bdo_market_submissions' as any)
-          .insert(submissionData)
-          .select();
-
-        if (submissionError) {
-          console.error('Error creating BDO market submission:', submissionError);
-          console.error('Submission data:', submissionData);
-          const errorMsg = submissionError.message || submissionError.code || 'Unknown error';
+      for (const marketData of marketsQueue) {
+        try {
+          // Get market ID from name (only use existing markets, don't create new ones due to RLS)
+          let marketId: string | null = null;
           
-          // Check if table doesn't exist (migration not applied)
-          if (errorMsg.includes('does not exist') || errorMsg.includes('relation') || submissionError.code === '42P01') {
-            toast.error('Database table not found. Please apply the migration file: 20251102000000_bdo_market_submissions.sql');
-          } else if (errorMsg.includes('row-level security') || errorMsg.includes('RLS') || submissionError.code === '42501') {
-            toast.error('Permission denied. Please check RLS policies for BDO role.');
-          } else {
-            toast.error(`Failed to save submission: ${errorMsg}`);
+          // Check if market exists by name (case-insensitive search)
+          const marketNameTrimmed = marketData.marketName.trim();
+          let existingMarket: { id: string; name: string } | null = null;
+          
+          // Try exact match first (case-insensitive)
+          const { data: exactMatch, error: exactError } = await supabase
+            .from('markets')
+            .select('id, name')
+            .ilike('name', marketNameTrimmed);
+          
+          if (exactError) {
+            console.error('Error searching for market:', exactError);
+            errorCount++;
+            continue;
           }
-        } else {
-          console.log('BDO market submission recorded successfully:', submissionDataResult);
+          
+          if (exactMatch && exactMatch.length > 0) {
+            existingMarket = exactMatch[0];
+            marketId = existingMarket.id;
+            console.log('Found existing market:', existingMarket.id, existingMarket.name);
+          }
+
+          const fileName = `${user.id}/${Date.now()}-${marketData.videoFile.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('employee-media')
+            .upload(fileName, marketData.videoFile);
+
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            errorCount++;
+            continue;
+          }
+
+          const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
+          const today = new Date().toISOString().split('T')[0];
+          let sessionId: string | null = null;
+
+          // Only create session if market exists (sessions require market_id)
+          if (marketId) {
+            // Check if session exists
+            const { data: existingSession } = await supabase
+              .from('sessions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('market_id', marketId)
+              .eq('session_date', today)
+              .maybeSingle();
+
+            if (existingSession) {
+              sessionId = existingSession.id;
+            } else {
+              // Create a new session for BDO
+              const { data: newSession, error: sessionError } = await supabase
+                .from('sessions')
+                .insert({
+                  user_id: user.id,
+                  market_id: marketId,
+                  session_date: today,
+                  status: 'active',
+                } as any)
+                .select('id')
+                .single();
+
+              if (!sessionError && newSession) {
+                sessionId = newSession.id;
+              }
+            }
+          }
+
+          // Insert media
+          const mediaPayload: any = {
+            user_id: user.id,
+            market_date: today,
+            media_type: 'market_video',
+            file_url: urlData.publicUrl,
+            file_name: marketData.videoFile.name,
+            content_type: marketData.videoFile.type,
+            captured_at: new Date().toISOString(),
+          };
+
+          if (marketId) {
+            mediaPayload.market_id = marketId;
+          }
+          if (sessionId) {
+            mediaPayload.session_id = sessionId;
+          }
+
+          const { error: insertError } = await supabase.from('media').insert(mediaPayload);
+
+          if (insertError) {
+            console.error('Media insert error:', insertError);
+            errorCount++;
+            continue;
+          }
+
+          successCount++;
+        } catch (error: any) {
+          console.error('Error processing market:', error);
+          errorCount++;
         }
-      } catch (submissionError: any) {
-        console.error('Error storing BDO submission:', submissionError);
-        const errorMsg = submissionError?.message || submissionError?.code || 'Unknown error';
-        toast.error(`Submission error: ${errorMsg}`);
       }
 
-      const istTime = new Date().toLocaleTimeString('en-IN', { 
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      toast.success(`Market pan video uploaded at ${istTime} IST`);
-      
-      // Reset form
+      if (successCount > 0) {
+        toast.success(`Successfully uploaded ${successCount} market pan video(s)`);
+      }
+      if (errorCount > 0) {
+        toast.error(`Failed to upload ${errorCount} market video(s)`);
+      }
+
+      // Reset everything
+      setMarketsQueue([]);
       setBdoPanVideoFile(null);
       setBdoPanVideoForm({
         marketName: '',
@@ -400,7 +385,7 @@ export default function MediaUpload() {
       
       fetchData();
     } catch (error: any) {
-      toast.error('Failed to upload market pan video');
+      toast.error('Failed to upload market pan videos');
       console.error(error);
     } finally {
       setUploading(false);
@@ -626,9 +611,41 @@ export default function MediaUpload() {
                       </p>
                     </div>
                   )}
+
+                  {/* Queue Display */}
+                  {marketsQueue.length > 0 && (
+                    <div className="space-y-2 border-t pt-4 mt-4">
+                      <h4 className="font-semibold text-sm">Queued Markets ({marketsQueue.length})</h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {marketsQueue.map((market, index) => (
+                          <div key={index} className="p-3 bg-muted rounded-lg">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{market.marketName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {market.videoFile.name} ({(market.videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Opening: {market.marketOpeningDate} | Location: {market.locationType}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveFromQueue(index)}
+                                disabled={uploading}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="gap-2">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -648,8 +665,18 @@ export default function MediaUpload() {
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleBDOPanVideoSubmit} disabled={uploading || !bdoPanVideoFile}>
-                    {uploading ? 'Submitting...' : 'Final Submit'}
+                  <Button
+                    variant="secondary"
+                    onClick={handleAddToQueue}
+                    disabled={uploading || !bdoPanVideoFile}
+                  >
+                    Add to Queue
+                  </Button>
+                  <Button
+                    onClick={handleBDOPanVideoSubmit}
+                    disabled={uploading || marketsQueue.length === 0}
+                  >
+                    {uploading ? 'Submitting...' : `Submit All (${marketsQueue.length})`}
                   </Button>
                 </DialogFooter>
               </DialogContent>
