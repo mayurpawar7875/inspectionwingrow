@@ -83,6 +83,120 @@ export type Database = {
         }
         Relationships: []
       }
+      bdo_market_submissions: {
+        Row: {
+          address: string
+          city: string | null
+          contact_email: string | null
+          contact_person_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          location: string
+          name: string
+          opening_date: string
+          photo_url: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          contact_email?: string | null
+          contact_person_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          location: string
+          name: string
+          opening_date: string
+          photo_url?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          contact_email?: string | null
+          contact_person_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+          opening_date?: string
+          photo_url?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bdo_stall_submissions: {
+        Row: {
+          address: string
+          contact_number: string
+          created_at: string
+          date_of_starting_markets: string
+          farmer_name: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          stall_name: string
+          status: string
+          submitted_at: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          contact_number: string
+          created_at?: string
+          date_of_starting_markets: string
+          farmer_name: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stall_name: string
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          contact_number?: string
+          created_at?: string
+          date_of_starting_markets?: string
+          farmer_name?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stall_name?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       collections: {
         Row: {
           amount: number
@@ -160,6 +274,36 @@ export type Database = {
           },
         ]
       }
+      employee_leaves: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          leave_date: string
+          reason: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          leave_date: string
+          reason: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          leave_date?: string
+          reason?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string
@@ -168,6 +312,7 @@ export type Database = {
           id: string
           phone: string | null
           status: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -176,6 +321,7 @@ export type Database = {
           id: string
           phone?: string | null
           status?: string
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -184,8 +330,78 @@ export type Database = {
           id?: string
           phone?: string | null
           status?: string
+          username?: string | null
         }
         Relationships: []
+      }
+      farmers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      market_schedule: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          is_active: boolean
+          market_id: string
+          schedule_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_active?: boolean
+          market_id: string
+          schedule_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_active?: boolean
+          market_id?: string
+          schedule_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_schedule_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "market_schedule_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       markets: {
         Row: {
@@ -228,39 +444,6 @@ export type Database = {
           schedule_json?: Json | null
         }
         Relationships: []
-      }
-      ,
-      market_schedule: {
-        Row: {
-          id: string
-          market_id: string
-          schedule_date: string
-          created_at: string
-          created_by: string | null
-        }
-        Insert: {
-          id?: string
-          market_id: string
-          schedule_date: string
-          created_at?: string
-          created_by?: string | null
-        }
-        Update: {
-          id?: string
-          market_id?: string
-          schedule_date?: string
-          created_at?: string
-          created_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "market_schedule_market_id_fkey"
-            columns: ["market_id"]
-            isOneToOne: false
-            referencedRelation: "markets"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       media: {
         Row: {
@@ -462,6 +645,30 @@ export type Database = {
           key?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          target_user_id: string | null
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          target_user_id?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -996,6 +1203,15 @@ export type Database = {
     }
     Functions: {
       backfill_media_metadata: { Args: never; Returns: undefined }
+      get_employee_by_username: {
+        Args: { _username: string }
+        Returns: {
+          email: string
+          id: string
+          status: string
+          username: string
+        }[]
+      }
       get_or_create_session: {
         Args: { p_date: string; p_market: string; p_user: string }
         Returns: string
@@ -1027,7 +1243,12 @@ export type Database = {
         | "market_video"
         | "cleaning_video"
         | "collection"
-      user_role: "employee" | "admin"
+      user_role:
+        | "employee"
+        | "admin"
+        | "market_manager"
+        | "bms_executive"
+        | "bdo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1175,7 +1396,13 @@ export const Constants = {
         "cleaning_video",
         "collection",
       ],
-      user_role: ["employee", "admin"],
+      user_role: [
+        "employee",
+        "admin",
+        "market_manager",
+        "bms_executive",
+        "bdo",
+      ],
     },
   },
 } as const

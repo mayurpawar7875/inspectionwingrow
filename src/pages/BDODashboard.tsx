@@ -429,31 +429,25 @@ export default function BDODashboard() {
             photoUrl = urlData.publicUrl;
           }
 
-          // Store additional metadata
-          const marketMetadata = {
-            contact_person_name: market.contactPersonName.trim(),
-            contact_phone: market.contactPhone.trim(),
-            contact_email: market.contactEmail.trim() || null,
-            opening_date: market.openingDate,
-            photo_url: photoUrl,
-            submitted_by: user.id,
-            submitted_at: new Date().toISOString(),
-          };
-
-          // Create market entry
-          const { error: marketError } = await supabase
-            .from('markets')
+          // Submit to BDO market submissions table for admin review
+          const { error: submissionError } = await (supabase as any)
+            .from('bdo_market_submissions')
             .insert({
               name: market.name.trim(),
               location: market.location.trim(),
               address: market.address.trim(),
               city: market.city.trim() || null,
-              is_active: false, // New markets should be reviewed by admin first
-              schedule_json: marketMetadata as any,
+              contact_person_name: market.contactPersonName.trim(),
+              contact_phone: market.contactPhone.trim(),
+              contact_email: market.contactEmail.trim() || null,
+              opening_date: market.openingDate,
+              photo_url: photoUrl,
+              submitted_by: user.id,
+              status: 'pending',
             });
 
-          if (marketError) {
-            console.error('Market creation error:', marketError);
+          if (submissionError) {
+            console.error('Market submission error:', submissionError);
             errorCount++;
           } else {
             successCount++;
@@ -486,10 +480,6 @@ export default function BDODashboard() {
       });
       
       setShowAddMarketDialog(false);
-      
-      // Refresh stats
-      fetchDistrictStats();
-      fetchMarketSummaries();
       
     } catch (error: any) {
       console.error('Error submitting markets:', error);
@@ -574,85 +564,25 @@ export default function BDODashboard() {
     try {
       for (const stall of stallsToSubmit) {
         try {
-          // First, ensure farmer exists in farmers table (for suggestions/autocomplete)
-          const { data: existingFarmer } = await (supabase as any)
-            .from('farmers')
-            .select('id')
-            .eq('name', stall.farmerName.trim())
-            .maybeSingle();
-
-          if (!existingFarmer) {
-            // Create farmer record if doesn't exist
-            const { error: farmerError } = await (supabase as any)
-              .from('farmers')
-              .insert({
-                name: stall.farmerName.trim(),
-                is_active: true,
-              });
-
-            if (farmerError && !farmerError.message.includes('duplicate') && !farmerError.message.includes('unique')) {
-              console.error('Farmer creation error:', farmerError);
-              // Continue anyway - farmer might already exist
-            }
-          }
-
-          // Store stall onboarding data in farmers table metadata or create a new onboarding record
-          // For now, we'll store extended farmer info - but we need a way to track stalls
-          // Since stall_confirmations requires market_id, we'll create a pending onboarding entry
-          // We can extend farmers table with additional fields via JSON or create onboarding records
-          
-          // Create or update farmer with extended information
-          // Store stall onboarding info - we'll use a metadata approach
-          // Since the farmers table is simple, we'll create stall onboarding records that can be processed later
-          // For now, let's create a record in a way that can be reviewed and assigned to markets
-          
-          // Create a stall onboarding entry - we'll store this as extended farmer info
-          // and create a way to track onboarded stalls
-          const stallMetadata = {
-            stall_name: stall.stallName.trim(),
-            contact_number: stall.contactNumber.trim(),
-            address: stall.address.trim(),
-            date_of_starting_markets: stall.dateOfStartingMarkets,
-            onboarded_by: user.id,
-            onboarded_at: new Date().toISOString(),
-            status: 'pending_review',
-          };
-
-          // Update or insert farmer with metadata
-          // For now, let's insert a record that links to farmers table
-          // We'll use the farmers table name field and store additional info separately
-          // Since farmers table only has name, we'll need to track this elsewhere
-          
-          // For BDO onboarding, we'll create entries that can be reviewed and then assigned to markets
-          // Let's store this as extended farmer info that will be used when creating stall_confirmations
-          
-          // Insert into farmers if not exists, or we can create onboarding records
-          // For simplicity, let's insert a farmer record and note the stall info in metadata
-          // We'll need to handle the stall assignment to markets separately
-          
-          // Create farmer record with stall info
-          const { error: farmerUpsertError } = await (supabase as any)
-            .from('farmers')
-            .upsert({
-              name: stall.farmerName.trim(),
-              is_active: true,
-            }, {
-              onConflict: 'name',
-              ignoreDuplicates: false,
+          // Submit to BDO stall submissions table for admin review
+          const { error: submissionError } = await (supabase as any)
+            .from('bdo_stall_submissions')
+            .insert({
+              farmer_name: stall.farmerName.trim(),
+              stall_name: stall.stallName.trim(),
+              contact_number: stall.contactNumber.trim(),
+              address: stall.address.trim(),
+              date_of_starting_markets: stall.dateOfStartingMarkets,
+              submitted_by: user.id,
+              status: 'pending',
             });
 
-          if (farmerUpsertError && !farmerUpsertError.message.includes('duplicate')) {
-            console.error('Farmer upsert error:', farmerUpsertError);
+          if (submissionError) {
+            console.error('Stall submission error:', submissionError);
             errorCount++;
-            continue;
+          } else {
+            successCount++;
           }
-
-          // Note: For now, we'll just ensure farmer exists and log the stall info
-          // The actual stall assignment will need market context
-          // We can create a BDO_onboarded_stalls tracking mechanism
-          // For immediate implementation, let's log success
-          successCount++;
-          
         } catch (error) {
           console.error('Error submitting stall:', error);
           errorCount++;
@@ -660,7 +590,7 @@ export default function BDODashboard() {
       }
 
       if (successCount > 0) {
-        toast.success(`Successfully onboarded ${successCount} stall(s)! Farmers have been registered.`);
+        toast.success(`Successfully onboarded ${successCount} stall(s)! Submissions will be reviewed by admin.`);
       }
       if (errorCount > 0) {
         toast.error(`Failed to onboard ${errorCount} stall(s).`);
