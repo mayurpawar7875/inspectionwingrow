@@ -67,7 +67,7 @@ export default function EmployeeMarketsList() {
 
       const scheduledMarketIds = new Set(schedules?.map(s => s.market_id) || []);
 
-      // Get live market data for scheduled markets
+      // Get live market data
       const { data: liveData } = await supabase
         .from('live_markets_today')
         .select('*')
@@ -75,10 +75,12 @@ export default function EmployeeMarketsList() {
 
       const liveDataMap = new Map(liveData?.map(m => [m.market_id, m]) || []);
 
-      // Combine data: show all scheduled markets, with live data if available
-      const marketData: MarketData[] = allMarkets
-        .filter(market => scheduledMarketIds.has(market.id))
-        .map(market => {
+      // Combine data: if schedules exist, show only scheduled markets; otherwise show all active markets
+      const marketsToShow = scheduledMarketIds.size > 0 
+        ? allMarkets.filter(market => scheduledMarketIds.has(market.id))
+        : allMarkets;
+
+      const marketData: MarketData[] = marketsToShow.map(market => {
           const live = liveDataMap.get(market.id);
           return {
             market_id: market.id,
