@@ -15,6 +15,13 @@ interface MarketData {
   last_upload_time: string | null;
 }
 
+interface Market {
+  id: string;
+  name: string;
+  city: string;
+  day_of_week: number | null;
+}
+
 export default function EmployeeMarketsList() {
   const navigate = useNavigate();
   const { city } = useParams<{ city: string }>();
@@ -47,7 +54,7 @@ export default function EmployeeMarketsList() {
       // First, get all active markets in the city
       const { data: allMarkets } = await supabase
         .from('markets')
-        .select('id, name, city')
+        .select('id, name, city, day_of_week')
         .eq('city', decodedCity)
         .eq('is_active', true);
 
@@ -57,7 +64,7 @@ export default function EmployeeMarketsList() {
         return;
       }
 
-      // Check which markets are scheduled for today
+      // Check which markets are scheduled for today using the new market_schedule table
       const { data: schedules } = await supabase
         .from('market_schedule')
         .select('market_id')
@@ -75,9 +82,16 @@ export default function EmployeeMarketsList() {
 
       const liveDataMap = new Map(liveData?.map(m => [m.market_id, m]) || []);
 
-      // Combine data: if schedules exist, show only scheduled markets; otherwise show all active markets
-      const marketsToShow = scheduledMarketIds.size > 0 
-        ? allMarkets.filter(market => scheduledMarketIds.has(market.id))
+      // Filter markets: show markets that are either:
+      // 1. In market_schedule table for today, OR
+      // 2. Have day_of_week matching today (legacy support), OR
+      // 3. If no schedules exist anywhere, show all markets
+      const hasAnySchedules = scheduledMarketIds.size > 0 || allMarkets.some(m => m.day_of_week !== null);
+      
+      const marketsToShow = hasAnySchedules
+        ? allMarkets.filter(market => 
+            scheduledMarketIds.has(market.id) || market.day_of_week === dayOfWeek
+          )
         : allMarkets;
 
       const marketData: MarketData[] = marketsToShow.map(market => {
