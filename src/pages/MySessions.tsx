@@ -72,8 +72,6 @@ export default function MySessions() {
   const [bdoMediaUploads, setBdoMediaUploads] = useState<BDOMediaUpload[]>([]);
   const [bdoStallSubmissions, setBdoStallSubmissions] = useState<any[]>([]);
   const [expandedSection, setExpandedSection] = useState<'media' | 'markets' | 'stalls' | null>(null);
-  const [showAddMarketDialog, setShowAddMarketDialog] = useState(false);
-  const [showAddStallDialog, setShowAddStallDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -454,10 +452,10 @@ export default function MySessions() {
 
               <Card 
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => setShowAddMarketDialog(true)}
+                onClick={() => setExpandedSection(expandedSection === 'markets' ? null : 'markets')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Add Market Location</CardTitle>
+                  <CardTitle className="text-sm font-medium">Market Locations</CardTitle>
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -468,10 +466,10 @@ export default function MySessions() {
 
               <Card 
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => setShowAddStallDialog(true)}
+                onClick={() => setExpandedSection(expandedSection === 'stalls' ? null : 'stalls')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Add Onboarded Stall</CardTitle>
+                  <CardTitle className="text-sm font-medium">Onboarded Stalls</CardTitle>
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -637,51 +635,6 @@ export default function MySessions() {
           </div>
         </main>
 
-        {/* Add Market Dialog */}
-        <Dialog open={showAddMarketDialog} onOpenChange={setShowAddMarketDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Market Location</DialogTitle>
-              <DialogDescription>
-                This feature opens in the BDO Dashboard. Redirecting...
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setShowAddMarketDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                setShowAddMarketDialog(false);
-                navigate('/bdo-dashboard');
-              }}>
-                Go to Dashboard
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Add Stall Dialog */}
-        <Dialog open={showAddStallDialog} onOpenChange={setShowAddStallDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Onboarded Stall</DialogTitle>
-              <DialogDescription>
-                This feature opens in the BDO Dashboard. Redirecting...
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setShowAddStallDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                setShowAddStallDialog(false);
-                navigate('/bdo-dashboard');
-              }}>
-                Go to Dashboard
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     );
   }
