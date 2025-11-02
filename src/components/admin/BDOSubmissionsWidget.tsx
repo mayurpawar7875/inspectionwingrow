@@ -51,7 +51,12 @@ interface BDOStallSubmission {
   review_notes: string | null;
 }
 
-export default function BDOSubmissionsWidget() {
+
+interface BDOSubmissionsWidgetProps {
+  filter?: 'all' | 'pending-markets' | 'pending-stalls' | 'approved-markets';
+}
+
+export default function BDOSubmissionsWidget({ filter = 'all' }: BDOSubmissionsWidgetProps) {
   const [marketSubmissions, setMarketSubmissions] = useState<BDOMarketSubmission[]>([]);
   const [stallSubmissions, setStallSubmissions] = useState<BDOStallSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,32 +180,62 @@ export default function BDOSubmissionsWidget() {
 
   const pendingMarkets = marketSubmissions.filter(m => m.status === 'pending');
   const pendingStalls = stallSubmissions.filter(s => s.status === 'pending');
+  const approvedMarkets = marketSubmissions.filter(m => m.status === 'approved');
+
+  // Filter data based on selected filter
+  const filteredMarkets = filter === 'all' 
+    ? marketSubmissions 
+    : filter === 'pending-markets'
+    ? pendingMarkets
+    : filter === 'approved-markets'
+    ? approvedMarkets
+    : [];
+
+  const filteredStalls = filter === 'all' || filter === 'pending-stalls'
+    ? (filter === 'pending-stalls' ? pendingStalls : stallSubmissions)
+    : [];
+
+  const showMarkets = filter === 'all' || filter === 'pending-markets' || filter === 'approved-markets';
+  const showStalls = filter === 'all' || filter === 'pending-stalls';
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              BDO Market Submissions
-              {pendingMarkets.length > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {pendingMarkets.length} Pending
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>Recent market location submissions from BDOs</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      {showMarkets && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                BDO Market Submissions
+                {pendingMarkets.length > 0 && filter !== 'approved-markets' && (
+                  <Badge variant="destructive" className="ml-2">
+                    {pendingMarkets.length} Pending
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {filter === 'pending-markets' 
+                  ? 'Pending market location submissions' 
+                  : filter === 'approved-markets'
+                  ? 'Approved market location submissions'
+                  : 'Recent market location submissions from BDOs'}
+              </CardDescription>
             </div>
-          ) : marketSubmissions.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No market submissions yet</p>
-          ) : (
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredMarkets.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {filter === 'pending-markets' 
+                  ? 'No pending market submissions' 
+                  : filter === 'approved-markets'
+                  ? 'No approved market submissions yet'
+                  : 'No market submissions yet'}
+              </p>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -213,7 +248,7 @@ export default function BDOSubmissionsWidget() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {marketSubmissions.map((market) => (
+                {filteredMarkets.map((market) => (
                   <TableRow key={market.id}>
                     <TableCell className="font-medium">{market.name}</TableCell>
                     <TableCell>{market.city || 'N/A'}</TableCell>
@@ -262,30 +297,38 @@ export default function BDOSubmissionsWidget() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              BDO Stall Submissions
-              {pendingStalls.length > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {pendingStalls.length} Pending
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>Recent stall onboarding submissions from BDOs</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      {showStalls && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                BDO Stall Submissions
+                {pendingStalls.length > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {pendingStalls.length} Pending
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {filter === 'pending-stalls' 
+                  ? 'Pending stall onboarding submissions' 
+                  : 'Recent stall onboarding submissions from BDOs'}
+              </CardDescription>
             </div>
-          ) : stallSubmissions.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No stall submissions yet</p>
-          ) : (
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredStalls.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {filter === 'pending-stalls' ? 'No pending stall submissions' : 'No stall submissions yet'}
+              </p>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -298,7 +341,7 @@ export default function BDOSubmissionsWidget() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stallSubmissions.map((stall) => (
+                {filteredStalls.map((stall) => (
                   <TableRow key={stall.id}>
                     <TableCell className="font-medium">{stall.stall_name}</TableCell>
                     <TableCell>{stall.farmer_name}</TableCell>
@@ -347,6 +390,7 @@ export default function BDOSubmissionsWidget() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Market Review Dialog */}
       <Dialog open={!!selectedMarket} onOpenChange={() => setSelectedMarket(null)}>
