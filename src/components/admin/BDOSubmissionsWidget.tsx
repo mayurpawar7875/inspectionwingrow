@@ -108,9 +108,7 @@ export default function BDOSubmissionsWidget() {
     }
   };
 
-  const handleReviewMarket = async (status: 'approved' | 'rejected') => {
-    if (!selectedMarket) return;
-
+  const handleReviewMarket = async (marketId: string, status: 'approved' | 'rejected', notes: string = '') => {
     try {
       setReviewing(true);
 
@@ -118,10 +116,10 @@ export default function BDOSubmissionsWidget() {
         .from('bdo_market_submissions')
         .update({
           status,
-          review_notes: reviewNotes,
+          review_notes: notes,
           reviewed_at: new Date().toISOString(),
         })
-        .eq('id', selectedMarket.id);
+        .eq('id', marketId);
 
       if (error) throw error;
 
@@ -137,9 +135,7 @@ export default function BDOSubmissionsWidget() {
     }
   };
 
-  const handleReviewStall = async (status: 'approved' | 'rejected') => {
-    if (!selectedStall) return;
-
+  const handleReviewStall = async (stallId: string, status: 'approved' | 'rejected', notes: string = '') => {
     try {
       setReviewing(true);
 
@@ -147,10 +143,10 @@ export default function BDOSubmissionsWidget() {
         .from('bdo_stall_submissions')
         .update({
           status,
-          review_notes: reviewNotes,
+          review_notes: notes,
           reviewed_at: new Date().toISOString(),
         })
-        .eq('id', selectedStall.id);
+        .eq('id', stallId);
 
       if (error) throw error;
 
@@ -225,14 +221,39 @@ export default function BDOSubmissionsWidget() {
                     <TableCell>{format(new Date(market.submitted_at), 'MMM dd, HH:mm')}</TableCell>
                     <TableCell>{getStatusBadge(market.status)}</TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedMarket(market)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedMarket(market)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {market.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => handleReviewMarket(market.id, 'approved')}
+                              disabled={reviewing}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReviewMarket(market.id, 'rejected')}
+                              disabled={reviewing}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -285,14 +306,39 @@ export default function BDOSubmissionsWidget() {
                     <TableCell>{format(new Date(stall.submitted_at), 'MMM dd, HH:mm')}</TableCell>
                     <TableCell>{getStatusBadge(stall.status)}</TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedStall(stall)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedStall(stall)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {stall.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => handleReviewStall(stall.id, 'approved')}
+                              disabled={reviewing}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReviewStall(stall.id, 'rejected')}
+                              disabled={reviewing}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -383,13 +429,13 @@ export default function BDOSubmissionsWidget() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => handleReviewMarket('rejected')}
+              onClick={() => handleReviewMarket(selectedMarket.id, 'rejected', reviewNotes)}
               disabled={reviewing}
             >
               <XCircle className="h-4 w-4 mr-1" />
               Reject
             </Button>
-            <Button onClick={() => handleReviewMarket('approved')} disabled={reviewing}>
+            <Button onClick={() => handleReviewMarket(selectedMarket.id, 'approved', reviewNotes)} disabled={reviewing}>
               <CheckCircle className="h-4 w-4 mr-1" />
               Approve
             </Button>
@@ -449,13 +495,13 @@ export default function BDOSubmissionsWidget() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => handleReviewStall('rejected')}
+              onClick={() => handleReviewStall(selectedStall.id, 'rejected', reviewNotes)}
               disabled={reviewing}
             >
               <XCircle className="h-4 w-4 mr-1" />
               Reject
             </Button>
-            <Button onClick={() => handleReviewStall('approved')} disabled={reviewing}>
+            <Button onClick={() => handleReviewStall(selectedStall.id, 'approved', reviewNotes)} disabled={reviewing}>
               <CheckCircle className="h-4 w-4 mr-1" />
               Approve
             </Button>
