@@ -430,7 +430,7 @@ export default function BDODashboard() {
           }
 
           // Submit to BDO market submissions table for admin review
-          const { error: submissionError } = await (supabase as any)
+          const { error: submissionError } = await supabase
             .from('bdo_market_submissions')
             .insert({
               name: market.name.trim(),
@@ -565,7 +565,7 @@ export default function BDODashboard() {
       for (const stall of stallsToSubmit) {
         try {
           // Submit to BDO stall submissions table for admin review
-          const { error: submissionError } = await (supabase as any)
+          const { error: submissionError } = await supabase
             .from('bdo_stall_submissions')
             .insert({
               farmer_name: stall.farmerName.trim(),
