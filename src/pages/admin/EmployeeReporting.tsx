@@ -38,6 +38,7 @@ export default function EmployeeReporting() {
     try {
       const today = new Date().toISOString().split('T')[0];
 
+      // Employee-specific data: Sessions, media uploads, and collections by field staff
       const [sessionsRes, completedRes, mediaRes, collectionsRes] = await Promise.all([
         supabase
           .from('sessions')

@@ -33,6 +33,7 @@ export default function BDOReporting() {
 
   const fetchStats = async () => {
     try {
+      // BDO-specific data: Only fetch BDO market and stall submissions
       const [marketsRes, stallsRes] = await Promise.all([
         supabase.from('bdo_market_submissions').select('id, status', { count: 'exact' }),
         supabase.from('bdo_stall_submissions').select('id, status', { count: 'exact' }),

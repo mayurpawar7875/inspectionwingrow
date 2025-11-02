@@ -34,6 +34,7 @@ export default function MarketManagerReporting() {
     try {
       const today = new Date().toISOString().split('T')[0];
 
+      // Market Manager-specific data: Live markets, stall confirmations, and market operations
       const [liveMarketsRes, stallsRes, mediaRes] = await Promise.all([
         supabase.from('live_markets_today').select('*'),
         supabase
