@@ -158,7 +158,7 @@ export default function EmployeeReporting() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Sessions</CardTitle>
           </CardHeader>
@@ -167,7 +167,7 @@ export default function EmployeeReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Completed Today</CardTitle>
           </CardHeader>
@@ -176,7 +176,7 @@ export default function EmployeeReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Media Uploads</CardTitle>
           </CardHeader>
@@ -185,7 +185,7 @@ export default function EmployeeReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Collections</CardTitle>
           </CardHeader>
