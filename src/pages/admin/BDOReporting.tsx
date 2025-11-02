@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import BDOSubmissionsWidget from '@/components/admin/BDOSubmissionsWidget';
 
 export default function BDOReporting() {
   const navigate = useNavigate();
+  const submissionsRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState({
     totalSubmissions: 0,
     pendingMarkets: 0,
@@ -50,6 +51,10 @@ export default function BDOReporting() {
     }
   };
 
+  const scrollToSubmissions = () => {
+    submissionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -64,7 +69,10 @@ export default function BDOReporting() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all"
+          onClick={scrollToSubmissions}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Submissions</CardTitle>
           </CardHeader>
@@ -73,7 +81,10 @@ export default function BDOReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border-orange-200"
+          onClick={scrollToSubmissions}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending Markets</CardTitle>
           </CardHeader>
@@ -82,7 +93,10 @@ export default function BDOReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border-orange-200"
+          onClick={scrollToSubmissions}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending Stalls</CardTitle>
           </CardHeader>
@@ -91,7 +105,10 @@ export default function BDOReporting() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border-green-200"
+          onClick={scrollToSubmissions}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Approved Markets</CardTitle>
           </CardHeader>
@@ -101,7 +118,9 @@ export default function BDOReporting() {
         </Card>
       </div>
 
-      <BDOSubmissionsWidget />
+      <div ref={submissionsRef}>
+        <BDOSubmissionsWidget />
+      </div>
     </div>
   );
 }
