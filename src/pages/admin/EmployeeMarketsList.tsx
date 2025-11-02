@@ -29,6 +29,8 @@ export default function EmployeeMarketsList() {
       .channel('employee-markets')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, fetchMarkets)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'media' }, fetchMarkets)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_schedule' }, fetchMarkets)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'markets' }, fetchMarkets)
       .subscribe();
 
     return () => {
@@ -38,12 +40,58 @@ export default function EmployeeMarketsList() {
 
   const fetchMarkets = async () => {
     try {
-      const { data: liveMarkets } = await supabase
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const todayDateStr = today.toISOString().split('T')[0];
+
+      // First, get all active markets in the city
+      const { data: allMarkets } = await supabase
+        .from('markets')
+        .select('id, name, city')
+        .eq('city', decodedCity)
+        .eq('is_active', true);
+
+      if (!allMarkets || allMarkets.length === 0) {
+        setMarkets([]);
+        setLoading(false);
+        return;
+      }
+
+      // Check which markets are scheduled for today
+      const { data: schedules } = await supabase
+        .from('market_schedule')
+        .select('market_id')
+        .in('market_id', allMarkets.map(m => m.id))
+        .eq('is_active', true)
+        .or(`day_of_week.eq.${dayOfWeek},schedule_date.eq.${todayDateStr}`);
+
+      const scheduledMarketIds = new Set(schedules?.map(s => s.market_id) || []);
+
+      // Get live market data for scheduled markets
+      const { data: liveData } = await supabase
         .from('live_markets_today')
         .select('*')
         .eq('city', decodedCity);
 
-      setMarkets(liveMarkets || []);
+      const liveDataMap = new Map(liveData?.map(m => [m.market_id, m]) || []);
+
+      // Combine data: show all scheduled markets, with live data if available
+      const marketData: MarketData[] = allMarkets
+        .filter(market => scheduledMarketIds.has(market.id))
+        .map(market => {
+          const live = liveDataMap.get(market.id);
+          return {
+            market_id: market.id,
+            market_name: market.name,
+            city: market.city,
+            active_sessions: live?.active_sessions || 0,
+            active_employees: live?.active_employees || 0,
+            media_uploads_count: live?.media_uploads_count || 0,
+            last_upload_time: live?.last_upload_time || null,
+          };
+        });
+
+      setMarkets(marketData);
     } catch (error) {
       console.error('Error fetching markets:', error);
     } finally {
