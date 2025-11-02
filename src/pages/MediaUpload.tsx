@@ -20,6 +20,7 @@ interface MediaFile {
   gps_lat: number | null;
   gps_lng: number | null;
   captured_at: string;
+  created_at: string;
   is_late: boolean;
   market_id: string | null;
   market_name?: string;
@@ -80,11 +81,41 @@ export default function MediaUpload() {
 
       if (mediaError) throw mediaError;
       
+      // For BDO users, also fetch market submissions to get market names
+      let submissions: any[] = [];
+      if (currentRole === 'bdo') {
+        const { data: submissionsData } = await supabase
+          .from('bdo_market_submissions')
+          .select('*')
+          .eq('submitted_by', user.id)
+          .order('created_at', { ascending: false });
+        
+        submissions = submissionsData || [];
+      }
+      
       // Map the data to include market_name
-      const formattedMedia = mediaData?.map((item: any) => ({
-        ...item,
-        market_name: item.markets?.name || null,
-      })) || [];
+      const formattedMedia = mediaData?.map((item: any) => {
+        let marketName = item.markets?.name || null;
+        
+        // If no market name from markets table (BDO case), try to find from submissions
+        if (!marketName && currentRole === 'bdo' && submissions.length > 0) {
+          // Match by video URL or approximate time
+          const matchingSubmission = submissions.find((sub: any) => 
+            sub.video_url === item.file_url ||
+            // Or match by approximate time (within 5 minutes)
+            (Math.abs(new Date(sub.created_at).getTime() - new Date(item.created_at).getTime()) < 5 * 60 * 1000)
+          );
+          
+          if (matchingSubmission) {
+            marketName = matchingSubmission.name;
+          }
+        }
+        
+        return {
+          ...item,
+          market_name: marketName,
+        };
+      }) || [];
       
       setMedia(formattedMedia);
     } catch (error: any) {
@@ -412,17 +443,21 @@ export default function MediaUpload() {
   const handleViewVideoDetails = async (video: MediaFile) => {
     // Fetch BDO submission details if available
     try {
-      const { data: submission } = await supabase
+      const { data: submissions } = await supabase
         .from('bdo_market_submissions')
         .select('*')
         .eq('submitted_by', user?.id || '')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
+
+      // Try to match submission by video URL or time
+      const matchingSubmission = submissions?.find((sub: any) => 
+        sub.video_url === video.file_url ||
+        (Math.abs(new Date(sub.created_at).getTime() - new Date(video.created_at).getTime()) < 5 * 60 * 1000)
+      );
 
       setSelectedVideoDetails({
         video,
-        submission,
+        submission: matchingSubmission || null,
       });
       setShowVideoDetailsDialog(true);
     } catch (error) {
