@@ -403,6 +403,31 @@ export default function MediaUpload() {
             continue;
           }
 
+          // Save market submission details to bdo_market_submissions table
+          const submissionData = {
+            name: marketNameTrimmed,
+            location: marketData.googleMapLocation.trim(),
+            address: marketData.googleMapLocation.trim(), // Using google map location as address for now
+            city: null,
+            contact_person_name: user.email || 'BDO User',
+            contact_phone: '',
+            contact_email: user.email || null,
+            opening_date: marketData.marketOpeningDate,
+            photo_url: urlData.publicUrl, // Using video URL as photo for now
+            submitted_by: user.id,
+            status: 'pending',
+            submitted_at: new Date().toISOString(),
+          };
+
+          const { error: submissionError } = await supabase
+            .from('bdo_market_submissions')
+            .insert(submissionData);
+
+          if (submissionError) {
+            console.error('Submission insert error:', submissionError);
+            // Don't increment error count as media was uploaded successfully
+          }
+
           successCount++;
         } catch (error: any) {
           console.error('Error processing market:', error);
