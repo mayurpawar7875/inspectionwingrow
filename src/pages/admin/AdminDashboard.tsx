@@ -10,6 +10,7 @@ import CollectionsWidget from '@/components/admin/CollectionsWidget';
 import StallConfirmationsWidget from '@/components/admin/StallConfirmationsWidget';
 import EmployeeTimeline from '@/components/admin/EmployeeTimeline';
 import TaskProgressWidget from '@/components/admin/TaskProgressWidget';
+import BDOSubmissionsWidget from '@/components/admin/BDOSubmissionsWidget';
 
 export default function AdminDashboard() {
   const { isAdmin } = useAuth();
@@ -134,6 +135,8 @@ export default function AdminDashboard() {
       </div>
 
       <LiveMarketsWidget />
+      
+      <BDOSubmissionsWidget />
       
       <RealtimeMediaFeed />
 
