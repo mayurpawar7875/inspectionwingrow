@@ -435,10 +435,10 @@ export default function MySessions() {
             </Card>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Card 
                 className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => navigate('/media-upload')}
+                onClick={() => setExpandedSection(expandedSection === 'media' ? null : 'media')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Finalised Market Data</CardTitle>
@@ -446,7 +446,7 @@ export default function MySessions() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{bdoMediaUploads.length}</div>
-                  <p className="text-xs text-muted-foreground">Total uploads</p>
+                  <p className="text-xs text-muted-foreground">Active market sessions</p>
                 </CardContent>
               </Card>
 
@@ -460,7 +460,7 @@ export default function MySessions() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{bdoMarketSubmissions.length}</div>
-                  <p className="text-xs text-muted-foreground">Submissions</p>
+                  <p className="text-xs text-muted-foreground">Locations searched</p>
                 </CardContent>
               </Card>
 
@@ -474,7 +474,7 @@ export default function MySessions() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{bdoStallSubmissions.length}</div>
-                  <p className="text-xs text-muted-foreground">Onboarded stalls</p>
+                  <p className="text-xs text-muted-foreground">Stalls onboarded</p>
                 </CardContent>
               </Card>
             </div>
