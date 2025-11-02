@@ -244,6 +244,17 @@ export default function BDODashboard() {
 
       if (collectionsError) throw collectionsError;
 
+      // Fetch BDO's own media uploads (for market submissions)
+      const { data: bdoMedia, error: bdoMediaError } = await supabase
+        .from('media')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('market_date', dateStr);
+
+      if (bdoMediaError) {
+        console.error('Error fetching BDO media:', bdoMediaError);
+      }
+
       // Calculate totals
       const totalMarkets = allMarkets?.length || 0;
       const activeMarkets = liveMarkets?.length || 0;
@@ -252,7 +263,10 @@ export default function BDODashboard() {
       const completedSessions = sessions?.filter((s: any) => ['completed', 'finalized'].includes(s.status)).length || 0;
       const totalEmployees = (employees as any)?.length || 0;
       
-      const mediaUploads = liveMarkets.reduce((sum: number, m: any) => sum + (m.media_uploads_count || 0), 0) || 0;
+      // Combine market media uploads and BDO's own uploads
+      const marketMediaUploads = liveMarkets.reduce((sum: number, m: any) => sum + (m.media_uploads_count || 0), 0) || 0;
+      const bdoMediaUploads = bdoMedia?.length || 0;
+      const mediaUploads = marketMediaUploads + bdoMediaUploads;
       const collectionsTotal = collections?.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0) || 0;
       const collectionsCount = collections?.length || 0;
       const completionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
