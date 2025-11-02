@@ -70,6 +70,8 @@ export default function MySessions() {
   // BDO specific states
   const [bdoMarketSubmissions, setBdoMarketSubmissions] = useState<BDOSubmission[]>([]);
   const [bdoMediaUploads, setBdoMediaUploads] = useState<BDOMediaUpload[]>([]);
+  const [bdoStallSubmissions, setBdoStallSubmissions] = useState<any[]>([]);
+  const [expandedSection, setExpandedSection] = useState<'media' | 'markets' | 'stalls' | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -117,8 +119,18 @@ export default function MySessions() {
 
       if (mediaError) throw mediaError;
 
+      // Fetch BDO stall submissions
+      const { data: stallSubmissions, error: stallError } = await supabase
+        .from('bdo_stall_submissions')
+        .select('*')
+        .eq('submitted_by', user.id)
+        .order('created_at', { ascending: false });
+
+      if (stallError) throw stallError;
+
       setBdoMarketSubmissions(marketSubmissions || []);
       setBdoMediaUploads(mediaUploads || []);
+      setBdoStallSubmissions(stallSubmissions || []);
     } catch (error: any) {
       console.error('Error fetching BDO data:', error);
       toast.error('Failed to load your submission history');
@@ -466,99 +478,160 @@ export default function MySessions() {
                 </CardContent>
               </Card>
             </div>
-            {/* Market Submissions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Market Location Submissions</CardTitle>
-                <CardDescription>Markets you've submitted for review</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {bdoMarketSubmissions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No market submissions yet
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Market Name</TableHead>
-                        <TableHead>Opening Date</TableHead>
-                        <TableHead>Submitted On</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Notes</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {bdoMarketSubmissions.map((submission) => (
-                        <TableRow key={submission.id}>
-                          <TableCell className="font-medium">{submission.name}</TableCell>
-                          <TableCell>{formatDate(submission.opening_date)}</TableCell>
-                          <TableCell>{formatDate(submission.submitted_at)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                submission.status === 'approved'
-                                  ? 'default'
-                                  : submission.status === 'rejected'
-                                  ? 'destructive'
-                                  : 'secondary'
-                              }
-                            >
-                              {submission.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {submission.review_notes || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Finalised Market Data */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Finalised Market Data</CardTitle>
-                <CardDescription>Videos and photos you've uploaded</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {bdoMediaUploads.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No media uploads yet
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Uploaded On</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {bdoMediaUploads.map((media) => (
-                        <TableRow key={media.id}>
-                          <TableCell className="font-medium max-w-xs truncate">
-                            {media.file_name}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {media.media_type.replace('_', ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(media.market_date)}</TableCell>
-                          <TableCell>{formatDate(media.captured_at)}</TableCell>
+            {/* Market Submissions - Expanded */}
+            {expandedSection === 'markets' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Market Location Submissions</CardTitle>
+                  <CardDescription>Markets you've submitted for review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {bdoMarketSubmissions.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      No market submissions yet
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Market Name</TableHead>
+                          <TableHead>Opening Date</TableHead>
+                          <TableHead>Submitted On</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Notes</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {bdoMarketSubmissions.map((submission) => (
+                          <TableRow key={submission.id}>
+                            <TableCell className="font-medium">{submission.name}</TableCell>
+                            <TableCell>{formatDate(submission.opening_date)}</TableCell>
+                            <TableCell>{formatDate(submission.submitted_at)}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  submission.status === 'approved'
+                                    ? 'default'
+                                    : submission.status === 'rejected'
+                                    ? 'destructive'
+                                    : 'secondary'
+                                }
+                              >
+                                {submission.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {submission.review_notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Finalised Market Data - Expanded */}
+            {expandedSection === 'media' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Finalised Market Data</CardTitle>
+                  <CardDescription>Videos and photos you've uploaded</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {bdoMediaUploads.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      No media uploads yet
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>File Name</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Uploaded On</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bdoMediaUploads.map((media) => (
+                          <TableRow key={media.id}>
+                            <TableCell className="font-medium max-w-xs truncate">
+                              {media.file_name}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {media.media_type.replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(media.market_date)}</TableCell>
+                            <TableCell>{formatDate(media.captured_at)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Stall Submissions - Expanded */}
+            {expandedSection === 'stalls' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Onboarded Stalls</CardTitle>
+                  <CardDescription>Stalls you've submitted for onboarding</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {bdoStallSubmissions.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      No stall submissions yet
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Farmer Name</TableHead>
+                          <TableHead>Stall Name</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Starting Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bdoStallSubmissions.map((submission: any) => (
+                          <TableRow key={submission.id}>
+                            <TableCell className="font-medium">{submission.farmer_name}</TableCell>
+                            <TableCell>{submission.stall_name}</TableCell>
+                            <TableCell>{submission.contact_number}</TableCell>
+                            <TableCell>{formatDate(submission.date_of_starting_markets)}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  submission.status === 'approved'
+                                    ? 'default'
+                                    : submission.status === 'rejected'
+                                    ? 'destructive'
+                                    : 'secondary'
+                                }
+                              >
+                                {submission.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {submission.review_notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </main>
       </div>
