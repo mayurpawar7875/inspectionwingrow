@@ -36,8 +36,25 @@ interface Session {
   all_tasks_completed?: boolean;
 }
 
+interface BDOSubmission {
+  id: string;
+  name: string;
+  submitted_at: string;
+  status: string;
+  opening_date: string;
+  review_notes: string | null;
+}
+
+interface BDOMediaUpload {
+  id: string;
+  file_name: string;
+  captured_at: string;
+  media_type: string;
+  market_date: string;
+}
+
 export default function MySessions() {
-  const { user } = useAuth();
+  const { user, currentRole } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
@@ -49,12 +66,20 @@ export default function MySessions() {
     status: '',
     searchQuery: '',
   });
+  
+  // BDO specific states
+  const [bdoMarketSubmissions, setBdoMarketSubmissions] = useState<BDOSubmission[]>([]);
+  const [bdoMediaUploads, setBdoMediaUploads] = useState<BDOMediaUpload[]>([]);
 
   useEffect(() => {
     if (user) {
-      fetchSessions();
+      if (currentRole === 'bdo') {
+        fetchBDOData();
+      } else {
+        fetchSessions();
+      }
     }
-  }, [user]);
+  }, [user, currentRole]);
 
   useEffect(() => {
     applyFilters();
@@ -66,6 +91,40 @@ export default function MySessions() {
     const m = String(ist.getMonth() + 1).padStart(2, '0');
     const d = String(ist.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  };
+
+  const fetchBDOData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Fetch BDO market submissions
+      const { data: marketSubmissions, error: marketError } = await supabase
+        .from('bdo_market_submissions')
+        .select('*')
+        .eq('submitted_by', user.id)
+        .order('created_at', { ascending: false });
+
+      if (marketError) throw marketError;
+
+      // Fetch BDO media uploads
+      const { data: mediaUploads, error: mediaError } = await supabase
+        .from('media')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('captured_at', { ascending: false });
+
+      if (mediaError) throw mediaError;
+
+      setBdoMarketSubmissions(marketSubmissions || []);
+      setBdoMediaUploads(mediaUploads || []);
+    } catch (error: any) {
+      console.error('Error fetching BDO data:', error);
+      toast.error('Failed to load your submission history');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchSessions = async () => {
@@ -262,12 +321,137 @@ export default function MySessions() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading session history...</p>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
+  // BDO View
+  if (currentRole === 'bdo') {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/bdo-dashboard')}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold">My Submissions</h1>
+                  <p className="text-sm text-muted-foreground">
+                    View your market submissions and media uploads
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            {/* Market Submissions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Market Location Submissions</CardTitle>
+                <CardDescription>Markets you've submitted for review</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bdoMarketSubmissions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No market submissions yet
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Market Name</TableHead>
+                        <TableHead>Opening Date</TableHead>
+                        <TableHead>Submitted On</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bdoMarketSubmissions.map((submission) => (
+                        <TableRow key={submission.id}>
+                          <TableCell className="font-medium">{submission.name}</TableCell>
+                          <TableCell>{formatDate(submission.opening_date)}</TableCell>
+                          <TableCell>{formatDate(submission.submitted_at)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                submission.status === 'approved'
+                                  ? 'default'
+                                  : submission.status === 'rejected'
+                                  ? 'destructive'
+                                  : 'secondary'
+                              }
+                            >
+                              {submission.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {submission.review_notes || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Media Uploads */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Media Uploads</CardTitle>
+                <CardDescription>Videos and photos you've uploaded</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bdoMediaUploads.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No media uploads yet
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>File Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Uploaded On</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bdoMediaUploads.map((media) => (
+                        <TableRow key={media.id}>
+                          <TableCell className="font-medium max-w-xs truncate">
+                            {media.file_name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {media.media_type.replace('_', ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(media.market_date)}</TableCell>
+                          <TableCell>{formatDate(media.captured_at)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Employee View
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
