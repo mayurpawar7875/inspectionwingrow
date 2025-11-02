@@ -21,6 +21,8 @@ interface MediaFile {
   gps_lng: number | null;
   captured_at: string;
   is_late: boolean;
+  market_id: string | null;
+  market_name?: string;
 }
 
 export default function MediaUpload() {
@@ -29,6 +31,8 @@ export default function MediaUpload() {
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedVideoDetails, setSelectedVideoDetails] = useState<any>(null);
+  const [showVideoDetailsDialog, setShowVideoDetailsDialog] = useState(false);
   const [showBDOPanVideoDialog, setShowBDOPanVideoDialog] = useState(false);
   const [bdoPanVideoFile, setBdoPanVideoFile] = useState<File | null>(null);
   const [bdoPanVideoForm, setBdoPanVideoForm] = useState({
@@ -60,16 +64,29 @@ export default function MediaUpload() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Fetch media for today
+      // Fetch media for today with market name
       const { data: mediaData, error: mediaError } = await supabase
         .from('media')
-        .select('*')
+        .select(`
+          *,
+          markets (
+            id,
+            name
+          )
+        `)
         .eq('user_id', user.id)
         .eq('market_date', today)
         .order('created_at', { ascending: false });
 
       if (mediaError) throw mediaError;
-      setMedia(mediaData || []);
+      
+      // Map the data to include market_name
+      const formattedMedia = mediaData?.map((item: any) => ({
+        ...item,
+        market_name: item.markets?.name || null,
+      })) || [];
+      
+      setMedia(formattedMedia);
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load media');
@@ -392,6 +409,29 @@ export default function MediaUpload() {
     }
   };
 
+  const handleViewVideoDetails = async (video: MediaFile) => {
+    // Fetch BDO submission details if available
+    try {
+      const { data: submission } = await supabase
+        .from('bdo_market_submissions')
+        .select('*')
+        .eq('submitted_by', user?.id || '')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      setSelectedVideoDetails({
+        video,
+        submission,
+      });
+      setShowVideoDetailsDialog(true);
+    } catch (error) {
+      console.error('Error fetching video details:', error);
+      setSelectedVideoDetails({ video, submission: null });
+      setShowVideoDetailsDialog(true);
+    }
+  };
+
   const handleCleaningVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -469,10 +509,15 @@ export default function MediaUpload() {
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Uploaded Videos ({marketVideoMedia.length})</h4>
                     {marketVideoMedia.map((file) => (
-                      <div key={file.id} className="p-3 bg-muted rounded-lg">
+                      <div
+                        key={file.id}
+                        className="p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleViewVideoDetails(file)}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <p className="text-sm font-medium">{file.file_name}</p>
+                            <p className="text-sm font-medium">{file.market_name || 'Market Name Not Available'}</p>
+                            <p className="text-xs text-muted-foreground">{file.file_name}</p>
                             <p className="text-xs text-muted-foreground">
                               Uploaded at {new Date(file.captured_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
                             </p>
@@ -677,6 +722,148 @@ export default function MediaUpload() {
                     disabled={uploading || marketsQueue.length === 0}
                   >
                     {uploading ? 'Submitting...' : `Submit All (${marketsQueue.length})`}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Video Details Dialog */}
+            <Dialog open={showVideoDetailsDialog} onOpenChange={setShowVideoDetailsDialog}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Market Video Details</DialogTitle>
+                  <DialogDescription>
+                    View the submitted market information
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {selectedVideoDetails && (
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Market Name</Label>
+                      <p className="text-sm">{selectedVideoDetails.video.market_name || 'Not Available'}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Video File</Label>
+                      <p className="text-sm">{selectedVideoDetails.video.file_name}</p>
+                      <a
+                        href={selectedVideoDetails.video.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View Video
+                      </a>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Upload Time</Label>
+                      <p className="text-sm">
+                        {new Date(selectedVideoDetails.video.captured_at).toLocaleString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </p>
+                    </div>
+
+                    {selectedVideoDetails.submission && (
+                      <>
+                        <div className="border-t pt-4 mt-4">
+                          <h4 className="font-semibold mb-3">Submitted Market Details</h4>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Opening Date</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.opening_date || 'N/A'}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Location Type</Label>
+                            <p className="text-sm capitalize">
+                              {selectedVideoDetails.submission.location?.replace('_', ' ') || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Address</Label>
+                          <p className="text-sm">{selectedVideoDetails.submission.address || 'N/A'}</p>
+                        </div>
+
+                        {selectedVideoDetails.submission.city && (
+                          <div className="space-y-2">
+                            <Label>City</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.city}</p>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>Google Map Location</Label>
+                          <a
+                            href={selectedVideoDetails.submission.location}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline break-all"
+                          >
+                            {selectedVideoDetails.submission.location}
+                          </a>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Contact Person</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.contact_person_name || 'N/A'}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Contact Phone</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.contact_phone || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        {selectedVideoDetails.submission.contact_email && (
+                          <div className="space-y-2">
+                            <Label>Contact Email</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.contact_email}</p>
+                          </div>
+                        )}
+
+                        {selectedVideoDetails.submission.photo_url && (
+                          <div className="space-y-2">
+                            <Label>Market Photo</Label>
+                            <a
+                              href={selectedVideoDetails.submission.photo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline"
+                            >
+                              View Photo
+                            </a>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>Submission Status</Label>
+                          <p className="text-sm capitalize">{selectedVideoDetails.submission.status?.replace('_', ' ') || 'Pending'}</p>
+                        </div>
+
+                        {selectedVideoDetails.submission.review_notes && (
+                          <div className="space-y-2">
+                            <Label>Review Notes</Label>
+                            <p className="text-sm">{selectedVideoDetails.submission.review_notes}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button onClick={() => setShowVideoDetailsDialog(false)}>
+                    Close
                   </Button>
                 </DialogFooter>
               </DialogContent>
