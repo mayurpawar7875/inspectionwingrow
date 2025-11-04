@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,7 +34,9 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
   const { toast } = useToast();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
+  const [deletingMarket, setDeletingMarket] = useState<Market | null>(null);
   const [form, setForm] = useState({
     name: '',
     city: '',
@@ -200,6 +203,40 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
     }
   };
 
+  const openDeleteDialog = (market: Market) => {
+    setDeletingMarket(market);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingMarket) return;
+
+    try {
+      const { error } = await supabase
+        .from('markets')
+        .delete()
+        .eq('id', deletingMarket.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Market deleted',
+      });
+      setIsDeleteOpen(false);
+      setDeletingMarket(null);
+      await fetchMarkets();
+      onChangeMade();
+    } catch (error) {
+      console.error('Error deleting market:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete market',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -249,6 +286,13 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
                       onClick={() => toggleMarketStatus(market.id, market.is_active)}
                     >
                       {market.is_active ? 'Deactivate' : 'Activate'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => openDeleteDialog(market)}
+                    >
+                      <Trash className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </TableCell>
@@ -373,6 +417,23 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Market</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingMarket?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingMarket(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
