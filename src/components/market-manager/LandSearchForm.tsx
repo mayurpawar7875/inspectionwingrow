@@ -1,0 +1,135 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import { MapPin } from 'lucide-react';
+
+interface LandSearchFormProps {
+  sessionId: string;
+  onComplete: () => void;
+}
+
+export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    placeName: '',
+    address: '',
+    contactName: '',
+    contactPhone: '',
+    isFinalized: false,
+    openingDate: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.placeName || !formData.address || !formData.contactName || !formData.contactPhone) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.from('market_land_search').insert({
+      session_id: sessionId,
+      place_name: formData.placeName,
+      address: formData.address,
+      contact_name: formData.contactName,
+      contact_phone: formData.contactPhone,
+      is_finalized: formData.isFinalized,
+      opening_date: formData.isFinalized && formData.openingDate ? formData.openingDate : null,
+    });
+
+    setLoading(false);
+    if (error) {
+      toast.error('Failed to save land search');
+      return;
+    }
+
+    toast.success('Land search saved successfully');
+    setFormData({ placeName: '', address: '', contactName: '', contactPhone: '', isFinalized: false, openingDate: '' });
+    onComplete();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          New Market Land Search
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="place-name">Place Name</Label>
+            <Input
+              id="place-name"
+              value={formData.placeName}
+              onChange={(e) => setFormData({ ...formData, placeName: e.target.value })}
+              placeholder="Enter place name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Enter address"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contact-name">Local Body Contact Name</Label>
+            <Input
+              id="contact-name"
+              value={formData.contactName}
+              onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+              placeholder="Enter contact name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contact-phone">Contact Number</Label>
+            <Input
+              id="contact-phone"
+              type="tel"
+              value={formData.contactPhone}
+              onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+              placeholder="Enter contact number"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="finalized">Finalized</Label>
+            <Switch
+              id="finalized"
+              checked={formData.isFinalized}
+              onCheckedChange={(checked) => setFormData({ ...formData, isFinalized: checked })}
+            />
+          </div>
+
+          {formData.isFinalized && (
+            <div className="space-y-2">
+              <Label htmlFor="opening-date">Opening Date</Label>
+              <Input
+                id="opening-date"
+                type="date"
+                value={formData.openingDate}
+                onChange={(e) => setFormData({ ...formData, openingDate: e.target.value })}
+              />
+            </div>
+          )}
+
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Saving...' : 'Save Land Search'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
