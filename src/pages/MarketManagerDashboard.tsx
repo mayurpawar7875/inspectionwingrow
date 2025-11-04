@@ -141,6 +141,28 @@ export default function MarketManagerDashboard() {
     }
   }, [sessionId]);
 
+  useEffect(() => {
+    const checkSessionCompletion = async () => {
+      if (!sessionId) return;
+
+      // Check if all tasks have at least one entry
+      const allTasksCompleted = TASKS.every(task => (taskCounts[task.id] || 0) > 0);
+
+      if (allTasksCompleted) {
+        const { error } = await supabase
+          .from('market_manager_sessions')
+          .update({ status: 'completed' })
+          .eq('id', sessionId);
+
+        if (!error) {
+          toast.success('All tasks completed! Session marked as complete.');
+        }
+      }
+    };
+
+    checkSessionCompletion();
+  }, [taskCounts, sessionId]);
+
   const handleTaskComplete = (taskId: number) => {
     if (!completedTasks.includes(taskId)) {
       setCompletedTasks([...completedTasks, taskId]);
