@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Camera, MapPin, Upload, X } from 'lucide-react';
+import { Camera, MapPin, X } from 'lucide-react';
 
 interface PunchInFormProps {
   sessionId: string;
@@ -14,7 +14,6 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
   const [loading, setLoading] = useState(false);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,7 +27,6 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
   const clearPhoto = () => {
     setSelfieFile(null);
     setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
@@ -99,27 +97,15 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
           <label className="block text-sm font-medium">Selfie</label>
           
           {!selfieFile ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => cameraInputRef.current?.click()}
-                className="h-24 flex flex-col gap-2"
-              >
-                <Camera className="h-6 w-6" />
-                <span className="text-xs">Take Photo</span>
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="h-24 flex flex-col gap-2"
-              >
-                <Upload className="h-6 w-6" />
-                <span className="text-xs">Upload Photo</span>
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => cameraInputRef.current?.click()}
+              className="w-full h-32 flex flex-col gap-2"
+            >
+              <Camera className="h-8 w-8" />
+              <span>Take Photo</span>
+            </Button>
           ) : (
             <div className="relative">
               <img 
@@ -144,14 +130,6 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
             type="file"
             accept="image/*"
             capture="user"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
             onChange={handleFileChange}
             className="hidden"
           />
