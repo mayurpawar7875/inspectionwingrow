@@ -21,14 +21,13 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
     placeName: '',
     address: '',
     contactName: '',
-    contactPhone: '',
     isFinalized: false,
     openingDate: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.placeName || !formData.address || !formData.contactName || !formData.contactPhone) {
+    if (!formData.placeName || !formData.address || !formData.contactName) {
       toast.error('Please fill all required fields');
       return;
     }
@@ -39,7 +38,6 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
       place_name: formData.placeName,
       address: formData.address,
       contact_name: formData.contactName,
-      contact_phone: formData.contactPhone,
       is_finalized: formData.isFinalized,
       opening_date: formData.isFinalized && formData.openingDate ? formData.openingDate : null,
     });
@@ -51,7 +49,7 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
     }
 
     toast.success('Land search saved successfully');
-    setFormData({ placeName: '', address: '', contactName: '', contactPhone: '', isFinalized: false, openingDate: '' });
+    setFormData({ placeName: '', address: '', contactName: '', isFinalized: false, openingDate: '' });
     onComplete();
   };
 
@@ -96,17 +94,6 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="contact-phone">Contact Number</Label>
-              <Input
-                id="contact-phone"
-                type="tel"
-                value={formData.contactPhone}
-                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                placeholder="Enter contact number"
-              />
-            </div>
-
             <div className="flex items-center justify-between">
               <Label htmlFor="finalized">Finalized</Label>
               <Switch
@@ -144,7 +131,6 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
             { key: 'place_name', label: 'Place' },
             { key: 'address', label: 'Address' },
             { key: 'contact_name', label: 'Contact' },
-            { key: 'contact_phone', label: 'Phone' },
             { key: 'is_finalized', label: 'Finalized', render: (val) => val ? 'Yes' : 'No' },
             { key: 'opening_date', label: 'Opening Date', render: (val) => val ? format(new Date(val), 'dd/MM/yyyy') : '-' },
           ]}
