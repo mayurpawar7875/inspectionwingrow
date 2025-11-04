@@ -48,8 +48,29 @@ export default function MarketManagerDashboard() {
       } else {
         navigate('/dashboard');
       }
+    } else {
+      // Check for active session when component mounts
+      checkActiveSession();
     }
   }, [currentRole, navigate, authLoading]);
+
+  const checkActiveSession = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('market_manager_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setSessionId(data.id);
+      await fetchTaskCounts(data.id);
+    }
+  };
 
   const fetchTaskCounts = async (sessionId: string) => {
     const counts: Record<number, number> = {};
