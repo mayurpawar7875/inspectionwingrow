@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +38,7 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
   const [deletingMarket, setDeletingMarket] = useState<Market | null>(null);
+  const [selectedMarkets, setSelectedMarkets] = useState<Set<string>>(new Set());
   const [form, setForm] = useState({
     name: '',
     city: '',
@@ -203,35 +205,58 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
     }
   };
 
-  const openDeleteDialog = (market: Market) => {
-    setDeletingMarket(market);
+  const toggleSelectAll = () => {
+    if (selectedMarkets.size === markets.length) {
+      setSelectedMarkets(new Set());
+    } else {
+      setSelectedMarkets(new Set(markets.map(m => m.id)));
+    }
+  };
+
+  const toggleSelectMarket = (marketId: string) => {
+    const newSelected = new Set(selectedMarkets);
+    if (newSelected.has(marketId)) {
+      newSelected.delete(marketId);
+    } else {
+      newSelected.add(marketId);
+    }
+    setSelectedMarkets(newSelected);
+  };
+
+  const openDeleteDialog = (market?: Market) => {
+    setDeletingMarket(market || null);
     setIsDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!deletingMarket) return;
-
     try {
+      const idsToDelete = deletingMarket 
+        ? [deletingMarket.id] 
+        : Array.from(selectedMarkets);
+
+      if (idsToDelete.length === 0) return;
+
       const { error } = await supabase
         .from('markets')
         .delete()
-        .eq('id', deletingMarket.id);
+        .in('id', idsToDelete);
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Market deleted',
+        description: `${idsToDelete.length} market(s) deleted`,
       });
       setIsDeleteOpen(false);
       setDeletingMarket(null);
+      setSelectedMarkets(new Set());
       await fetchMarkets();
       onChangeMade();
     } catch (error) {
-      console.error('Error deleting market:', error);
+      console.error('Error deleting market(s):', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete market',
+        description: 'Failed to delete market(s)',
         variant: 'destructive',
       });
     }
@@ -247,16 +272,33 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
             <CardTitle>Markets</CardTitle>
             <CardDescription>Manage market locations and schedules</CardDescription>
           </div>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Market
-          </Button>
+          <div className="flex gap-2">
+            {selectedMarkets.size > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={() => openDeleteDialog()}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete Selected ({selectedMarkets.size})
+              </Button>
+            )}
+            <Button onClick={openAdd}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Market
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedMarkets.size === markets.length && markets.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead>Name</TableHead>
               <TableHead>City</TableHead>
               <TableHead>Location</TableHead>
@@ -267,6 +309,12 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
           <TableBody>
             {markets.map((market) => (
               <TableRow key={market.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedMarkets.has(market.id)}
+                    onCheckedChange={() => toggleSelectMarket(market.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{market.name}</TableCell>
                 <TableCell>{market.city || 'N/A'}</TableCell>
                 <TableCell>{market.location}</TableCell>
@@ -421,13 +469,18 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Market</AlertDialogTitle>
+            <AlertDialogTitle>Delete Market{selectedMarkets.size > 1 && 's'}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingMarket?.name}"? This action cannot be undone.
+              {deletingMarket 
+                ? `Are you sure you want to delete "${deletingMarket.name}"? This action cannot be undone.`
+                : `Are you sure you want to delete ${selectedMarkets.size} market(s)? This action cannot be undone.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingMarket(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setDeletingMarket(null); setIsDeleteOpen(false); }}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
