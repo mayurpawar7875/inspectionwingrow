@@ -26,12 +26,20 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
   }, []);
 
   const fetchLiveMarkets = async () => {
+    // Get today's day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    
+    // Fetch markets that are scheduled for today
     const { data } = await supabase
-      .from('markets')
-      .select('id, name')
+      .from('market_schedule')
+      .select('market_id, markets(id, name)')
       .eq('is_active', true)
-      .order('name');
-    setMarkets(data || []);
+      .eq('day_of_week', dayOfWeek);
+    
+    // Extract unique markets
+    const uniqueMarkets = data?.map(item => item.markets).filter(Boolean) || [];
+    setMarkets(uniqueMarkets);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
