@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { MapPin } from 'lucide-react';
+import { TaskHistoryView } from './TaskHistoryView';
+import { format } from 'date-fns';
 
 interface LandSearchFormProps {
   sessionId: string;
@@ -54,82 +56,100 @@ export function LandSearchForm({ sessionId, onComplete }: LandSearchFormProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          New Market Land Search
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="place-name">Place Name</Label>
-            <Input
-              id="place-name"
-              value={formData.placeName}
-              onChange={(e) => setFormData({ ...formData, placeName: e.target.value })}
-              placeholder="Enter place name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Enter address"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contact-name">Local Body Contact Name</Label>
-            <Input
-              id="contact-name"
-              value={formData.contactName}
-              onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-              placeholder="Enter contact name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contact-phone">Contact Number</Label>
-            <Input
-              id="contact-phone"
-              type="tel"
-              value={formData.contactPhone}
-              onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-              placeholder="Enter contact number"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="finalized">Finalized</Label>
-            <Switch
-              id="finalized"
-              checked={formData.isFinalized}
-              onCheckedChange={(checked) => setFormData({ ...formData, isFinalized: checked })}
-            />
-          </div>
-
-          {formData.isFinalized && (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            New Market Land Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="opening-date">Opening Date</Label>
+              <Label htmlFor="place-name">Place Name</Label>
               <Input
-                id="opening-date"
-                type="date"
-                value={formData.openingDate}
-                onChange={(e) => setFormData({ ...formData, openingDate: e.target.value })}
+                id="place-name"
+                value={formData.placeName}
+                onChange={(e) => setFormData({ ...formData, placeName: e.target.value })}
+                placeholder="Enter place name"
               />
             </div>
-          )}
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Save Land Search'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Enter address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-name">Local Body Contact Name</Label>
+              <Input
+                id="contact-name"
+                value={formData.contactName}
+                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                placeholder="Enter contact name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-phone">Contact Number</Label>
+              <Input
+                id="contact-phone"
+                type="tel"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                placeholder="Enter contact number"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="finalized">Finalized</Label>
+              <Switch
+                id="finalized"
+                checked={formData.isFinalized}
+                onCheckedChange={(checked) => setFormData({ ...formData, isFinalized: checked })}
+              />
+            </div>
+
+            {formData.isFinalized && (
+              <div className="space-y-2">
+                <Label htmlFor="opening-date">Opening Date</Label>
+                <Input
+                  id="opening-date"
+                  type="date"
+                  value={formData.openingDate}
+                  onChange={(e) => setFormData({ ...formData, openingDate: e.target.value })}
+                />
+              </div>
+            )}
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Saving...' : 'Save Land Search'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">History</h3>
+        <TaskHistoryView
+          sessionId={sessionId}
+          taskType="market_land_search"
+          columns={[
+            { key: 'place_name', label: 'Place' },
+            { key: 'address', label: 'Address' },
+            { key: 'contact_name', label: 'Contact' },
+            { key: 'contact_phone', label: 'Phone' },
+            { key: 'is_finalized', label: 'Finalized', render: (val) => val ? 'Yes' : 'No' },
+            { key: 'opening_date', label: 'Opening Date', render: (val) => val ? format(new Date(val), 'dd/MM/yyyy') : '-' },
+          ]}
+        />
+      </div>
+    </div>
   );
 }

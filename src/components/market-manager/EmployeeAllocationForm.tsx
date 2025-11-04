@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Users } from 'lucide-react';
+import { TaskHistoryView } from './TaskHistoryView';
 
 interface EmployeeAllocationFormProps {
   sessionId: string;
@@ -59,46 +61,60 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Employee Allocation
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="market">Live Market</Label>
-            <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-              <SelectTrigger id="market">
-                <SelectValue placeholder="Select market" />
-              </SelectTrigger>
-              <SelectContent>
-                {markets.map((market) => (
-                  <SelectItem key={market.id} value={market.id}>
-                    {market.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Employee Allocation
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="market">Live Market</Label>
+              <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+                <SelectTrigger id="market">
+                  <SelectValue placeholder="Select market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {markets.map((market) => (
+                    <SelectItem key={market.id} value={market.id}>
+                      {market.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="employee-name">Employee Name</Label>
-            <Input
-              id="employee-name"
-              value={employeeName}
-              onChange={(e) => setEmployeeName(e.target.value)}
-              placeholder="Enter employee name"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="employee-name">Employee Name</Label>
+              <Input
+                id="employee-name"
+                value={employeeName}
+                onChange={(e) => setEmployeeName(e.target.value)}
+                placeholder="Enter employee name"
+              />
+            </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Allocate Employee'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Saving...' : 'Allocate Employee'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">History</h3>
+        <TaskHistoryView
+          sessionId={sessionId}
+          taskType="employee_allocations"
+          columns={[
+            { key: 'employee_name', label: 'Employee' },
+            { key: 'market_id', label: 'Market', render: (_, row) => markets.find(m => m.id === row.market_id)?.name || 'Unknown' },
+          ]}
+        />
+      </div>
+    </div>
   );
 }

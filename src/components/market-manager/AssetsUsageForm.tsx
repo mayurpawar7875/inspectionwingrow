@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
+import { TaskHistoryView } from './TaskHistoryView';
+import { format } from 'date-fns';
 
 interface AssetsUsageFormProps {
   sessionId: string;
@@ -66,77 +68,94 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Assets Usage in Live Markets
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="employee-name">Employee Name</Label>
-            <Input
-              id="employee-name"
-              value={formData.employeeName}
-              onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
-              placeholder="Enter employee name"
-            />
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Assets Usage in Live Markets
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="employee-name">Employee Name</Label>
+              <Input
+                id="employee-name"
+                value={formData.employeeName}
+                onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
+                placeholder="Enter employee name"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="market">Market Name</Label>
-            <Select value={formData.marketId} onValueChange={(value) => setFormData({ ...formData, marketId: value })}>
-              <SelectTrigger id="market">
-                <SelectValue placeholder="Select market" />
-              </SelectTrigger>
-              <SelectContent>
-                {markets.map((market) => (
-                  <SelectItem key={market.id} value={market.id}>
-                    {market.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="market">Market Name</Label>
+              <Select value={formData.marketId} onValueChange={(value) => setFormData({ ...formData, marketId: value })}>
+                <SelectTrigger id="market">
+                  <SelectValue placeholder="Select market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {markets.map((market) => (
+                    <SelectItem key={market.id} value={market.id}>
+                      {market.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="asset-name">Asset Issued</Label>
-            <Input
-              id="asset-name"
-              value={formData.assetName}
-              onChange={(e) => setFormData({ ...formData, assetName: e.target.value })}
-              placeholder="Enter asset name"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="asset-name">Asset Issued</Label>
+              <Input
+                id="asset-name"
+                value={formData.assetName}
+                onChange={(e) => setFormData({ ...formData, assetName: e.target.value })}
+                placeholder="Enter asset name"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="return-date">Return Date (Optional)</Label>
-            <Input
-              id="return-date"
-              type="date"
-              value={formData.returnDate}
-              onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="return-date">Return Date (Optional)</Label>
+              <Input
+                id="return-date"
+                type="date"
+                value={formData.returnDate}
+                onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
+              />
+            </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Save Asset Usage'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Saving...' : 'Save Asset Usage'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">History</h3>
+        <TaskHistoryView
+          sessionId={sessionId}
+          taskType="assets_usage"
+          columns={[
+            { key: 'employee_name', label: 'Employee' },
+            { key: 'market_id', label: 'Market', render: (_, row) => markets.find(m => m.id === row.market_id)?.name || 'Unknown' },
+            { key: 'asset_name', label: 'Asset' },
+            { key: 'quantity', label: 'Qty' },
+            { key: 'return_date', label: 'Return Date', render: (val) => val ? format(new Date(val), 'dd/MM/yyyy') : '-' },
+          ]}
+        />
+      </div>
+    </div>
   );
 }

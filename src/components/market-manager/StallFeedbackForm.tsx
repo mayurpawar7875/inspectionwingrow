@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { MessageSquare } from 'lucide-react';
+import { TaskHistoryView } from './TaskHistoryView';
 
 interface StallFeedbackFormProps {
   sessionId: string;
@@ -45,43 +46,57 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          BMS Stall Feedbacks
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="rating">Rating: {rating[0]}/5</Label>
-            <Slider
-              id="rating"
-              min={1}
-              max={5}
-              step={1}
-              value={rating}
-              onValueChange={setRating}
-            />
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            BMS Stall Feedbacks
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="rating">Rating: {rating[0]}/5</Label>
+              <Slider
+                id="rating"
+                min={1}
+                max={5}
+                step={1}
+                value={rating}
+                onValueChange={setRating}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="feedback">Feedback</Label>
-            <Textarea
-              id="feedback"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Enter your feedback"
-              rows={4}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="feedback">Feedback</Label>
+              <Textarea
+                id="feedback"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Enter your feedback"
+                rows={4}
+              />
+            </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Save Feedback'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Saving...' : 'Save Feedback'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">History</h3>
+        <TaskHistoryView
+          sessionId={sessionId}
+          taskType="bms_stall_feedbacks"
+          columns={[
+            { key: 'rating', label: 'Rating', render: (val) => `${val}/5` },
+            { key: 'feedback_text', label: 'Feedback' },
+          ]}
+        />
+      </div>
+    </div>
   );
 }

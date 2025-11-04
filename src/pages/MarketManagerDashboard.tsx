@@ -35,6 +35,7 @@ export default function MarketManagerDashboard() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState<number | null>(null);
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
+  const [taskCounts, setTaskCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,6 +50,28 @@ export default function MarketManagerDashboard() {
       }
     }
   }, [currentRole, navigate, authLoading]);
+
+  const fetchTaskCounts = async (sessionId: string) => {
+    const counts: Record<number, number> = {};
+    
+    const queries = await Promise.all([
+      supabase.from('employee_allocations').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('market_manager_punchin').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('market_land_search').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('stall_searching_updates').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('assets_money_recovery').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('assets_usage').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('bms_stall_feedbacks').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('market_inspection_updates').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+      supabase.from('market_manager_punchout').select('*', { count: 'exact', head: true }).eq('session_id', sessionId),
+    ]);
+
+    queries.forEach((result, index) => {
+      counts[index + 1] = result.count || 0;
+    });
+
+    setTaskCounts(counts);
+  };
 
   const handleSessionCreate = async (sessionDate: string, dayOfWeek: number) => {
     if (!user) return;
@@ -70,8 +93,32 @@ export default function MarketManagerDashboard() {
     }
 
     setSessionId(data.id);
+    await fetchTaskCounts(data.id);
     toast.success('Session started');
   };
+
+  useEffect(() => {
+    if (sessionId) {
+      fetchTaskCounts(sessionId);
+
+      const channel = supabase
+        .channel('task-updates')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'employee_allocations', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'market_manager_punchin', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'market_land_search', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stall_searching_updates', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assets_money_recovery', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assets_usage', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bms_stall_feedbacks', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'market_inspection_updates', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'market_manager_punchout', filter: `session_id=eq.${sessionId}` }, () => fetchTaskCounts(sessionId))
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [sessionId]);
 
   const handleTaskComplete = (taskId: number) => {
     if (!completedTasks.includes(taskId)) {
@@ -155,7 +202,14 @@ export default function MarketManagerDashboard() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{task.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{task.name}</span>
+                      {taskCounts[task.id] > 0 && (
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                          {taskCounts[task.id]}
+                        </span>
+                      )}
+                    </div>
                     {completedTasks.includes(task.id) && (
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
                     )}

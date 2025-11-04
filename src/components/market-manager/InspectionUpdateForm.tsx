@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ClipboardList } from 'lucide-react';
+import { TaskHistoryView } from './TaskHistoryView';
 
 interface InspectionUpdateFormProps {
   sessionId: string;
@@ -59,47 +60,61 @@ export function InspectionUpdateForm({ sessionId, onComplete }: InspectionUpdate
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" />
-          Market Inspection Update
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="market">Market Name</Label>
-            <Select value={marketId} onValueChange={setMarketId}>
-              <SelectTrigger id="market">
-                <SelectValue placeholder="Select market" />
-              </SelectTrigger>
-              <SelectContent>
-                {markets.map((market) => (
-                  <SelectItem key={market.id} value={market.id}>
-                    {market.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5" />
+            Market Inspection Update
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="market">Market Name</Label>
+              <Select value={marketId} onValueChange={setMarketId}>
+                <SelectTrigger id="market">
+                  <SelectValue placeholder="Select market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {markets.map((market) => (
+                    <SelectItem key={market.id} value={market.id}>
+                      {market.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="update">What's New Today</Label>
-            <Textarea
-              id="update"
-              value={updateNotes}
-              onChange={(e) => setUpdateNotes(e.target.value)}
-              placeholder="Enter inspection updates"
-              rows={4}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="update">What's New Today</Label>
+              <Textarea
+                id="update"
+                value={updateNotes}
+                onChange={(e) => setUpdateNotes(e.target.value)}
+                placeholder="Enter inspection updates"
+                rows={4}
+              />
+            </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : 'Save Update'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Saving...' : 'Save Update'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">History</h3>
+        <TaskHistoryView
+          sessionId={sessionId}
+          taskType="market_inspection_updates"
+          columns={[
+            { key: 'market_id', label: 'Market', render: (_, row) => markets.find(m => m.id === row.market_id)?.name || 'Unknown' },
+            { key: 'update_notes', label: 'Updates' },
+          ]}
+        />
+      </div>
+    </div>
   );
 }
