@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { TaskHistoryView } from './TaskHistoryView';
+import { PreviewDialog } from './PreviewDialog';
 import { format } from 'date-fns';
 
 interface AssetsUsageFormProps {
@@ -18,6 +19,7 @@ interface AssetsUsageFormProps {
 export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps) {
   const [loading, setLoading] = useState(false);
   const [markets, setMarkets] = useState<any[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const [formData, setFormData] = useState({
     employeeName: '',
     marketId: '',
@@ -39,13 +41,16 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
     setMarkets(data || []);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePreview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.employeeName || !formData.marketId || !formData.assetName) {
       toast.error('Please fill all required fields');
       return;
     }
+    setShowPreview(true);
+  };
 
+  const handleConfirmSubmit = async () => {
     setLoading(true);
     const { error } = await supabase.from('assets_usage').insert({
       session_id: sessionId,
@@ -64,6 +69,7 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
 
     toast.success('Asset usage saved successfully');
     setFormData({ employeeName: '', marketId: '', assetName: '', quantity: '1', returnDate: '' });
+    setShowPreview(false);
     onComplete();
   };
 
@@ -77,7 +83,7 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handlePreview} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="employee-name">Employee Name</Label>
               <Input
@@ -136,11 +142,26 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Saving...' : 'Save Asset Usage'}
+              Preview & Submit
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      <PreviewDialog
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleConfirmSubmit}
+        title="Asset Usage"
+        data={{
+          employeeName: formData.employeeName,
+          market: markets.find(m => m.id === formData.marketId)?.name || '-',
+          assetName: formData.assetName,
+          quantity: formData.quantity,
+          returnDate: formData.returnDate || 'Not specified',
+        }}
+        loading={loading}
+      />
 
       <div>
         <h3 className="font-semibold mb-3">History</h3>

@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { MessageSquare, Video, X, Circle } from 'lucide-react';
 import { TaskHistoryView } from './TaskHistoryView';
+import { PreviewDialog } from './PreviewDialog';
 
 interface StallFeedbackFormProps {
   sessionId: string;
@@ -27,6 +28,7 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     fetchMarkets();
@@ -76,13 +78,16 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
     if (videoInputRef.current) videoInputRef.current.value = '';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePreview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !marketId || !feedback.trim()) {
       toast.error('Please fill all required fields');
       return;
     }
+    setShowPreview(true);
+  };
 
+  const handleConfirmSubmit = async () => {
     setLoading(true);
 
     let videoUrl = null;
@@ -127,6 +132,7 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
     setFeedback('');
     setRating([3]);
     setVideoFile(null);
+    setShowPreview(false);
     onComplete();
   };
 
@@ -140,7 +146,7 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handlePreview} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="customer-name">Customer Name</Label>
               <Input
@@ -260,11 +266,26 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Saving...' : 'Save Feedback'}
+              Preview & Submit
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      <PreviewDialog
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleConfirmSubmit}
+        title="Stall Feedback"
+        data={{
+          customerName,
+          market: markets.find(m => m.id === marketId)?.name || '-',
+          rating: `${rating[0]}/5`,
+          feedback,
+          video: videoFile ? 'Video attached' : 'No video',
+        }}
+        loading={loading}
+      />
 
       <div>
         <h3 className="font-semibold mb-3">History</h3>

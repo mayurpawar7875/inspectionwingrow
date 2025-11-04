@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import Collections from "./pages/admin/Collections";
 import MySessions from "./pages/MySessions";
 import MarketManagerDashboard from "./pages/MarketManagerDashboard";
+import MyManagerSessions from "./pages/MyManagerSessions";
 import BDODashboard from "./pages/BDODashboard";
 import BDOSession from "./pages/BDOSession";
 import BDOReporting from "./pages/admin/BDOReporting";
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/install" element={<Install />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/manager-dashboard" element={<ProtectedRoute><MarketManagerDashboard /></ProtectedRoute>} />
+              <Route path="/my-manager-sessions" element={<ProtectedRoute><MyManagerSessions /></ProtectedRoute>} />
               <Route path="/bdo-dashboard" element={<ProtectedRoute><BDODashboard /></ProtectedRoute>} />
               <Route path="/bdo-session" element={<ProtectedRoute><BDOSession /></ProtectedRoute>} />
               <Route path="/market-selection" element={<ProtectedRoute><MarketSelection /></ProtectedRoute>} />

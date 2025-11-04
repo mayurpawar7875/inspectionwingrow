@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { DollarSign } from 'lucide-react';
 import { TaskHistoryView } from './TaskHistoryView';
+import { PreviewDialog } from './PreviewDialog';
 
 interface MoneyRecoveryFormProps {
   sessionId: string;
@@ -15,6 +16,7 @@ interface MoneyRecoveryFormProps {
 
 export function MoneyRecoveryForm({ sessionId, onComplete }: MoneyRecoveryFormProps) {
   const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [formData, setFormData] = useState({
     farmerName: '',
     stallName: '',
@@ -23,13 +25,16 @@ export function MoneyRecoveryForm({ sessionId, onComplete }: MoneyRecoveryFormPr
     pendingAmount: '',
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePreview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.farmerName || !formData.stallName || !formData.itemName) {
       toast.error('Please fill all required fields');
       return;
     }
+    setShowPreview(true);
+  };
 
+  const handleConfirmSubmit = async () => {
     setLoading(true);
     const { error } = await supabase.from('assets_money_recovery').insert({
       session_id: sessionId,
@@ -48,6 +53,7 @@ export function MoneyRecoveryForm({ sessionId, onComplete }: MoneyRecoveryFormPr
 
     toast.success('Money recovery saved successfully');
     setFormData({ farmerName: '', stallName: '', itemName: '', receivedAmount: '', pendingAmount: '' });
+    setShowPreview(false);
     onComplete();
   };
 
@@ -61,7 +67,7 @@ export function MoneyRecoveryForm({ sessionId, onComplete }: MoneyRecoveryFormPr
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handlePreview} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="farmer-name">Farmer Name</Label>
               <Input
@@ -117,11 +123,26 @@ export function MoneyRecoveryForm({ sessionId, onComplete }: MoneyRecoveryFormPr
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Saving...' : 'Save Money Recovery'}
+              Preview & Submit
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      <PreviewDialog
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleConfirmSubmit}
+        title="Money Recovery"
+        data={{
+          farmerName: formData.farmerName,
+          stallName: formData.stallName,
+          itemName: formData.itemName,
+          receivedAmount: formData.receivedAmount || '0',
+          pendingAmount: formData.pendingAmount || '0',
+        }}
+        loading={loading}
+      />
 
       <div>
         <h3 className="font-semibold mb-3">History</h3>
