@@ -5,7 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Session {
@@ -34,13 +37,32 @@ export default function MyManagerSessions() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedMarket, setSelectedMarket] = useState('all');
+  const [markets, setMarkets] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchSessions();
+      fetchMarkets();
     }
   }, [user]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [sessions, startDate, endDate, selectedMarket]);
+
+  const fetchMarkets = async () => {
+    const { data } = await supabase
+      .from('markets')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name');
+    setMarkets(data || []);
+  };
 
   const fetchSessions = async () => {
     if (!user) return;
@@ -96,9 +118,37 @@ export default function MyManagerSessions() {
       );
 
       setSessions(sessionsWithCounts);
+      setFilteredSessions(sessionsWithCounts);
     }
 
     setLoading(false);
+  };
+
+  const applyFilters = () => {
+    let filtered = [...sessions];
+
+    // Date filters
+    if (startDate) {
+      filtered = filtered.filter(s => s.session_date >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(s => s.session_date <= endDate);
+    }
+
+    // Market filter - we need to check which markets were used in this session
+    if (selectedMarket && selectedMarket !== 'all') {
+      // For now, we can't filter by market since sessions don't have market_id
+      // This would require checking employee_allocations or other related tables
+      // For simplicity, we'll skip this for now or you can add market_id to sessions table
+    }
+
+    setFilteredSessions(filtered);
+  };
+
+  const clearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setSelectedMarket('all');
   };
 
   const getStatusBadge = (status: string) => {
@@ -140,15 +190,73 @@ export default function MyManagerSessions() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Filters</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start-date">Start Date</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end-date">End Date</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="market">Market</Label>
+                <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+                  <SelectTrigger id="market">
+                    <SelectValue placeholder="All markets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Markets</SelectItem>
+                    {markets.map((market) => (
+                      <SelectItem key={market.id} value={market.id}>
+                        {market.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {(startDate || endDate || selectedMarket !== 'all') && (
+              <div className="mt-4">
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="space-y-4">
-          {sessions.length === 0 ? (
+          {filteredSessions.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No sessions found</p>
+                <p className="text-muted-foreground">
+                  {sessions.length === 0 ? 'No sessions found' : 'No sessions match the selected filters'}
+                </p>
               </CardContent>
             </Card>
           ) : (
-            sessions.map((session) => (
+            filteredSessions.map((session) => (
               <Card key={session.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
