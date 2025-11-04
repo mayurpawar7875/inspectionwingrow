@@ -83,6 +83,108 @@ export type Database = {
         }
         Relationships: []
       }
+      assets_money_recovery: {
+        Row: {
+          created_at: string
+          farmer_name: string
+          id: string
+          item_name: string
+          pending_amount: number
+          received_amount: number
+          session_id: string
+          stall_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          farmer_name: string
+          id?: string
+          item_name: string
+          pending_amount?: number
+          received_amount?: number
+          session_id: string
+          stall_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          farmer_name?: string
+          id?: string
+          item_name?: string
+          pending_amount?: number
+          received_amount?: number
+          session_id?: string
+          stall_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_money_recovery_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets_usage: {
+        Row: {
+          asset_name: string
+          created_at: string
+          employee_name: string
+          id: string
+          market_id: string
+          quantity: number
+          return_date: string | null
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          asset_name: string
+          created_at?: string
+          employee_name: string
+          id?: string
+          market_id: string
+          quantity?: number
+          return_date?: string | null
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          asset_name?: string
+          created_at?: string
+          employee_name?: string
+          id?: string
+          market_id?: string
+          quantity?: number
+          return_date?: string | null
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_usage_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "assets_usage_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_usage_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bdo_market_submissions: {
         Row: {
           address: string
@@ -197,6 +299,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bms_stall_feedbacks: {
+        Row: {
+          created_at: string
+          feedback_text: string | null
+          id: string
+          rating: number | null
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          rating?: number | null
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bms_stall_feedbacks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collections: {
         Row: {
           amount: number
@@ -270,6 +407,55 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_allocations: {
+        Row: {
+          created_at: string
+          employee_name: string
+          id: string
+          market_id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_name: string
+          id?: string
+          market_id: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_name?: string
+          id?: string
+          market_id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_allocations_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "employee_allocations_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_allocations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -355,6 +541,205 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      market_inspection_updates: {
+        Row: {
+          created_at: string
+          id: string
+          market_id: string
+          session_id: string
+          update_notes: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          market_id: string
+          session_id: string
+          update_notes: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          market_id?: string
+          session_id?: string
+          update_notes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_inspection_updates_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "market_inspection_updates_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_inspection_updates_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_land_search: {
+        Row: {
+          address: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          is_finalized: boolean
+          opening_date: string | null
+          place_name: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          is_finalized?: boolean
+          opening_date?: string | null
+          place_name: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          is_finalized?: boolean
+          opening_date?: string | null
+          place_name?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_land_search_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_manager_punchin: {
+        Row: {
+          created_at: string
+          gps_lat: number
+          gps_lng: number
+          id: string
+          punched_at: string
+          selfie_url: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          gps_lat: number
+          gps_lng: number
+          id?: string
+          punched_at?: string
+          selfie_url: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          gps_lat?: number
+          gps_lng?: number
+          id?: string
+          punched_at?: string
+          selfie_url?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_manager_punchin_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_manager_punchout: {
+        Row: {
+          created_at: string
+          gps_lat: number
+          gps_lng: number
+          id: string
+          punched_at: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          gps_lat: number
+          gps_lng: number
+          id?: string
+          punched_at?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          gps_lat?: number
+          gps_lng?: number
+          id?: string
+          punched_at?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_manager_punchout_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_manager_sessions: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          session_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          session_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          session_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1064,6 +1449,50 @@ export type Database = {
             columns: ["market_id"]
             isOneToOne: false
             referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stall_searching_updates: {
+        Row: {
+          contact_phone: string
+          created_at: string
+          farmer_name: string
+          id: string
+          is_interested: boolean
+          joining_date: string | null
+          session_id: string
+          stall_name: string
+          updated_at: string
+        }
+        Insert: {
+          contact_phone: string
+          created_at?: string
+          farmer_name: string
+          id?: string
+          is_interested?: boolean
+          joining_date?: string | null
+          session_id: string
+          stall_name: string
+          updated_at?: string
+        }
+        Update: {
+          contact_phone?: string
+          created_at?: string
+          farmer_name?: string
+          id?: string
+          is_interested?: boolean
+          joining_date?: string | null
+          session_id?: string
+          stall_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stall_searching_updates_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "market_manager_sessions"
             referencedColumns: ["id"]
           },
         ]
