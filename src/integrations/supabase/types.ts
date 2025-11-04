@@ -302,29 +302,52 @@ export type Database = {
       bms_stall_feedbacks: {
         Row: {
           created_at: string
+          customer_name: string | null
           feedback_text: string | null
           id: string
+          market_id: string | null
           rating: number | null
           session_id: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
+          customer_name?: string | null
           feedback_text?: string | null
           id?: string
+          market_id?: string | null
           rating?: number | null
           session_id: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
+          customer_name?: string | null
           feedback_text?: string | null
           id?: string
+          market_id?: string | null
           rating?: number | null
           session_id?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bms_stall_feedbacks_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "bms_stall_feedbacks_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bms_stall_feedbacks_session_id_fkey"
             columns: ["session_id"]
