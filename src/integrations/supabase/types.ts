@@ -770,7 +770,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organiser_feedback_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "organiser_feedback_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1036,7 +1051,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stall_inspections_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "stall_inspections_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stalls: {
         Row: {
