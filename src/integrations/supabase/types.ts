@@ -597,7 +597,7 @@ export type Database = {
         Row: {
           address: string
           contact_name: string
-          contact_phone: string
+          contact_phone: string | null
           created_at: string
           id: string
           is_finalized: boolean
@@ -609,7 +609,7 @@ export type Database = {
         Insert: {
           address: string
           contact_name: string
-          contact_phone: string
+          contact_phone?: string | null
           created_at?: string
           id?: string
           is_finalized?: boolean
@@ -621,7 +621,7 @@ export type Database = {
         Update: {
           address?: string
           contact_name?: string
-          contact_phone?: string
+          contact_phone?: string | null
           created_at?: string
           id?: string
           is_finalized?: boolean
