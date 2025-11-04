@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { LogOut, CheckCircle2 } from 'lucide-react';
 import { SessionSelector } from '@/components/market-manager/SessionSelector';
@@ -32,7 +33,7 @@ export default function MarketManagerDashboard() {
   const { user, signOut, currentRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentTask, setCurrentTask] = useState(1);
+  const [openDialog, setOpenDialog] = useState<number | null>(null);
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
 
   useEffect(() => {
@@ -76,9 +77,7 @@ export default function MarketManagerDashboard() {
     if (!completedTasks.includes(taskId)) {
       setCompletedTasks([...completedTasks, taskId]);
     }
-    if (taskId < 9) {
-      setCurrentTask(taskId + 1);
-    }
+    setOpenDialog(null);
   };
 
   const handleSignOut = async () => {
@@ -86,10 +85,10 @@ export default function MarketManagerDashboard() {
     navigate('/auth');
   };
 
-  const renderTaskForm = () => {
+  const renderTaskForm = (taskId: number) => {
     if (!sessionId) return null;
 
-    switch (currentTask) {
+    switch (taskId) {
       case 1:
         return <EmployeeAllocationForm sessionId={sessionId} onComplete={() => handleTaskComplete(1)} />;
       case 2:
@@ -143,18 +142,14 @@ export default function MarketManagerDashboard() {
         {!sessionId ? (
           <SessionSelector onSessionCreate={handleSessionCreate} />
         ) : (
-          <div className="grid md:grid-cols-[300px,1fr] gap-6">
-            {/* Task List Sidebar */}
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold mb-4">Tasks</h2>
-              {TASKS.map((task) => (
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold mb-4">Tasks</h2>
+            {TASKS.map((task) => (
+              <div key={task.id}>
                 <button
-                  key={task.id}
-                  onClick={() => setCurrentTask(task.id)}
+                  onClick={() => setOpenDialog(task.id)}
                   className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                    currentTask === task.id
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : completedTasks.includes(task.id)
+                    completedTasks.includes(task.id)
                       ? 'bg-muted border-muted'
                       : 'bg-card border-border hover:bg-muted'
                   }`}
@@ -166,11 +161,17 @@ export default function MarketManagerDashboard() {
                     )}
                   </div>
                 </button>
-              ))}
-            </div>
 
-            {/* Current Task Form */}
-            <div>{renderTaskForm()}</div>
+                <Dialog open={openDialog === task.id} onOpenChange={(open) => !open && setOpenDialog(null)}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{task.name}</DialogTitle>
+                    </DialogHeader>
+                    {renderTaskForm(task.id)}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ))}
           </div>
         )}
       </main>
