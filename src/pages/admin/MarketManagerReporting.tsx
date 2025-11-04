@@ -4,7 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LiveMarketsWidget from '@/components/admin/LiveMarketsWidget';
+import { EmployeeAllocationsTab } from '@/components/admin/market-manager/EmployeeAllocationsTab';
+import { PunchRecordsTab } from '@/components/admin/market-manager/PunchRecordsTab';
+import { LandSearchTab } from '@/components/admin/market-manager/LandSearchTab';
+import { StallSearchTab } from '@/components/admin/market-manager/StallSearchTab';
+import { AssetsTab } from '@/components/admin/market-manager/AssetsTab';
+import { FeedbacksTab } from '@/components/admin/market-manager/FeedbacksTab';
+import { InspectionsTab } from '@/components/admin/market-manager/InspectionsTab';
 
 export default function MarketManagerReporting() {
   const navigate = useNavigate();
@@ -109,7 +117,50 @@ export default function MarketManagerReporting() {
         </Card>
       </div>
 
-      <LiveMarketsWidget />
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="allocations">Allocations</TabsTrigger>
+          <TabsTrigger value="punch">Punch Records</TabsTrigger>
+          <TabsTrigger value="land">Land Search</TabsTrigger>
+          <TabsTrigger value="stalls">Stall Search</TabsTrigger>
+          <TabsTrigger value="assets">Assets</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="inspections">Inspections</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <LiveMarketsWidget />
+        </TabsContent>
+
+        <TabsContent value="allocations">
+          <EmployeeAllocationsTab />
+        </TabsContent>
+
+        <TabsContent value="punch">
+          <PunchRecordsTab />
+        </TabsContent>
+
+        <TabsContent value="land">
+          <LandSearchTab />
+        </TabsContent>
+
+        <TabsContent value="stalls">
+          <StallSearchTab />
+        </TabsContent>
+
+        <TabsContent value="assets">
+          <AssetsTab />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <FeedbacksTab />
+        </TabsContent>
+
+        <TabsContent value="inspections">
+          <InspectionsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
