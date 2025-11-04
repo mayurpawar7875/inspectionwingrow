@@ -241,7 +241,20 @@ export function MarketsTab({ onChangeMade }: MarketsTabProps) {
         .delete()
         .in('id', idsToDelete);
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a foreign key constraint error
+        if (error.code === '23503') {
+          toast({
+            title: 'Cannot Delete Market',
+            description: 'This market has related data (sessions, media uploads, etc.) and cannot be deleted. Please deactivate it instead.',
+            variant: 'destructive',
+          });
+          setIsDeleteOpen(false);
+          setDeletingMarket(null);
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: 'Success',
