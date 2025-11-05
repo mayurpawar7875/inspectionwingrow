@@ -183,6 +183,8 @@ export default function MyManagerSessions() {
   const getVideoSignedUrl = async (videoUrl: string | null): Promise<string | null> => {
     if (!videoUrl) return null;
     
+    console.log('[Video URL Debug] Original URL:', videoUrl);
+    
     try {
       let videoPath = videoUrl;
       
@@ -193,6 +195,8 @@ export default function MyManagerSessions() {
         const signedMatch = videoUrl.match(/\/storage\/v1\/object\/sign\/employee-media\/(.+)\?/);
         const pathMatch = videoUrl.match(/employee-media\/(.+)$/);
         
+        console.log('[Video URL Debug] Match results:', { publicMatch, signedMatch, pathMatch });
+        
         if (publicMatch) {
           videoPath = publicMatch[1];
         } else if (signedMatch) {
@@ -201,9 +205,12 @@ export default function MyManagerSessions() {
           videoPath = pathMatch[1];
         } else {
           // If we can't extract path, return the original URL
+          console.log('[Video URL Debug] Could not extract path, returning original URL');
           return videoUrl;
         }
       }
+      
+      console.log('[Video URL Debug] Extracted path:', videoPath);
       
       // Generate signed URL (valid for 1 hour)
       const { data, error } = await supabase.storage
@@ -211,13 +218,14 @@ export default function MyManagerSessions() {
         .createSignedUrl(videoPath, 3600);
       
       if (error) {
-        console.error('Error generating signed URL:', error);
+        console.error('[Video URL Debug] Error generating signed URL:', error);
         return null;
       }
       
+      console.log('[Video URL Debug] Generated signed URL:', data.signedUrl);
       return data.signedUrl;
     } catch (error) {
-      console.error('Error generating video signed URL:', error);
+      console.error('[Video URL Debug] Exception:', error);
       return null;
     }
   };

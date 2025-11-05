@@ -104,11 +104,8 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
         return;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('employee-media')
-        .getPublicUrl(`feedbacks/${fileName}`);
-      
-      videoUrl = urlData.publicUrl;
+      // Store just the path, not the full URL
+      videoUrl = `feedbacks/${fileName}`;
     }
 
     const { error } = await supabase.from('bms_stall_feedbacks').insert({
