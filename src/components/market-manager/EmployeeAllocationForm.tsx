@@ -19,11 +19,34 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
   const [markets, setMarkets] = useState<any[]>([]);
   const [selectedMarket, setSelectedMarket] = useState('');
   const [employeeName, setEmployeeName] = useState('');
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchLiveMarkets();
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, full_name, email')
+        .eq('status', 'active')
+        .order('full_name');
+      
+      if (error) {
+        console.error('Error fetching employees:', error);
+        toast.error('Failed to load employees');
+        return;
+      }
+      
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast.error('Failed to load employees');
+    }
+  };
 
   const fetchLiveMarkets = async () => {
     try {
@@ -145,12 +168,18 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
 
             <div className="space-y-2">
               <Label htmlFor="employee-name">Employee Name</Label>
-              <Input
-                id="employee-name"
-                value={employeeName}
-                onChange={(e) => setEmployeeName(e.target.value)}
-                placeholder="Enter employee name"
-              />
+              <Select value={employeeName} onValueChange={setEmployeeName}>
+                <SelectTrigger id="employee-name">
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.full_name || employee.email}>
+                      {employee.full_name || employee.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
