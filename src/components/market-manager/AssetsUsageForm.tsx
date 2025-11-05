@@ -33,12 +33,51 @@ export function AssetsUsageForm({ sessionId, onComplete }: AssetsUsageFormProps)
   }, []);
 
   const fetchMarkets = async () => {
-    const { data } = await supabase
-      .from('markets')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
-    setMarkets(data || []);
+    try {
+      // Fetch live markets for today
+      const { data: liveMarketsData, error: liveError } = await supabase
+        .from('live_markets_today')
+        .select('market_id, market_name');
+
+      if (liveError) {
+        console.error('Error fetching live markets:', liveError);
+        // Fallback: fetch all active markets
+        const { data: allMarketsData } = await supabase
+          .from('markets')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name');
+        setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+        return;
+      }
+
+      // Map live markets data to match expected format
+      const liveMarkets = (liveMarketsData || []).map(m => ({
+        id: m.market_id,
+        name: m.market_name || 'Unknown Market',
+      }));
+
+      if (liveMarkets.length === 0) {
+        // Fallback: fetch all active markets if no live markets today
+        const { data: allMarketsData } = await supabase
+          .from('markets')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name');
+        setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+      } else {
+        setMarkets(liveMarkets);
+      }
+    } catch (error) {
+      console.error('Error fetching markets:', error);
+      // Fallback: fetch all active markets
+      const { data: allMarketsData } = await supabase
+        .from('markets')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+    }
   };
 
   const handlePreview = (e: React.FormEvent) => {

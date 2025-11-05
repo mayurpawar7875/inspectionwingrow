@@ -26,20 +26,55 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
   }, []);
 
   const fetchLiveMarkets = async () => {
-    // Get today's day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    
-    // Fetch markets that are scheduled for today
-    const { data } = await supabase
-      .from('market_schedule')
-      .select('market_id, markets(id, name)')
-      .eq('is_active', true)
-      .eq('day_of_week', dayOfWeek);
-    
-    // Extract unique markets
-    const uniqueMarkets = data?.map(item => item.markets).filter(Boolean) || [];
-    setMarkets(uniqueMarkets);
+    try {
+      // Fetch live markets for today using the live_markets_today view
+      const { data: liveMarketsData, error: liveError } = await supabase
+        .from('live_markets_today')
+        .select('market_id, market_name');
+
+      if (liveError) {
+        console.error('Error fetching live markets:', liveError);
+        // Fallback: fetch markets from market_schedule based on day of week
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const { data: scheduleData } = await supabase
+          .from('market_schedule')
+          .select('market_id, markets(id, name)')
+          .eq('is_active', true)
+          .eq('day_of_week', dayOfWeek);
+        
+        const uniqueMarkets = scheduleData?.map(item => item.markets).filter(Boolean) || [];
+        setMarkets(uniqueMarkets);
+        return;
+      }
+
+      // Map live markets data to match expected format
+      const liveMarkets = (liveMarketsData || []).map(m => ({
+        id: m.market_id,
+        name: m.market_name || 'Unknown Market',
+      }));
+
+      if (liveMarkets.length === 0) {
+        // Fallback: fetch all active markets if no live markets today
+        const { data: allMarketsData } = await supabase
+          .from('markets')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name');
+        setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+      } else {
+        setMarkets(liveMarkets);
+      }
+    } catch (error) {
+      console.error('Error fetching live markets:', error);
+      // Final fallback: fetch all active markets
+      const { data: allMarketsData } = await supabase
+        .from('markets')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
