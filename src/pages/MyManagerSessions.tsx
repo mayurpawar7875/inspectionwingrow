@@ -180,48 +180,45 @@ export default function MyManagerSessions() {
     punch_out: { table: 'market_manager_punchout', label: 'Punch-Out' },
   };
 
-  const getVideoPublicUrl = (videoUrl: string | null): string | null => {
+  const getVideoSignedUrl = async (videoUrl: string | null): Promise<string | null> => {
     if (!videoUrl) return null;
     
     try {
-      // If it's already a valid URL starting with http/https, check if it's a Supabase URL
+      let videoPath = videoUrl;
+      
+      // If it's already a full URL, extract the path
       if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
-        // Check if it's already a valid Supabase storage URL
-        if (videoUrl.includes('/storage/v1/object/public/')) {
-          // Extract the path from the URL
-          const pathMatch = videoUrl.match(/\/storage\/v1\/object\/public\/employee-media\/(.+)$/);
-          if (pathMatch) {
-            const videoPath = pathMatch[1];
-            // Regenerate public URL to ensure it's correct
-            const { data: urlData } = supabase.storage
-              .from('employee-media')
-              .getPublicUrl(videoPath);
-            return urlData.publicUrl;
-          }
-        }
-        // If it's a different URL format, try to extract path
+        // Try to extract path from various URL formats
+        const publicMatch = videoUrl.match(/\/storage\/v1\/object\/public\/employee-media\/(.+)$/);
+        const signedMatch = videoUrl.match(/\/storage\/v1\/object\/sign\/employee-media\/(.+)\?/);
         const pathMatch = videoUrl.match(/employee-media\/(.+)$/);
-        if (pathMatch) {
-          const videoPath = pathMatch[1];
-          const { data: urlData } = supabase.storage
-            .from('employee-media')
-            .getPublicUrl(videoPath);
-          return urlData.publicUrl;
+        
+        if (publicMatch) {
+          videoPath = publicMatch[1];
+        } else if (signedMatch) {
+          videoPath = signedMatch[1];
+        } else if (pathMatch) {
+          videoPath = pathMatch[1];
+        } else {
+          // If we can't extract path, return the original URL
+          return videoUrl;
         }
-        // If we can't extract path, return the original URL
-        return videoUrl;
       }
       
-      // If it's not a full URL, assume it's a path and generate public URL
-      const { data: urlData } = supabase.storage
+      // Generate signed URL (valid for 1 hour)
+      const { data, error } = await supabase.storage
         .from('employee-media')
-        .getPublicUrl(videoUrl);
+        .createSignedUrl(videoPath, 3600);
       
-      return urlData.publicUrl;
+      if (error) {
+        console.error('Error generating signed URL:', error);
+        return null;
+      }
+      
+      return data.signedUrl;
     } catch (error) {
-      console.error('Error generating video public URL:', error);
-      // Return original URL as fallback
-      return videoUrl;
+      console.error('Error generating video signed URL:', error);
+      return null;
     }
   };
 
@@ -251,7 +248,7 @@ export default function MyManagerSessions() {
           
           // Fix video URL if it exists
           if (item.video_url) {
-            processedItem.video_url = getVideoPublicUrl(item.video_url);
+            processedItem.video_url = await getVideoSignedUrl(item.video_url);
           }
           
           return processedItem;
