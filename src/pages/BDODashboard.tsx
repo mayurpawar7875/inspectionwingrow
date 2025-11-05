@@ -439,8 +439,7 @@ export default function BDODashboard() {
               continue;
             }
             
-            const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
-            photoUrl = urlData.publicUrl;
+            photoUrl = fileName; // Store path, not full URL
           }
 
           // Validate required fields

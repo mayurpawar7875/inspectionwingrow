@@ -142,11 +142,7 @@ export default function BDOSession() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('employee-media')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
+      return filePath; // Return path, not full URL
     } catch (error) {
       console.error('Error uploading selfie:', error);
       throw error;

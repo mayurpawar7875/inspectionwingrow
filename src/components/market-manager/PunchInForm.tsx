@@ -56,14 +56,10 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
           return;
         }
 
-        const { data: urlData } = supabase.storage
-          .from('employee-media')
-          .getPublicUrl(`punchin/${fileName}`);
-
-        // Save punch-in record
+        // Save punch-in record with file path (not full URL)
         const { error } = await supabase.from('market_manager_punchin').insert({
           session_id: sessionId,
-          selfie_url: urlData.publicUrl,
+          selfie_url: `punchin/${fileName}`,
           gps_lat: latitude,
           gps_lng: longitude,
         });

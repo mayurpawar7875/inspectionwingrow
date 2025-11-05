@@ -154,14 +154,12 @@ export default function MediaUpload() {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
-
       // Insert media - trigger will handle session creation and metadata
       const { error: insertError } = await supabase.from('media').insert({
         user_id: user.id,
         market_id: marketId,
         media_type: mediaType,
-        file_url: urlData.publicUrl,
+        file_url: fileName, // Store path, not full URL
         file_name: file.name,
         content_type: file.type,
         gps_lat: gpsLat || null,
@@ -376,7 +374,6 @@ export default function MediaUpload() {
             continue;
           }
 
-          const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
           const today = new Date().toISOString().split('T')[0];
           let sessionId: string | null = null;
 
@@ -417,7 +414,7 @@ export default function MediaUpload() {
             user_id: user.id,
             market_date: today,
             media_type: 'market_video',
-            file_url: urlData.publicUrl,
+            file_url: fileName, // Store path, not full URL
             file_name: marketData.videoFile.name,
             content_type: marketData.videoFile.type,
             captured_at: new Date().toISOString(),
@@ -448,7 +445,7 @@ export default function MediaUpload() {
             contact_phone: '',
             contact_email: user.email || null,
             opening_date: marketData.marketOpeningDate,
-            photo_url: urlData.publicUrl, // Using video URL as photo for now
+            photo_url: fileName, // Store path, not full URL
             submitted_by: user.id,
             status: 'pending',
             submitted_at: new Date().toISOString(),

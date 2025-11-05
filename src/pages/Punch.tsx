@@ -105,13 +105,12 @@ export default function Punch() {
         .from('employee-media')
         .upload(fileName, selfieFile);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('employee-media').getPublicUrl(fileName);
 
       const { error: insertMediaErr } = await supabase.from('media').insert({
         user_id: user!.id,
         market_id: session.market_id,
         media_type: 'selfie_gps',
-        file_url: urlData.publicUrl,
+        file_url: fileName, // Store path, not full URL
         file_name: selfieFile.name,
         content_type: selfieFile.type,
         gps_lat: gpsLat,
@@ -134,7 +133,7 @@ export default function Punch() {
         .insert({
           session_id: session.id,
           task_type: 'punch',
-          payload: { action: 'punch_in', timestamp: now, gps_lat: gpsLat, gps_lng: gpsLng, gps_accuracy: gpsAccuracy, selfie_url: urlData.publicUrl },
+          payload: { action: 'punch_in', timestamp: now, gps_lat: gpsLat, gps_lng: gpsLng, gps_accuracy: gpsAccuracy, selfie_url: fileName },
           created_at: now,
         })
         .select()

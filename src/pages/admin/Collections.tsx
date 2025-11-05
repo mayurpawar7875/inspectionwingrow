@@ -233,16 +233,12 @@ export default function Collections() {
         .upload(fileName, depositFile);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from('employee-media')
-        .getPublicUrl(fileName);
-
       const { error: insertError } = await supabase.from('media').insert({
         user_id: user.id,
         market_id: sessionMarketId,
         market_date: sessionDate,
         media_type: 'cash_deposit' as any,
-        file_url: urlData.publicUrl,
+        file_url: fileName, // Store path, not full URL
         file_name: depositFile.name,
         content_type: depositFile.type,
         captured_at: new Date().toISOString(),
