@@ -27,53 +27,66 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
 
   const fetchLiveMarkets = async () => {
     try {
-      // Fetch live markets for today using the live_markets_today view
-      const { data: liveMarketsData, error: liveError } = await supabase
-        .from('live_markets_today')
-        .select('market_id, market_name');
-
-      if (liveError) {
-        console.error('Error fetching live markets:', liveError);
-        // Fallback: fetch markets from market_schedule based on day of week
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const { data: scheduleData } = await supabase
-          .from('market_schedule')
-          .select('market_id, markets(id, name)')
-          .eq('is_active', true)
-          .eq('day_of_week', dayOfWeek);
-        
-        const uniqueMarkets = scheduleData?.map(item => item.markets).filter(Boolean) || [];
-        setMarkets(uniqueMarkets);
-        return;
+      const today = new Date();
+      const todayIST = new Date(today.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const dayOfWeek = todayIST.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const todayDate = todayIST.toISOString().split('T')[0];
+      
+      // First, try to get markets with active sessions today
+      const { data: activeSessions } = await supabase
+        .from('sessions')
+        .select('market_id, markets(id, name)')
+        .eq('session_date', todayDate)
+        .eq('status', 'active');
+      
+      let liveMarkets: any[] = [];
+      
+      // Add markets with active sessions
+      if (activeSessions && activeSessions.length > 0) {
+        const sessionMarkets = activeSessions
+          .map(s => s.markets)
+          .filter(Boolean)
+          .filter((market, index, self) => 
+            index === self.findIndex(m => m.id === market.id)
+          );
+        liveMarkets.push(...sessionMarkets);
       }
-
-      // Map live markets data to match expected format
-      const liveMarkets = (liveMarketsData || []).map(m => ({
-        id: m.market_id,
-        name: m.market_name || 'Unknown Market',
-      }));
-
+      
+      // Also fetch markets scheduled for today's day of week
+      const { data: scheduledMarkets, error: scheduleError } = await supabase
+        .from('market_schedule')
+        .select('market_id, markets(id, name)')
+        .eq('is_active', true)
+        .eq('day_of_week', dayOfWeek);
+      
+      if (!scheduleError && scheduledMarkets) {
+        const scheduled = scheduledMarkets
+          .map(s => s.markets)
+          .filter(Boolean)
+          .filter((market, index, self) => 
+            index === self.findIndex(m => m.id === market.id)
+          );
+        
+        // Merge with live markets, avoiding duplicates
+        scheduled.forEach(market => {
+          if (!liveMarkets.find(m => m.id === market.id)) {
+            liveMarkets.push(market);
+          }
+        });
+      }
+      
       if (liveMarkets.length === 0) {
-        // Fallback: fetch all active markets if no live markets today
-        const { data: allMarketsData } = await supabase
-          .from('markets')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name');
-        setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+        toast.info('No markets scheduled for today');
+        setMarkets([]);
       } else {
+        // Sort by name
+        liveMarkets.sort((a, b) => a.name.localeCompare(b.name));
         setMarkets(liveMarkets);
       }
     } catch (error) {
       console.error('Error fetching live markets:', error);
-      // Final fallback: fetch all active markets
-      const { data: allMarketsData } = await supabase
-        .from('markets')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-      setMarkets((allMarketsData || []).map(m => ({ id: m.id, name: m.name })));
+      toast.error('Failed to load markets');
+      setMarkets([]);
     }
   };
 
