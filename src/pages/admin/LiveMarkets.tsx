@@ -246,12 +246,24 @@ export default function LiveMarkets() {
   }
 
   const renderTaskChart = (market: LiveMarket) => {
-    if (!market.task_stats) return null;
+    if (!market.task_stats) {
+      return (
+        <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
+          No data available
+        </div>
+      );
+    }
 
     const { attendance, stall_confirmations, market_video, cleaning_video, other } = market.task_stats;
     const total = attendance + stall_confirmations + market_video + cleaning_video + other;
 
-    if (total === 0) return null;
+    if (total === 0) {
+      return (
+        <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
+          No submissions yet
+        </div>
+      );
+    }
 
     const data = [
       { name: 'Attendance', value: attendance, color: 'hsl(var(--chart-1))' },
