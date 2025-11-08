@@ -158,7 +158,10 @@ export default function LiveMarkets() {
                 .in('id', userIds);
               
               employeeNames = employeesData?.map((e: any) => e.full_name).filter(Boolean) || [];
+              console.log('Employee names fetched:', employeeNames);
             }
+            
+            console.log('Market with names:', { ...market, task_stats: taskStats, employee_names: employeeNames });
             
             return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
@@ -381,8 +384,10 @@ export default function LiveMarkets() {
                         <span>Employees</span>
                       </div>
                       <p className="text-2xl font-bold">{market.active_employees}</p>
-                      {market.employee_names.length > 0 && (
-                        <p className="text-xs text-muted-foreground">{market.employee_names.join(', ')}</p>
+                      {market.employee_names && market.employee_names.length > 0 ? (
+                        <p className="text-sm text-foreground font-medium mt-1">{market.employee_names.join(', ')}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">No employee data</p>
                       )}
                     </div>
                     
