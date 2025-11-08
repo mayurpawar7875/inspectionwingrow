@@ -12,6 +12,7 @@ interface LiveMarket {
   city: string | null;
   active_sessions: number;
   active_employees: number;
+  employee_names: string[];
   stall_confirmations_count: number;
   media_uploads_count: number;
   last_upload_time: string | null;
@@ -138,7 +139,18 @@ export default function LiveMarkets() {
         const marketsWithStats = await Promise.all(
           (data as any[]).map(async (market) => {
             const taskStats = await fetchTaskStats(market.market_id, todayDate);
-            return { ...market, task_stats: taskStats };
+            
+            // Fetch employee names for this market
+            const { data: sessionsData } = await supabase
+              .from('sessions')
+              .select('user_id, profiles!inner(full_name)')
+              .eq('market_id', market.market_id)
+              .eq('session_date', todayDate)
+              .not('punch_in_time', 'is', null);
+            
+            const employeeNames = sessionsData?.map((s: any) => s.profiles?.full_name).filter(Boolean) || [];
+            
+            return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
         );
         setMarkets(marketsWithStats);
@@ -169,6 +181,7 @@ export default function LiveMarkets() {
             city: m.city ?? null,
             active_sessions: 0,
             active_employees: 0,
+            employee_names: [],
             stall_confirmations_count: 0,
             media_uploads_count: 0,
             last_upload_time: null,
@@ -194,6 +207,7 @@ export default function LiveMarkets() {
                 city: m.city ?? null,
                 active_sessions: 0,
                 active_employees: 0,
+                employee_names: [],
                 stall_confirmations_count: 0,
                 media_uploads_count: 0,
                 last_upload_time: null,
@@ -207,7 +221,18 @@ export default function LiveMarkets() {
         const marketsWithStats = await Promise.all(
           fallbackMarkets.map(async (market) => {
             const taskStats = await fetchTaskStats(market.market_id, todayDate);
-            return { ...market, task_stats: taskStats };
+            
+            // Fetch employee names for this market
+            const { data: sessionsData } = await supabase
+              .from('sessions')
+              .select('user_id, profiles!inner(full_name)')
+              .eq('market_id', market.market_id)
+              .eq('session_date', todayDate)
+              .not('punch_in_time', 'is', null);
+            
+            const employeeNames = sessionsData?.map((s: any) => s.profiles?.full_name).filter(Boolean) || [];
+            
+            return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
         );
         setMarkets(marketsWithStats);
@@ -336,6 +361,9 @@ export default function LiveMarkets() {
                         <span>Employees</span>
                       </div>
                       <p className="text-2xl font-bold">{market.active_employees}</p>
+                      {market.employee_names.length > 0 && (
+                        <p className="text-xs text-muted-foreground">{market.employee_names.join(', ')}</p>
+                      )}
                     </div>
                     
                     <div className="space-y-1">
