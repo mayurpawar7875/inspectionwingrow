@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Users, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface LiveMarket {
   market_id: string;
@@ -245,84 +245,50 @@ export default function LiveMarkets() {
     );
   }
 
-  const renderTaskChart = (market: LiveMarket) => {
-    if (!market.task_stats) {
-      return (
-        <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
-          No data available
-        </div>
-      );
-    }
-
-    const { attendance, stall_confirmations, market_video, cleaning_video, other } = market.task_stats;
-    const total = attendance + stall_confirmations + market_video + cleaning_video + other;
-
-    if (total === 0) {
-      return (
-        <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
-          No submissions yet
-        </div>
-      );
-    }
-
-    const data = [
-      { name: 'Attendance', value: attendance, color: 'hsl(var(--chart-1))' },
-      { name: 'Stall Confirmations', value: stall_confirmations, color: 'hsl(var(--chart-2))' },
-      { name: 'Market Video', value: market_video, color: 'hsl(var(--chart-3))' },
-      { name: 'Cleaning Video', value: cleaning_video, color: 'hsl(var(--chart-4))' },
-      { name: 'Other', value: other, color: 'hsl(var(--chart-5))' },
-    ].filter(item => item.value > 0);
+  const renderTaskChecklist = (market: LiveMarket) => {
+    const tasks = [
+      { 
+        label: 'Punch-in Time', 
+        completed: !!market.last_punch_in,
+        value: market.last_punch_in ? formatTime(market.last_punch_in) : null
+      },
+      { 
+        label: 'Selfie Uploaded', 
+        completed: market.task_stats ? market.task_stats.attendance > 0 : false 
+      },
+      { 
+        label: 'Stall Confirmations', 
+        completed: market.stall_confirmations_count > 0,
+        value: market.stall_confirmations_count > 0 ? `${market.stall_confirmations_count} stalls` : null
+      },
+      { 
+        label: 'Market Video', 
+        completed: market.task_stats ? market.task_stats.market_video > 0 : false 
+      },
+      { 
+        label: 'Cleaning Video', 
+        completed: market.task_stats ? market.task_stats.cleaning_video > 0 : false 
+      },
+      { 
+        label: 'Media Uploads', 
+        completed: market.media_uploads_count > 0,
+        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} files` : null
+      },
+    ];
 
     return (
       <div className="space-y-3">
-        <div className="relative h-[180px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => [
-                  `${value} (${((value / total) * 100).toFixed(1)}%)`,
-                  ''
-                ]}
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--popover))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{total}</div>
-              <div className="text-xs text-muted-foreground">Total</div>
+        {tasks.map((task, index) => (
+          <div key={index} className="flex items-center gap-3">
+            <Checkbox checked={task.completed} disabled className="pointer-events-none" />
+            <div className="flex-1">
+              <div className="text-sm font-medium">{task.label}</div>
+              {task.value && (
+                <div className="text-xs text-muted-foreground">{task.value}</div>
+              )}
             </div>
           </div>
-        </div>
-        <div className="space-y-1 text-xs">
-          {data.map((item, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
-                <span className="text-muted-foreground">{item.name}</span>
-              </div>
-              <span className="font-medium">{item.value}</span>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     );
   };
@@ -389,10 +355,10 @@ export default function LiveMarkets() {
                   </div>
                 </div>
 
-                {/* Right: Task Chart */}
+                {/* Right: Task Checklist */}
                 <div className="md:border-l md:pl-6 md:min-w-[280px]">
-                  <h4 className="text-sm font-medium mb-3">Task Submissions</h4>
-                  {renderTaskChart(market)}
+                  <h4 className="text-sm font-medium mb-4">Task Status</h4>
+                  {renderTaskChecklist(market)}
                 </div>
               </div>
             </Card>
