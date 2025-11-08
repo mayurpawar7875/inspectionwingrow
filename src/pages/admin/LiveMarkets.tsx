@@ -143,17 +143,22 @@ export default function LiveMarkets() {
             // Fetch employee names for this market
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select(`
-                user_id,
-                profiles (
-                  full_name
-                )
-              `)
+              .select('user_id')
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
               .not('punch_in_time', 'is', null);
             
-            const employeeNames = sessionsData?.map((s: any) => s.profiles?.full_name).filter(Boolean) || [];
+            const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
+            let employeeNames: string[] = [];
+            
+            if (userIds.length > 0) {
+              const { data: employeesData } = await supabase
+                .from('employees')
+                .select('full_name')
+                .in('id', userIds);
+              
+              employeeNames = employeesData?.map((e: any) => e.full_name).filter(Boolean) || [];
+            }
             
             return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
@@ -230,17 +235,22 @@ export default function LiveMarkets() {
             // Fetch employee names for this market
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select(`
-                user_id,
-                profiles (
-                  full_name
-                )
-              `)
+              .select('user_id')
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
               .not('punch_in_time', 'is', null);
             
-            const employeeNames = sessionsData?.map((s: any) => s.profiles?.full_name).filter(Boolean) || [];
+            const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
+            let employeeNames: string[] = [];
+            
+            if (userIds.length > 0) {
+              const { data: employeesData } = await supabase
+                .from('employees')
+                .select('full_name')
+                .in('id', userIds);
+              
+              employeeNames = employeesData?.map((e: any) => e.full_name).filter(Boolean) || [];
+            }
             
             return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
