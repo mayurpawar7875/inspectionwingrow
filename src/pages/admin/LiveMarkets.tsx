@@ -143,7 +143,12 @@ export default function LiveMarkets() {
             // Fetch employee names for this market
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select('user_id, profiles!inner(full_name)')
+              .select(`
+                user_id,
+                profiles (
+                  full_name
+                )
+              `)
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
               .not('punch_in_time', 'is', null);
@@ -225,7 +230,12 @@ export default function LiveMarkets() {
             // Fetch employee names for this market
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select('user_id, profiles!inner(full_name)')
+              .select(`
+                user_id,
+                profiles (
+                  full_name
+                )
+              `)
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
               .not('punch_in_time', 'is', null);
