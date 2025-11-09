@@ -604,8 +604,45 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Punch Out - Show at bottom after punch in */}
-                {todaySession.punch_in_time && (
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/punch')}>
+                {todaySession.punch_in_time && !todaySession.punch_out_time && (
+                  <Card 
+                    className="cursor-pointer hover:shadow-md transition-shadow" 
+                    onClick={async () => {
+                      if (!todaySession) return;
+                      
+                      // Get GPS location
+                      navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                          const { latitude, longitude } = position.coords;
+                          
+                          try {
+                            // Update session with punch out time
+                            const { error: sessionError } = await supabase
+                              .from('sessions')
+                              .update({ 
+                                punch_out_time: new Date().toISOString(),
+                                status: 'completed'
+                              })
+                              .eq('id', todaySession.id);
+
+                            if (sessionError) throw sessionError;
+
+                            toast.success('Punched out successfully! Session completed.');
+                            
+                            // Refresh the session data
+                            fetchTodaySession();
+                          } catch (error: any) {
+                            console.error('Punch out error:', error);
+                            toast.error('Failed to punch out: ' + error.message);
+                          }
+                        },
+                        (error) => {
+                          toast.error('Failed to get GPS location. Please enable location services.');
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                      );
+                    }}
+                  >
                     <CardHeader className="p-3 sm:p-4">
                       <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                       <CardTitle className="text-sm sm:text-base">Punch Out</CardTitle>
