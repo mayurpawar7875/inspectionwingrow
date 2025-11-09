@@ -22,6 +22,10 @@ import {
   ExternalLink,
   Umbrella,
   History,
+  Upload,
+  Video,
+  ImageIcon,
+  Sparkles,
 } from 'lucide-react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { Textarea } from '@/components/ui/textarea';
@@ -442,115 +446,141 @@ export default function Dashboard() {
 
             {/* Action Cards - Show until punch out */}
             {!todaySession.punch_out_time && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/punch')}>
-                  <CardHeader>
-                    <Clock className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Punch In/Out</CardTitle>
-                    <CardDescription>Record your attendance timestamps</CardDescription>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                {/* Punch In/Out */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/punch')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Punch In/Out</CardTitle>
+                    <CardDescription className="text-xs">Record attendance</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => navigate('/stalls')}
-                >
-                  <CardHeader>
-                    <FileText className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Stall Confirmations</CardTitle>
-                    <CardDescription>
-                      {stallsCount} stall{stallsCount !== 1 ? 's' : ''} added
+                {/* Stall Confirmations */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/stalls')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Stalls</CardTitle>
+                    <CardDescription className="text-xs">
+                      {stallsCount} added
                     </CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => navigate('/media-upload')}
-                >
-                  <CardHeader>
-                    <Camera className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Media Upload</CardTitle>
-                    <CardDescription>
-                      {todaySession.media.length} file{todaySession.media.length !== 1 ? 's' : ''} uploaded
-                    </CardDescription>
+                {/* Outside Market Rates */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Upload className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Outside Rates</CardTitle>
+                    <CardDescription className="text-xs">Upload media</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setOffersDialog(true)}
-                >
-                  <CardHeader>
-                    <FileText className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Today's Offers</CardTitle>
-                    <CardDescription>Add commodity offers and pricing</CardDescription>
+                {/* Selfie + GPS */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Selfie + GPS</CardTitle>
+                    <CardDescription className="text-xs">With location</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setCommoditiesDialog(true)}
-                >
-                  <CardHeader>
-                    <AlertCircle className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Non-Available Commodities</CardTitle>
-                    <CardDescription>Report unavailable items</CardDescription>
+                {/* Rate Board Photo */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <ImageIcon className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Rate Board</CardTitle>
+                    <CardDescription className="text-xs">Photo upload</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setFeedbackDialog(true)}
-                >
-                  <CardHeader>
-                    <MessageSquare className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Organiser Feedback</CardTitle>
-                    <CardDescription>Report difficulties & provide feedback</CardDescription>
+                {/* Market Video */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Video className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Market Video</CardTitle>
+                    <CardDescription className="text-xs">Pan video</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setInspectionDialog(true)}
-                >
-                  <CardHeader>
-                    <ClipboardCheck className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Stall Inspection</CardTitle>
-                    <CardDescription>Inspect farmer stalls & equipment</CardDescription>
+                {/* Cleaning Video */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Cleaning</CardTitle>
+                    <CardDescription className="text-xs">Video upload</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setPlanningDialog(true)}
-                >
-                  <CardHeader>
-                    <Calendar className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Next Day Planning</CardTitle>
-                    <CardDescription>Plan tomorrow's market & stalls</CardDescription>
+                {/* Customer Feedback */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Feedback</CardTitle>
+                    <CardDescription className="text-xs">Customer video</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => setLeaveDialog(true)}
-                >
-                  <CardHeader>
-                    <Umbrella className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Request Leave</CardTitle>
-                    <CardDescription>Apply for a leave with reason</CardDescription>
+                {/* Today's Offers */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setOffersDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Today's Offers</CardTitle>
+                    <CardDescription className="text-xs">Add pricing</CardDescription>
                   </CardHeader>
                 </Card>
 
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={handleOpenCollectionSheet}
-                >
-                  <CardHeader>
-                    <ExternalLink className="h-8 w-8 text-accent mb-2" />
-                    <CardTitle className="text-lg">Market Collections</CardTitle>
-                    <CardDescription>Record rents and payment modes</CardDescription>
+                {/* Non-Available Commodities */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCommoditiesDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <AlertCircle className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Non-Available</CardTitle>
+                    <CardDescription className="text-xs">Report items</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* Organiser Feedback */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFeedbackDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">My Feedback</CardTitle>
+                    <CardDescription className="text-xs">Share thoughts</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* Stall Inspection */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setInspectionDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <ClipboardCheck className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Inspection</CardTitle>
+                    <CardDescription className="text-xs">Stall check</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* Next Day Planning */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPlanningDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Calendar className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Planning</CardTitle>
+                    <CardDescription className="text-xs">Next day</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* Leave Request */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setLeaveDialog(true)}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Umbrella className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Leave</CardTitle>
+                    <CardDescription className="text-xs">Request leave</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* Collection Sheet */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleOpenCollectionSheet}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <ExternalLink className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Collections</CardTitle>
+                    <CardDescription className="text-xs">Record daily</CardDescription>
                   </CardHeader>
                 </Card>
               </div>
