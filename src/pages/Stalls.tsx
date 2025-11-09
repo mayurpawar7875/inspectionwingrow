@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash2, Edit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const stallSchema = z.object({
+  farmer_name: z.string().trim().min(1, 'Farmer name is required').max(200, 'Farmer name must be less than 200 characters'),
+  stall_name: z.string().trim().min(1, 'Stall name is required').max(200, 'Stall name must be less than 200 characters'),
+  stall_no: z.string().trim().min(1, 'Stall number is required').max(50, 'Stall number must be less than 50 characters'),
+  collection_amount: z.string().optional(),
+  collection_mode: z.enum(['cash', 'online']).optional(),
+});
 
 interface Stall {
   id: string;
@@ -26,16 +37,20 @@ export default function Stalls() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStall, setEditingStall] = useState<Stall | null>(null);
-  const [formData, setFormData] = useState({
-    farmer_name: '',
-    stall_name: '',
-    stall_no: '',
-  });
-  const [formAmount, setFormAmount] = useState<string>('');
-  const [formMode, setFormMode] = useState<'cash' | 'online'>('cash');
   const [savingCollection, setSavingCollection] = useState<Record<string, boolean>>({});
   const [quickAmounts, setQuickAmounts] = useState<Record<string, string>>({});
   const [quickModes, setQuickModes] = useState<Record<string, 'cash' | 'online'>>({});
+  
+  const form = useForm<z.infer<typeof stallSchema>>({
+    resolver: zodResolver(stallSchema),
+    defaultValues: {
+      farmer_name: '',
+      stall_name: '',
+      stall_no: '',
+      collection_amount: '',
+      collection_mode: 'cash',
+    },
+  });
 
   useEffect(() => {
     fetchData();
@@ -73,14 +88,7 @@ export default function Stalls() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.farmer_name.trim() || !formData.stall_name.trim() || !formData.stall_no.trim()) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
+  const handleSubmit = async (data: z.infer<typeof stallSchema>) => {
     if (!user) return;
 
     try {
@@ -114,7 +122,11 @@ export default function Stalls() {
         // Update existing stall confirmation
         const { error } = await supabase
           .from('stall_confirmations')
-          .update(formData)
+          .update({
+            farmer_name: data.farmer_name,
+            stall_name: data.stall_name,
+            stall_no: data.stall_no,
+          })
           .eq('id', editingStall.id);
 
         if (error) throw error;
@@ -128,7 +140,9 @@ export default function Stalls() {
       } else {
         // Insert new stall confirmation - trigger will handle session and metadata
         const payload = {
-          ...formData,
+          farmer_name: data.farmer_name,
+          stall_name: data.stall_name,
+          stall_no: data.stall_no,
           created_by: user.id,
           market_id: marketId,
           market_date: getISTDateString(new Date()),
@@ -150,13 +164,13 @@ export default function Stalls() {
         toast.success(`Saved at ${istTime} IST`);
 
         // If amount provided, create a collection entry immediately
-        const amountNum = Number(formAmount || 0);
+        const amountNum = Number(data.collection_amount || 0);
         if (!isNaN(amountNum) && amountNum > 0 && inserted?.id) {
           const { error: collErr } = await supabase.from('collections').insert({
             market_id: marketId,
             market_date: getISTDateString(new Date()),
             amount: amountNum,
-            mode: formMode === 'cash' ? 'cash' : 'upi',
+            mode: data.collection_mode === 'cash' ? 'cash' : 'upi',
             collected_by: user.id,
           } as any);
           if (collErr) {
@@ -170,9 +184,7 @@ export default function Stalls() {
 
       setDialogOpen(false);
       setEditingStall(null);
-      setFormData({ farmer_name: '', stall_name: '', stall_no: '' });
-      setFormAmount('');
-      setFormMode('cash');
+      form.reset();
       fetchData();
     } catch (error: any) {
       toast.error((editingStall ? 'Failed to update stall: ' : 'Failed to add stall: ') + (error?.message || ''));
@@ -182,10 +194,12 @@ export default function Stalls() {
 
   const handleEdit = (stall: Stall) => {
     setEditingStall(stall);
-    setFormData({
+    form.reset({
       farmer_name: stall.farmer_name,
       stall_name: stall.stall_name,
       stall_no: stall.stall_no,
+      collection_amount: '',
+      collection_mode: 'cash',
     });
     setDialogOpen(true);
   };
@@ -208,9 +222,7 @@ export default function Stalls() {
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditingStall(null);
-    setFormData({ farmer_name: '', stall_name: '', stall_no: '' });
-    setFormAmount('');
-    setFormMode('cash');
+    form.reset();
   };
 
   const saveQuickCollection = async (stallId: string) => {
@@ -310,66 +322,98 @@ export default function Stalls() {
                       Enter the details of the stall
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="farmer_name">Farmer Name</Label>
-                      <Input
-                        id="farmer_name"
-                        value={formData.farmer_name}
-                        onChange={(e) => setFormData({ ...formData, farmer_name: e.target.value })}
-                        placeholder="Enter farmer name"
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="farmer_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Farmer Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter farmer name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stall_name">Stall Name</Label>
-                      <Input
-                        id="stall_name"
-                        value={formData.stall_name}
-                        onChange={(e) => setFormData({ ...formData, stall_name: e.target.value })}
-                        placeholder="Enter stall name"
+                      <FormField
+                        control={form.control}
+                        name="stall_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stall Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter stall name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stall_no">Stall Number</Label>
-                      <Input
-                        id="stall_no"
-                        value={formData.stall_no}
-                        onChange={(e) => setFormData({ ...formData, stall_no: e.target.value })}
-                        placeholder="Enter stall number"
+                      <FormField
+                        control={form.control}
+                        name="stall_no"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stall Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter stall number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Collection Amount (optional)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="amount"
-                          type="number"
-                          min="0"
-                          inputMode="decimal"
-                          value={formAmount}
-                          onChange={(e) => setFormAmount(e.target.value)}
-                          placeholder="0"
-                        />
-                        <Select value={formMode} onValueChange={(v) => setFormMode(v as 'cash' | 'online')}>
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Mode" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cash">Cash</SelectItem>
-                            <SelectItem value="online">Online</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-2">
+                        <FormLabel>Collection Amount (optional)</FormLabel>
+                        <div className="flex gap-2">
+                          <FormField
+                            control={form.control}
+                            name="collection_amount"
+                            render={({ field }) => (
+                              <FormItem className="flex-1">
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    inputMode="decimal"
+                                    placeholder="0"
+                                    {...field}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="collection_mode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="w-[140px]">
+                                      <SelectValue placeholder="Mode" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="online">Online</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button type="submit" className="flex-1">
-                        {editingStall ? 'Update' : 'Add'} Stall
-                      </Button>
-                      <Button type="button" variant="outline" onClick={handleDialogClose}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
+                      <div className="flex gap-2">
+                        <Button type="submit" className="flex-1">
+                          {editingStall ? 'Update' : 'Add'} Stall
+                        </Button>
+                        <Button type="button" variant="outline" onClick={handleDialogClose}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </DialogContent>
               </Dialog>
             </div>

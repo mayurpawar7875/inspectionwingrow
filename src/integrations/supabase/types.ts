@@ -1685,6 +1685,7 @@ export type Database = {
     }
     Functions: {
       backfill_media_metadata: { Args: never; Returns: undefined }
+      expire_old_market_manager_sessions: { Args: never; Returns: undefined }
       get_employee_by_username: {
         Args: { _username: string }
         Returns: {

@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Save, Trash2 } from 'lucide-react';
+
+const feedbackSchema = z.object({
+  difficulties: z.string().trim().max(2000, 'Difficulties must be less than 2000 characters').optional(),
+  feedback: z.string().trim().max(2000, 'Feedback must be less than 2000 characters').optional(),
+}).refine(data => data.difficulties || data.feedback, {
+  message: 'Please enter at least one field',
+  path: ['difficulties'],
+});
 
 interface Props {
   sessionId: string;
@@ -22,11 +33,17 @@ interface FeedbackEntry {
 }
 
 export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate, userId, onSuccess }: Props) {
-  const [difficulties, setDifficulties] = useState('');
-  const [feedback, setFeedback] = useState('');
   const [existingEntry, setExistingEntry] = useState<FeedbackEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  const form = useForm<z.infer<typeof feedbackSchema>>({
+    resolver: zodResolver(feedbackSchema),
+    defaultValues: {
+      difficulties: '',
+      feedback: '',
+    },
+  });
 
   useEffect(() => {
     fetchExistingFeedback();
@@ -45,8 +62,10 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
 
       if (data) {
         setExistingEntry(data);
-        setDifficulties(data.difficulties || '');
-        setFeedback(data.feedback || '');
+        form.reset({
+          difficulties: data.difficulties || '',
+          feedback: data.feedback || '',
+        });
       }
     } catch (error: any) {
       console.error('Error fetching feedback:', error);
@@ -55,12 +74,7 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
     }
   };
 
-  const handleSave = async () => {
-    if (!difficulties.trim() && !feedback.trim()) {
-      toast.error('Please enter at least one field');
-      return;
-    }
-
+  const handleSave = async (data: z.infer<typeof feedbackSchema>) => {
     setSaving(true);
     try {
       if (existingEntry) {
@@ -68,8 +82,8 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
         const { error } = await supabase
           .from('organiser_feedback')
           .update({
-            difficulties: difficulties.trim() || null,
-            feedback: feedback.trim() || null,
+            difficulties: data.difficulties?.trim() || null,
+            feedback: data.feedback?.trim() || null,
           })
           .eq('id', existingEntry.id);
 
@@ -84,8 +98,8 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
             session_id: sessionId,
             market_id: marketId,
             market_date: marketDate,
-            difficulties: difficulties.trim() || null,
-            feedback: feedback.trim() || null,
+            difficulties: data.difficulties?.trim() || null,
+            feedback: data.feedback?.trim() || null,
           });
 
         if (error) throw error;
@@ -115,8 +129,7 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
       if (error) throw error;
 
       setExistingEntry(null);
-      setDifficulties('');
-      setFeedback('');
+      form.reset({ difficulties: '', feedback: '' });
       toast.success('Feedback deleted successfully');
       onSuccess?.();
     } catch (error: any) {
@@ -145,53 +158,71 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
         <CardTitle>Organiser Feedback & Difficulties</CardTitle>
         <CardDescription>Report any difficulties faced and provide feedback about the organiser</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="difficulties">Difficulties Faced</Label>
-          <Textarea
-            id="difficulties"
-            placeholder="Describe any difficulties or challenges you faced today..."
-            value={difficulties}
-            onChange={(e) => setDifficulties(e.target.value)}
-            rows={4}
-            disabled={saving}
-          />
-        </div>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="difficulties"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Difficulties Faced</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe any difficulties or challenges you faced today..."
+                      rows={4}
+                      disabled={saving}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="space-y-2">
-          <Label htmlFor="feedback">Feedback about Organiser</Label>
-          <Textarea
-            id="feedback"
-            placeholder="Provide feedback about the organiser's performance..."
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            rows={4}
-            disabled={saving}
-          />
-        </div>
+            <FormField
+              control={form.control}
+              name="feedback"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Feedback about Organiser</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Provide feedback about the organiser's performance..."
+                      rows={4}
+                      disabled={saving}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {existingEntry ? 'Update' : 'Save'}
-              </>
-            )}
-          </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {existingEntry ? 'Update' : 'Save'}
+                  </>
+                )}
+              </Button>
 
-          {existingEntry && (
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          )}
-        </div>
+              {existingEntry && (
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
