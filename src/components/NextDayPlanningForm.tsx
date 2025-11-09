@@ -224,42 +224,45 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-accent" />
-          <CardTitle>Next Day Market Planning</CardTitle>
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+          <CardTitle className="text-base sm:text-lg">Next Day Market Planning</CardTitle>
         </div>
-        <CardDescription>Plan tomorrow's market and stall confirmations</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">Plan tomorrow's market and stall confirmations</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="market-name">Next Day Market Name *</Label>
+          <Label htmlFor="market-name" className="text-xs sm:text-sm">Next Day Market Name *</Label>
           <Input
             id="market-name"
             placeholder="Enter market name for next day"
+            className="h-8 sm:h-10 text-xs sm:text-sm"
             value={marketName}
             onChange={(e) => setMarketName(e.target.value)}
             disabled={saving}
           />
         </div>
 
-        <div className="space-y-3">
-          <Label>Add Stall Confirmations *</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="farmer-name" className="text-sm">Farmer Name</Label>
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="text-xs sm:text-sm">Add Stall Confirmations *</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="farmer-name" className="text-xs">Farmer Name</Label>
               <Input
                 id="farmer-name"
                 placeholder="Enter farmer name"
+                className="h-8 sm:h-10 text-xs sm:text-sm"
                 value={farmerName}
                 onChange={(e) => setFarmerName(e.target.value)}
                 disabled={saving}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddConfirmation()}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="stall-name" className="text-sm">Stall Name</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="stall-name" className="text-xs">Stall Name</Label>
               <Input
                 id="stall-name"
                 placeholder="Enter stall name"
+                className="h-8 sm:h-10 text-xs sm:text-sm"
                 value={stallName}
                 onChange={(e) => setStallName(e.target.value)}
                 disabled={saving}
@@ -272,20 +275,20 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
             variant="outline" 
             onClick={handleAddConfirmation} 
             disabled={saving}
-            className="w-full"
+            className="w-full h-8 sm:h-10 text-xs sm:text-sm"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             Add Confirmation
           </Button>
 
           {confirmations.length > 0 && (
-            <div className="space-y-2 mt-4">
-              <Label className="text-sm">Added Confirmations ({confirmations.length})</Label>
+            <div className="space-y-2 mt-3 sm:mt-4">
+              <Label className="text-xs sm:text-sm">Added Confirmations ({confirmations.length})</Label>
               <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
                 {confirmations.map((conf, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/50">
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 hover:bg-muted/50">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{conf.stallName}</p>
+                      <p className="text-xs sm:text-sm font-medium">{conf.stallName}</p>
                       <p className="text-xs text-muted-foreground">{conf.farmerName}</p>
                     </div>
                     <Button
@@ -295,7 +298,7 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
                       onClick={() => handleRemoveConfirmation(index)}
                       disabled={saving}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 ))}
@@ -305,23 +308,23 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="h-8 sm:h-10 text-xs sm:text-sm">
             {saving ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 {existingPlan ? 'Update' : 'Save'} Planning
               </>
             )}
           </Button>
 
           {existingPlan && (
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              <Trash2 className="mr-2 h-4 w-4" />
+            <Button variant="destructive" onClick={handleDelete} disabled={saving} className="h-8 sm:h-10 text-xs sm:text-sm">
+              <Trash2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Delete
             </Button>
           )}
