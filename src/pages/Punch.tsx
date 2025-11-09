@@ -308,36 +308,30 @@ export default function Punch() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <div>
-                  <h3 className="font-semibold">Punch Out Time</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {session.punch_out_time
-                      ? new Date(session.punch_out_time).toLocaleString()
-                      : 'Not recorded yet'}
-                  </p>
+              {/* Only show Punch Out section after punching in */}
+              {session.punch_in_time && (
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div>
+                    <h3 className="font-semibold">Punch Out Time</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {session.punch_out_time
+                        ? new Date(session.punch_out_time).toLocaleString()
+                        : 'Not recorded yet'}
+                    </p>
+                  </div>
+                  {session.punch_out_time ? (
+                    <CheckCircle className="h-6 w-6 text-success" />
+                  ) : (
+                    <Button
+                      onClick={handlePunchOut}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? 'Recording...' : 'Punch Out'}
+                    </Button>
+                  )}
                 </div>
-                {session.punch_out_time ? (
-                  <CheckCircle className="h-6 w-6 text-success" />
-                ) : (
-                  <Button
-                    onClick={handlePunchOut}
-                    disabled={actionLoading || !session.punch_in_time}
-                    variant={session.punch_in_time ? 'default' : 'secondary'}
-                  >
-                    {actionLoading ? 'Recording...' : 'Punch Out'}
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
-
-            {!session.punch_in_time && (
-              <div className="bg-info/10 text-info-foreground p-4 rounded-lg">
-                <p className="text-sm">
-                  <strong>Note:</strong> You must punch in before you can punch out.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </main>
