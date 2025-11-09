@@ -23,7 +23,11 @@ interface LiveMarket {
     stall_confirmations: number;
     market_video: number;
     cleaning_video: number;
-    other: number;
+    offers: number;
+    commodities: number;
+    feedback: number;
+    inspections: number;
+    planning: number;
   };
 }
 
@@ -112,19 +116,45 @@ export default function AdminDashboard() {
         .eq('market_date', todayDate)
         .eq('media_type', 'cleaning_video');
 
-      const { count: otherCount } = await supabase
-        .from('media')
+      const { count: offersCount } = await supabase
+        .from('offers')
         .select('*', { count: 'exact', head: true })
         .eq('market_id', marketId)
-        .eq('market_date', todayDate)
-        .not('media_type', 'in', '(market_video,cleaning_video)');
+        .eq('market_date', todayDate);
+
+      const { count: commoditiesCount } = await supabase
+        .from('non_available_commodities')
+        .select('*', { count: 'exact', head: true })
+        .eq('market_id', marketId)
+        .eq('market_date', todayDate);
+
+      const { count: feedbackCount } = await supabase
+        .from('organiser_feedback')
+        .select('*', { count: 'exact', head: true })
+        .eq('market_id', marketId)
+        .eq('market_date', todayDate);
+
+      const { count: inspectionsCount } = await supabase
+        .from('stall_inspections')
+        .select('*', { count: 'exact', head: true })
+        .eq('market_id', marketId)
+        .eq('market_date', todayDate);
+
+      const { count: planningCount } = await supabase
+        .from('next_day_planning')
+        .select('*', { count: 'exact', head: true })
+        .eq('current_market_date', todayDate);
 
       return {
         attendance: attendanceCount || 0,
         stall_confirmations: stallsCount || 0,
         market_video: marketVideoCount || 0,
         cleaning_video: cleaningVideoCount || 0,
-        other: otherCount || 0,
+        offers: offersCount || 0,
+        commodities: commoditiesCount || 0,
+        feedback: feedbackCount || 0,
+        inspections: inspectionsCount || 0,
+        planning: planningCount || 0,
       };
     } catch (error) {
       console.error('Error fetching task stats:', error);
@@ -133,7 +163,11 @@ export default function AdminDashboard() {
         stall_confirmations: 0,
         market_video: 0,
         cleaning_video: 0,
-        other: 0,
+        offers: 0,
+        commodities: 0,
+        feedback: 0,
+        inspections: 0,
+        planning: 0,
       };
     }
   };
@@ -290,6 +324,34 @@ export default function AdminDashboard() {
         onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
+        label: "Today's Offers", 
+        completed: market.task_stats ? market.task_stats.offers > 0 : false,
+        value: market.task_stats && market.task_stats.offers > 0 ? `${market.task_stats.offers} items` : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
+      },
+      { 
+        label: 'Non-Available Commodities', 
+        completed: market.task_stats ? market.task_stats.commodities > 0 : false,
+        value: market.task_stats && market.task_stats.commodities > 0 ? `${market.task_stats.commodities} items` : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
+      },
+      { 
+        label: 'Organiser Feedback', 
+        completed: market.task_stats ? market.task_stats.feedback > 0 : false,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
+      },
+      { 
+        label: 'Stall Inspection', 
+        completed: market.task_stats ? market.task_stats.inspections > 0 : false,
+        value: market.task_stats && market.task_stats.inspections > 0 ? `${market.task_stats.inspections} stalls` : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
+      },
+      { 
+        label: 'Next Day Planning', 
+        completed: market.task_stats ? market.task_stats.planning > 0 : false,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
+      },
+      { 
         label: 'Market Video', 
         completed: market.task_stats ? market.task_stats.market_video > 0 : false,
         onClick: () => navigate(`/admin/market/${market.market_id}`)
@@ -297,12 +359,6 @@ export default function AdminDashboard() {
       { 
         label: 'Cleaning Video', 
         completed: market.task_stats ? market.task_stats.cleaning_video > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
-      },
-      { 
-        label: 'Media Uploads', 
-        completed: market.media_uploads_count > 0,
-        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} files` : null,
         onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
     ];
