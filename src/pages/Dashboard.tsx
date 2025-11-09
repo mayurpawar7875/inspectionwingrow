@@ -464,14 +464,16 @@ export default function Dashboard() {
             {/* Action Cards - Show until punch out */}
             {!todaySession.punch_out_time && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                {/* Punch In/Out */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/punch')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Punch In/Out</CardTitle>
-                    <CardDescription className="text-xs">Record attendance</CardDescription>
-                  </CardHeader>
-                </Card>
+                {/* Punch In */}
+                {!todaySession.punch_in_time && (
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/punch')}>
+                    <CardHeader className="p-3 sm:p-4">
+                      <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                      <CardTitle className="text-sm sm:text-base">Punch In</CardTitle>
+                      <CardDescription className="text-xs">Record arrival</CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
 
                 {/* Stall Confirmations */}
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/stalls')}>
@@ -600,6 +602,17 @@ export default function Dashboard() {
                     <CardDescription className="text-xs">Record daily</CardDescription>
                   </CardHeader>
                 </Card>
+
+                {/* Punch Out - Show at bottom after punch in */}
+                {todaySession.punch_in_time && (
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/punch')}>
+                    <CardHeader className="p-3 sm:p-4">
+                      <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                      <CardTitle className="text-sm sm:text-base">Punch Out</CardTitle>
+                      <CardDescription className="text-xs">Record departure</CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
               </div>
             )}
 
