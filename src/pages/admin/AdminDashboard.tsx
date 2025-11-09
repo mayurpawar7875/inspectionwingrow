@@ -5,7 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Building2, ClipboardList, MapPin, TrendingUp, Activity, ChevronRight, Clock, Upload } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface LiveMarket {
   market_id: string;
@@ -48,6 +51,12 @@ export default function AdminDashboard() {
   });
   const [liveMarkets, setLiveMarkets] = useState<LiveMarket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [taskDialog, setTaskDialog] = useState<{
+    open: boolean;
+    taskType: string;
+    data: any[];
+    marketName: string;
+  }>({ open: false, taskType: '', data: [], marketName: '' });
 
   useEffect(() => {
     if (!isAdmin) {
@@ -304,62 +313,411 @@ export default function AdminDashboard() {
     return istNow.getDay() === 1;
   };
 
+  const fetchTaskData = async (marketId: string, marketName: string, taskType: string) => {
+    const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    let data: any[] = [];
+
+    try {
+      switch (taskType) {
+        case 'stall_confirmations':
+          const { data: confirmations } = await supabase
+            .from('stall_confirmations')
+            .select('*')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = confirmations || [];
+          break;
+
+        case 'offers':
+          const { data: offers } = await supabase
+            .from('offers')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = offers || [];
+          break;
+
+        case 'commodities':
+          const { data: commodities } = await supabase
+            .from('non_available_commodities')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = commodities || [];
+          break;
+
+        case 'feedback':
+          const { data: feedback } = await supabase
+            .from('organiser_feedback')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = feedback || [];
+          break;
+
+        case 'inspections':
+          const { data: inspections } = await supabase
+            .from('stall_inspections')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = inspections || [];
+          break;
+
+        case 'planning':
+          const { data: planning } = await supabase
+            .from('next_day_planning')
+            .select('*, employees(full_name)')
+            .eq('current_market_date', todayDate)
+            .order('created_at', { ascending: false });
+          data = planning || [];
+          break;
+
+        case 'market_video':
+          const { data: marketVideos } = await supabase
+            .from('media')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .eq('media_type', 'market_video')
+            .order('created_at', { ascending: false });
+          data = marketVideos || [];
+          break;
+
+        case 'cleaning_video':
+          const { data: cleaningVideos } = await supabase
+            .from('media')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .eq('media_type', 'cleaning_video')
+            .order('created_at', { ascending: false });
+          data = cleaningVideos || [];
+          break;
+
+        case 'attendance':
+          const { data: sessions } = await supabase
+            .from('sessions')
+            .select('*, employees(full_name)')
+            .eq('market_id', marketId)
+            .eq('session_date', todayDate)
+            .order('punch_in_time', { ascending: false });
+          data = sessions || [];
+          break;
+      }
+
+      setTaskDialog({ open: true, taskType, data, marketName });
+    } catch (error) {
+      console.error('Error fetching task data:', error);
+    }
+  };
+
+  const getTaskTitle = (taskType: string) => {
+    const titles: Record<string, string> = {
+      stall_confirmations: 'Stall Confirmations',
+      offers: "Today's Offers",
+      commodities: 'Non-Available Commodities',
+      feedback: 'Organiser Feedback',
+      inspections: 'Stall Inspections',
+      planning: 'Next Day Planning',
+      market_video: 'Market Videos',
+      cleaning_video: 'Cleaning Videos',
+      attendance: 'Attendance Records',
+    };
+    return titles[taskType] || taskType;
+  };
+
+  const renderTaskDialogContent = () => {
+    const { taskType, data } = taskDialog;
+
+    if (data.length === 0) {
+      return <div className="text-center py-8 text-muted-foreground">No data available</div>;
+    }
+
+    switch (taskType) {
+      case 'stall_confirmations':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stall No</TableHead>
+                <TableHead>Stall Name</TableHead>
+                <TableHead>Farmer Name</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.stall_no}</TableCell>
+                  <TableCell>{item.stall_name}</TableCell>
+                  <TableCell>{item.farmer_name}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(item.created_at), 'HH:mm')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+
+      case 'offers':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Commodity</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.commodity_name}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>{item.price ? `₹${item.price}` : 'N/A'}</TableCell>
+                  <TableCell>{item.employees?.full_name || 'N/A'}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(item.created_at), 'HH:mm')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+
+      case 'commodities':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Commodity Name</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.commodity_name}</TableCell>
+                  <TableCell>{item.notes || '-'}</TableCell>
+                  <TableCell>{item.employees?.full_name || 'N/A'}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(item.created_at), 'HH:mm')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+
+      case 'feedback':
+        return (
+          <div className="space-y-4">
+            {data.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <CardTitle className="text-sm">{item.employees?.full_name || 'Unknown'}</CardTitle>
+                  <CardDescription>{format(new Date(item.created_at), 'HH:mm')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {item.difficulties && (
+                    <div className="mb-2">
+                      <strong>Difficulties:</strong> {item.difficulties}
+                    </div>
+                  )}
+                  {item.feedback && (
+                    <div>
+                      <strong>Feedback:</strong> {item.feedback}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+
+      case 'inspections':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Farmer Name</TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => {
+                const items = [];
+                if (item.has_tent) items.push('Tent');
+                if (item.has_table) items.push('Table');
+                if (item.has_green_net) items.push('Green Net');
+                if (item.has_flex) items.push('Flex');
+                if (item.has_rateboard) items.push('Rate Board');
+                if (item.has_light) items.push('Light');
+                if (item.has_apron) items.push('Apron');
+                if (item.has_display) items.push('Display');
+                if (item.has_digital_weighing_machine) items.push('Weighing Machine');
+                if (item.has_mat) items.push('Mat');
+                if (item.has_cap) items.push('Cap');
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.farmer_name}</TableCell>
+                    <TableCell>{item.employees?.full_name || 'N/A'}</TableCell>
+                    <TableCell>{items.join(', ') || 'None'}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(item.created_at), 'HH:mm')}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        );
+
+      case 'planning':
+        return (
+          <div className="space-y-4">
+            {data.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <CardTitle className="text-sm">{item.next_day_market_name}</CardTitle>
+                  <CardDescription>
+                    By {item.employees?.full_name || 'Unknown'} at {format(new Date(item.created_at), 'HH:mm')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="whitespace-pre-wrap">{item.stall_list}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+
+      case 'market_video':
+      case 'cleaning_video':
+        return (
+          <div className="space-y-4">
+            {data.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <CardTitle className="text-sm">{item.employees?.full_name || 'Unknown'}</CardTitle>
+                  <CardDescription>{format(new Date(item.created_at), 'HH:mm')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <video controls className="w-full rounded-md">
+                    <source src={item.file_url} type={item.content_type} />
+                    Your browser does not support the video tag.
+                  </video>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+
+      case 'attendance':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Punch In</TableHead>
+                <TableHead>Punch Out</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.employees?.full_name || 'N/A'}</TableCell>
+                  <TableCell>{item.punch_in_time ? format(new Date(item.punch_in_time), 'HH:mm') : 'N/A'}</TableCell>
+                  <TableCell>{item.punch_out_time ? format(new Date(item.punch_out_time), 'HH:mm') : 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
+                      {item.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+
+      default:
+        return <div>Unknown task type</div>;
+    }
+  };
+
   const renderTaskChecklist = (market: LiveMarket) => {
     const tasks = [
       { 
         label: 'Punch-in Time', 
         completed: !!market.last_punch_in,
         value: market.last_punch_in ? formatTime(market.last_punch_in) : null,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'attendance',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'attendance')
       },
       { 
         label: 'Selfie Uploaded', 
         completed: market.task_stats ? market.task_stats.attendance > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'attendance',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'attendance')
       },
       { 
         label: 'Stall Confirmations', 
         completed: market.stall_confirmations_count > 0,
         value: market.stall_confirmations_count > 0 ? `${market.stall_confirmations_count} stalls` : null,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'stall_confirmations',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'stall_confirmations')
       },
       { 
         label: "Today's Offers", 
         completed: market.task_stats ? market.task_stats.offers > 0 : false,
         value: market.task_stats && market.task_stats.offers > 0 ? `${market.task_stats.offers} items` : null,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'offers',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'offers')
       },
       { 
         label: 'Non-Available Commodities', 
         completed: market.task_stats ? market.task_stats.commodities > 0 : false,
         value: market.task_stats && market.task_stats.commodities > 0 ? `${market.task_stats.commodities} items` : null,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'commodities',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'commodities')
       },
       { 
         label: 'Organiser Feedback', 
         completed: market.task_stats ? market.task_stats.feedback > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'feedback',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'feedback')
       },
       { 
         label: 'Stall Inspection', 
         completed: market.task_stats ? market.task_stats.inspections > 0 : false,
         value: market.task_stats && market.task_stats.inspections > 0 ? `${market.task_stats.inspections} stalls` : null,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'inspections',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'inspections')
       },
       { 
         label: 'Next Day Planning', 
         completed: market.task_stats ? market.task_stats.planning > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'planning',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'planning')
       },
       { 
         label: 'Market Video', 
         completed: market.task_stats ? market.task_stats.market_video > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'market_video',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'market_video')
       },
       { 
         label: 'Cleaning Video', 
         completed: market.task_stats ? market.task_stats.cleaning_video > 0 : false,
-        onClick: () => navigate(`/admin/market/${market.market_id}`)
+        taskType: 'cleaning_video',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'cleaning_video')
       },
     ];
 
@@ -620,6 +978,17 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <Dialog open={taskDialog.open} onOpenChange={(open) => setTaskDialog({ ...taskDialog, open })}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {getTaskTitle(taskDialog.taskType)} - {taskDialog.marketName}
+              </DialogTitle>
+            </DialogHeader>
+            {renderTaskDialogContent()}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
