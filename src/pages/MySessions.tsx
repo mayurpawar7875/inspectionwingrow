@@ -643,16 +643,16 @@ export default function MySessions() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="flex-shrink-0">
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold">My Session History</h1>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold truncate">My Session History</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   View all markets you've attended
                 </p>
               </div>
@@ -661,21 +661,21 @@ export default function MySessions() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Filter className="h-4 w-4" />
               Filters
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search</Label>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="search" className="text-xs sm:text-sm">Search</Label>
                 <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     id="search"
                     placeholder="Market name..."
@@ -683,12 +683,12 @@ export default function MySessions() {
                     onChange={(e) =>
                       setFilters({ ...filters, searchQuery: e.target.value })
                     }
-                    className="pl-8"
+                    className="pl-7 h-8 text-sm"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="dateFrom">From Date</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="dateFrom" className="text-xs sm:text-sm">From Date</Label>
                 <Input
                   id="dateFrom"
                   type="date"
@@ -696,10 +696,11 @@ export default function MySessions() {
                   onChange={(e) =>
                     setFilters({ ...filters, dateFrom: e.target.value })
                   }
+                  className="h-8 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="dateTo">To Date</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="dateTo" className="text-xs sm:text-sm">To Date</Label>
                 <Input
                   id="dateTo"
                   type="date"
@@ -707,17 +708,18 @@ export default function MySessions() {
                   onChange={(e) =>
                     setFilters({ ...filters, dateTo: e.target.value })
                   }
+                  className="h-8 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="status" className="text-xs sm:text-sm">Status</Label>
                 <Select
                   value={filters.status || 'all'}
                   onValueChange={(value) =>
                     setFilters({ ...filters, status: value === 'all' ? '' : value })
                   }
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="h-8 text-sm">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
