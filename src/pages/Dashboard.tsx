@@ -335,23 +335,27 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Employee Dashboard</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex justify-between items-center gap-2 mb-2 sm:mb-0">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm sm:text-2xl font-bold text-foreground">Employee Dashboard</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+              <NotificationBell />
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <NotificationBell />
-            <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
+          <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-0">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/my-sessions')}>
               <History className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">My Sessions</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/install')}>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
               Install App
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
