@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { NotificationBell } from '@/components/NotificationBell';
 import {
@@ -349,19 +350,37 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
-          <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-0">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/my-sessions')}>
-              <History className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">My Sessions</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setLeaveDialog(true)}>
-              <Umbrella className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Request Leave</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
-              Install App
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/my-sessions')}>
+                    <History className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">My Sessions</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>My Sessions</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setLeaveDialog(true)}>
+                    <Umbrella className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Request Leave</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Request Leave</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
+                Install App
+              </Button>
+            </div>
+          </TooltipProvider>
         </div>
       </header>
 
