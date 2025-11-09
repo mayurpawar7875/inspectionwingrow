@@ -337,6 +337,85 @@ export default function AdminDashboard() {
           <p className="text-lg text-muted-foreground">Real-time reporting and analytics</p>
         </div>
 
+        {/* Live Markets Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Live Markets Today</h2>
+            <Badge variant="outline" className="text-sm">{liveMarkets.length} Active</Badge>
+          </div>
+
+          {liveMarkets.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center h-32">
+                <p className="text-muted-foreground">
+                  {isISTMonday() ? 'Markets are closed on Mondays' : 'No active markets today'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {liveMarkets.map((market) => (
+                <Card key={market.market_id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="grid md:grid-cols-[1fr,auto] gap-6 p-6">
+                    {/* Left: Market Info */}
+                    <div 
+                      className="space-y-4 cursor-pointer"
+                      onClick={() => navigate(`/admin/market/${market.market_id}`)}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-xl font-semibold">{market.market_name}</h3>
+                          <Badge variant="default" className="ml-2">{market.active_sessions} active</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {market.city || 'N/A'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Users className="h-4 w-4" />
+                            <span>Employees</span>
+                          </div>
+                          <p className="text-2xl font-bold">{market.active_employees}</p>
+                          {market.employee_names && market.employee_names.length > 0 ? (
+                            <p className="text-sm text-foreground font-medium mt-1">{market.employee_names.join(', ')}</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-1">No employee data</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Upload className="h-4 w-4" />
+                            <span>Uploads</span>
+                          </div>
+                          <p className="text-2xl font-bold">{market.media_uploads_count}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>Last upload: {formatTime(market.last_upload_time)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Task Checklist */}
+                    <div className="md:border-l md:pl-6 md:min-w-[280px]">
+                      <h4 className="text-sm font-medium mb-4">Task Status</h4>
+                      {renderTaskChecklist(market)}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Main Tiles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* BDO Reporting Tile */}
@@ -419,85 +498,6 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Live Markets Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Live Markets Today</h2>
-            <Badge variant="outline" className="text-sm">{liveMarkets.length} Active</Badge>
-          </div>
-
-          {liveMarkets.length === 0 ? (
-            <Card>
-              <CardContent className="flex items-center justify-center h-32">
-                <p className="text-muted-foreground">
-                  {isISTMonday() ? 'Markets are closed on Mondays' : 'No active markets today'}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {liveMarkets.map((market) => (
-                <Card key={market.market_id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="grid md:grid-cols-[1fr,auto] gap-6 p-6">
-                    {/* Left: Market Info */}
-                    <div 
-                      className="space-y-4 cursor-pointer"
-                      onClick={() => navigate(`/admin/market/${market.market_id}`)}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="text-xl font-semibold">{market.market_name}</h3>
-                          <Badge variant="default" className="ml-2">{market.active_sessions} active</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {market.city || 'N/A'}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="h-4 w-4" />
-                            <span>Employees</span>
-                          </div>
-                          <p className="text-2xl font-bold">{market.active_employees}</p>
-                          {market.employee_names && market.employee_names.length > 0 ? (
-                            <p className="text-sm text-foreground font-medium mt-1">{market.employee_names.join(', ')}</p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground mt-1">No employee data</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Upload className="h-4 w-4" />
-                            <span>Uploads</span>
-                          </div>
-                          <p className="text-2xl font-bold">{market.media_uploads_count}</p>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>Last upload: {formatTime(market.last_upload_time)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Task Checklist */}
-                    <div className="md:border-l md:pl-6 md:min-w-[280px]">
-                      <h4 className="text-sm font-medium mb-4">Task Status</h4>
-                      {renderTaskChecklist(market)}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Quick Access Cards */}
