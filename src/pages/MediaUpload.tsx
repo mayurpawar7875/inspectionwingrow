@@ -995,11 +995,11 @@ export default function MediaUpload() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="outside-rates">Upload Media (Image/Video/Audio)</Label>
+              <Label htmlFor="outside-rates">Upload Image</Label>
               <Input
                 id="outside-rates"
                 type="file"
-                accept="image/*,video/*,audio/*"
+                accept="image/*"
                 onChange={handleOutsideRatesUpload}
                 disabled={uploading}
               />
