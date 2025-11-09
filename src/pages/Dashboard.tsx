@@ -395,47 +395,64 @@ export default function Dashboard() {
           <div className="space-y-6">
             {/* Session Info */}
             <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>Today's Session</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-2">
-                      <MapPin className="h-4 w-4" />
-                      {todaySession.market.name} - {todaySession.market.location}
+              <CardHeader className="pb-3 sm:pb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg sm:text-xl">Today's Session</CardTitle>
+                    <CardDescription className="mt-1.5 sm:mt-2 text-xs sm:text-sm break-words">
+                      <span className="font-medium">{todaySession.market.name}</span>
+                      <span className="mx-1">-</span>
+                      <a 
+                        href={todaySession.market.location} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <MapPin className="h-3 w-3 inline" />
+                        <span className="break-all">View Location</span>
+                      </a>
                     </CardDescription>
                   </div>
-                  {getStatusBadge(todaySession.status)}
+                  <div className="flex-shrink-0">
+                    {getStatusBadge(todaySession.status)}
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Punch In</p>
-                      <p className="font-medium">
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Punch In</p>
+                      <p className="font-medium text-sm sm:text-base break-words">
                         {todaySession.punch_in_time
                           ? new Date(todaySession.punch_in_time).toLocaleTimeString()
                           : 'Not recorded'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Punch Out</p>
-                      <p className="font-medium">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Punch Out</p>
+                      <p className="font-medium text-sm sm:text-base break-words">
                         {todaySession.punch_out_time
                           ? new Date(todaySession.punch_out_time).toLocaleTimeString()
                           : 'Not recorded'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date</p>
-                      <p className="font-medium">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Date</p>
+                      <p className="font-medium text-sm sm:text-base break-words">
                         {new Date(todaySession.session_date).toLocaleDateString()}
                       </p>
                     </div>
