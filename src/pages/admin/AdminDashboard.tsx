@@ -417,28 +417,28 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Tiles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* BDO Reporting Tile */}
           <Card 
-            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            className="group cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
             onClick={() => navigate('/admin/bdo-reporting')}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                  <MapPin className="h-8 w-8 text-blue-500" />
+            <CardHeader className="pb-2 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                  <MapPin className="h-5 w-5 text-blue-500" />
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <CardTitle className="text-2xl mt-4">BDO Reporting</CardTitle>
-              <CardDescription>Block Development Officer submissions</CardDescription>
+              <CardTitle className="text-lg">BDO Reporting</CardTitle>
+              <CardDescription className="text-xs">Block Development Officer submissions</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
-                <span className="text-sm font-medium text-muted-foreground">Pending Reviews</span>
-                <span className="text-2xl font-bold text-orange-500">{bdoStats.pending}</span>
+            <CardContent className="space-y-2 p-4 pt-0">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-accent/50">
+                <span className="text-xs font-medium text-muted-foreground">Pending Reviews</span>
+                <span className="text-xl font-bold text-orange-500">{bdoStats.pending}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Activity className="h-3 w-3" />
                 <span>Last update: {getTimeAgo(bdoStats.lastUpdate)}</span>
               </div>
@@ -447,25 +447,25 @@ export default function AdminDashboard() {
 
           {/* Employee Reporting Tile */}
           <Card 
-            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            className="group cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
             onClick={() => navigate('/admin/employee-reporting')}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-xl bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                  <Users className="h-8 w-8 text-green-500" />
+            <CardHeader className="pb-2 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                  <Users className="h-5 w-5 text-green-500" />
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <CardTitle className="text-2xl mt-4">Employee Reporting</CardTitle>
-              <CardDescription>Field staff activities and submissions</CardDescription>
+              <CardTitle className="text-lg">Employee Reporting</CardTitle>
+              <CardDescription className="text-xs">Field staff activities and submissions</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
-                <span className="text-sm font-medium text-muted-foreground">Active Sessions</span>
-                <span className="text-2xl font-bold text-green-500">{employeeStats.active}</span>
+            <CardContent className="space-y-2 p-4 pt-0">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-accent/50">
+                <span className="text-xs font-medium text-muted-foreground">Active Sessions</span>
+                <span className="text-xl font-bold text-green-500">{employeeStats.active}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Activity className="h-3 w-3" />
                 <span>Last update: {getTimeAgo(employeeStats.lastUpdate)}</span>
               </div>
@@ -474,25 +474,25 @@ export default function AdminDashboard() {
 
           {/* Market Manager Reporting Tile */}
           <Card 
-            className="group cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
+            className="group cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
             onClick={() => navigate('/admin/market-reporting')}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                  <Building2 className="h-8 w-8 text-purple-500" />
+            <CardHeader className="pb-2 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                  <Building2 className="h-5 w-5 text-purple-500" />
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <CardTitle className="text-2xl mt-4">Market Manager Reporting</CardTitle>
-              <CardDescription>Live market operations and analytics</CardDescription>
+              <CardTitle className="text-lg">Market Manager Reporting</CardTitle>
+              <CardDescription className="text-xs">Live market operations and analytics</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
-                <span className="text-sm font-medium text-muted-foreground">Live Markets</span>
-                <span className="text-2xl font-bold text-purple-500">{marketStats.live}</span>
+            <CardContent className="space-y-2 p-4 pt-0">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-accent/50">
+                <span className="text-xs font-medium text-muted-foreground">Live Markets</span>
+                <span className="text-xl font-bold text-purple-500">{marketStats.live}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Activity className="h-3 w-3" />
                 <span>Last update: {getTimeAgo(marketStats.lastUpdate)}</span>
               </div>
