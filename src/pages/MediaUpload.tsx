@@ -1154,17 +1154,17 @@ export default function MediaUpload() {
                     </div>
                     <div className="flex-1">
                       <CardTitle>Customer Feedback Video</CardTitle>
-                      <CardDescription>Record customer feedback and experiences</CardDescription>
+                      <CardDescription>Record customer feedback and experiences (video or audio)</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="customer-feedback">Upload Video</Label>
+                    <Label htmlFor="customer-feedback">Upload Video or Audio</Label>
                     <Input
                       id="customer-feedback"
                       type="file"
-                      accept="video/*"
+                      accept="video/*,audio/*"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
@@ -1172,10 +1172,13 @@ export default function MediaUpload() {
                       }}
                       disabled={uploading}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Accepts video and audio files (MP4, MOV, MP3, M4A, etc.)
+                    </p>
                   </div>
                   {media.filter((m) => m.media_type === 'customer_feedback').length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">Uploaded Videos ({media.filter((m) => m.media_type === 'customer_feedback').length})</h4>
+                      <h4 className="font-semibold text-sm">Uploaded Files ({media.filter((m) => m.media_type === 'customer_feedback').length})</h4>
                       {media.filter((m) => m.media_type === 'customer_feedback').map((file) => (
                         <div key={file.id} className="p-3 bg-muted rounded-lg">
                           <div className="flex items-start justify-between gap-2">
