@@ -85,19 +85,19 @@ export default function NonAvailableCommoditiesForm({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-warning" />
-          <CardTitle>Non-Available Commodities</CardTitle>
+          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+          <CardTitle className="text-base sm:text-lg">Non-Available Commodities</CardTitle>
         </div>
-        <CardDescription>List commodities that are not available in this market today</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">List commodities that are not available in this market today</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="p-4 border rounded-lg space-y-4">
+                <div key={field.id} className="p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm">Commodity {index + 1}</h4>
+                    <h4 className="font-semibold text-xs sm:text-sm">Commodity {index + 1}</h4>
                     {fields.length > 1 && (
                       <Button
                         type="button"
@@ -105,7 +105,7 @@ export default function NonAvailableCommoditiesForm({
                         size="sm"
                         onClick={() => remove(index)}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     )}
                   </div>
@@ -115,11 +115,11 @@ export default function NonAvailableCommoditiesForm({
                     name={`commodities.${index}.commodity_name`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Commodity Name</FormLabel>
+                        <FormLabel className="text-xs sm:text-sm">Commodity Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter commodity name" {...field} />
+                          <Input placeholder="Enter commodity name" className="h-8 sm:h-10 text-xs sm:text-sm" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
@@ -129,15 +129,16 @@ export default function NonAvailableCommoditiesForm({
                     name={`commodities.${index}.notes`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes (Optional)</FormLabel>
+                        <FormLabel className="text-xs sm:text-sm">Notes (Optional)</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Add any additional notes" 
+                            className="text-xs sm:text-sm"
                             {...field} 
                             rows={2}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
@@ -149,16 +150,16 @@ export default function NonAvailableCommoditiesForm({
               type="button"
               variant="outline"
               onClick={() => append({ commodity_name: '', notes: '' })}
-              className="w-full"
+              className="w-full h-8 sm:h-10 text-xs sm:text-sm"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Add Another Commodity
             </Button>
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
+            <Button type="submit" disabled={isSubmitting} className="w-full h-8 sm:h-10 text-xs sm:text-sm">
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
