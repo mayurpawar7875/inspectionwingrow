@@ -23,9 +23,6 @@ import {
   Umbrella,
   History,
   Upload,
-  Video,
-  ImageIcon,
-  Sparkles,
 } from 'lucide-react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { Textarea } from '@/components/ui/textarea';
@@ -487,48 +484,12 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Outside Market Rates */}
+                {/* Media Upload */}
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
                   <CardHeader className="p-3 sm:p-4">
                     <Upload className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Outside Rates</CardTitle>
-                    <CardDescription className="text-xs">Upload media</CardDescription>
-                  </CardHeader>
-                </Card>
-
-
-                {/* Rate Board Photo */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <ImageIcon className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Rate Board</CardTitle>
-                    <CardDescription className="text-xs">Photo upload</CardDescription>
-                  </CardHeader>
-                </Card>
-
-                {/* Market Video */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Video className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Market Video</CardTitle>
-                    <CardDescription className="text-xs">Pan video</CardDescription>
-                  </CardHeader>
-                </Card>
-
-                {/* Cleaning Video */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Cleaning</CardTitle>
-                    <CardDescription className="text-xs">Video upload</CardDescription>
-                  </CardHeader>
-                </Card>
-
-                {/* Customer Feedback */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Feedback</CardTitle>
-                    <CardDescription className="text-xs">Customer video</CardDescription>
+                    <CardTitle className="text-sm sm:text-base">Media Upload</CardTitle>
+                    <CardDescription className="text-xs">Upload files</CardDescription>
                   </CardHeader>
                 </Card>
 
