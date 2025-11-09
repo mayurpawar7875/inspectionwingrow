@@ -819,7 +819,7 @@ export default function Dashboard() {
 
       {/* Next Day Planning Dialog */}
       <Dialog open={planningDialog} onOpenChange={setPlanningDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-screen h-screen max-w-full max-h-full overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Next Day Market Planning</DialogTitle>
           </DialogHeader>
