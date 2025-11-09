@@ -9,11 +9,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, FileText, Settings, MonitorPlay } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings } from "lucide-react";
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Live Markets", url: "/admin/live-markets", icon: MonitorPlay },
   { title: "All Sessions", url: "/admin/sessions", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Settings", url: "/admin/settings", icon: Settings },

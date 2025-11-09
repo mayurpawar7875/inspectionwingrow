@@ -19,7 +19,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AllSessions from "./pages/admin/AllSessions";
 import Users from "./pages/admin/Users";
 import LiveMarket from "./pages/admin/LiveMarket";
-import LiveMarkets from "./pages/admin/LiveMarkets";
 import MarketDetail from "./pages/admin/MarketDetail";
 import Settings from "./pages/admin/Settings";
 import LeaveRequests from "./pages/admin/LeaveRequests";
@@ -76,7 +75,6 @@ const App = () => (
               <Route path="/admin/employee-reporting/market/:marketId" element={<ProtectedRoute><AdminLayout><EmployeeReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/market-reporting" element={<ProtectedRoute><AdminLayout><MarketManagerReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/live-market" element={<ProtectedRoute><AdminLayout><LiveMarket /></AdminLayout></ProtectedRoute>} />
-              <Route path="/admin/live-markets" element={<ProtectedRoute><AdminLayout><LiveMarkets /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/sessions" element={<ProtectedRoute><AdminLayout><AllSessions /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AdminLayout><Users /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/leaves" element={<ProtectedRoute><AdminLayout><LeaveRequests /></AdminLayout></ProtectedRoute>} />
