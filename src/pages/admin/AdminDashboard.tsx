@@ -275,36 +275,46 @@ export default function AdminDashboard() {
       { 
         label: 'Punch-in Time', 
         completed: !!market.last_punch_in,
-        value: market.last_punch_in ? formatTime(market.last_punch_in) : null
+        value: market.last_punch_in ? formatTime(market.last_punch_in) : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
         label: 'Selfie Uploaded', 
-        completed: market.task_stats ? market.task_stats.attendance > 0 : false 
+        completed: market.task_stats ? market.task_stats.attendance > 0 : false,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
         label: 'Stall Confirmations', 
         completed: market.stall_confirmations_count > 0,
-        value: market.stall_confirmations_count > 0 ? `${market.stall_confirmations_count} stalls` : null
+        value: market.stall_confirmations_count > 0 ? `${market.stall_confirmations_count} stalls` : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
         label: 'Market Video', 
-        completed: market.task_stats ? market.task_stats.market_video > 0 : false 
+        completed: market.task_stats ? market.task_stats.market_video > 0 : false,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
         label: 'Cleaning Video', 
-        completed: market.task_stats ? market.task_stats.cleaning_video > 0 : false 
+        completed: market.task_stats ? market.task_stats.cleaning_video > 0 : false,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
       { 
         label: 'Media Uploads', 
         completed: market.media_uploads_count > 0,
-        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} files` : null
+        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} files` : null,
+        onClick: () => navigate(`/admin/market/${market.market_id}`)
       },
     ];
 
     return (
       <div className="space-y-3">
         {tasks.map((task, index) => (
-          <div key={index} className="flex items-center gap-3">
+          <div 
+            key={index} 
+            className="flex items-center gap-3 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
+            onClick={task.onClick}
+          >
             <Checkbox checked={task.completed} disabled className="pointer-events-none" />
             <div className="flex-1">
               <div className="text-sm font-medium">{task.label}</div>
@@ -358,11 +368,11 @@ export default function AdminDashboard() {
                 <Card key={market.market_id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="grid md:grid-cols-[1fr,auto] gap-6 p-6">
                     {/* Left: Market Info */}
-                    <div 
-                      className="space-y-4 cursor-pointer"
-                      onClick={() => navigate(`/admin/market/${market.market_id}`)}
-                    >
-                      <div>
+                    <div className="space-y-4">
+                      <div 
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/admin/market/${market.market_id}`)}
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-xl font-semibold">{market.market_name}</h3>
                           <Badge variant="default" className="ml-2">{market.active_sessions} active</Badge>
@@ -373,7 +383,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Users className="h-4 w-4" />
@@ -385,14 +395,6 @@ export default function AdminDashboard() {
                           ) : (
                             <p className="text-xs text-muted-foreground mt-1">No employee data</p>
                           )}
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Upload className="h-4 w-4" />
-                            <span>Uploads</span>
-                          </div>
-                          <p className="text-2xl font-bold">{market.media_uploads_count}</p>
                         </div>
                       </div>
 
