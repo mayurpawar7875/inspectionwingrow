@@ -330,84 +330,188 @@ export default function AdminDashboard() {
           break;
 
         case 'offers':
-          const { data: offers } = await supabase
+          const { data: offersData } = await supabase
             .from('offers')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .order('created_at', { ascending: false });
-          data = offers || [];
+          
+          if (offersData && offersData.length > 0) {
+            const userIds = [...new Set(offersData.map(o => o.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = offersData.map(o => ({
+              ...o,
+              employees: { full_name: employeeMap.get(o.user_id) }
+            }));
+          }
           break;
 
         case 'commodities':
-          const { data: commodities } = await supabase
+          const { data: commoditiesData } = await supabase
             .from('non_available_commodities')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .order('created_at', { ascending: false });
-          data = commodities || [];
+          
+          if (commoditiesData && commoditiesData.length > 0) {
+            const userIds = [...new Set(commoditiesData.map(c => c.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = commoditiesData.map(c => ({
+              ...c,
+              employees: { full_name: employeeMap.get(c.user_id) }
+            }));
+          }
           break;
 
         case 'feedback':
-          const { data: feedback } = await supabase
+          const { data: feedbackData } = await supabase
             .from('organiser_feedback')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .order('created_at', { ascending: false });
-          data = feedback || [];
+          
+          if (feedbackData && feedbackData.length > 0) {
+            const userIds = [...new Set(feedbackData.map(f => f.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = feedbackData.map(f => ({
+              ...f,
+              employees: { full_name: employeeMap.get(f.user_id) }
+            }));
+          }
           break;
 
         case 'inspections':
-          const { data: inspections } = await supabase
+          const { data: inspectionsData } = await supabase
             .from('stall_inspections')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .order('created_at', { ascending: false });
-          data = inspections || [];
+          
+          if (inspectionsData && inspectionsData.length > 0) {
+            const userIds = [...new Set(inspectionsData.map(i => i.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = inspectionsData.map(i => ({
+              ...i,
+              employees: { full_name: employeeMap.get(i.user_id) }
+            }));
+          }
           break;
 
         case 'planning':
-          const { data: planning } = await supabase
+          const { data: planningData } = await supabase
             .from('next_day_planning')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('current_market_date', todayDate)
             .order('created_at', { ascending: false });
-          data = planning || [];
+          
+          if (planningData && planningData.length > 0) {
+            const userIds = [...new Set(planningData.map(p => p.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = planningData.map(p => ({
+              ...p,
+              employees: { full_name: employeeMap.get(p.user_id) }
+            }));
+          }
           break;
 
         case 'market_video':
-          const { data: marketVideos } = await supabase
+          const { data: marketVideosData } = await supabase
             .from('media')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .eq('media_type', 'market_video')
             .order('created_at', { ascending: false });
-          data = marketVideos || [];
+          
+          if (marketVideosData && marketVideosData.length > 0) {
+            const userIds = [...new Set(marketVideosData.map(m => m.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = marketVideosData.map(m => ({
+              ...m,
+              employees: { full_name: employeeMap.get(m.user_id) }
+            }));
+          }
           break;
 
         case 'cleaning_video':
-          const { data: cleaningVideos } = await supabase
+          const { data: cleaningVideosData } = await supabase
             .from('media')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
             .eq('media_type', 'cleaning_video')
             .order('created_at', { ascending: false });
-          data = cleaningVideos || [];
+          
+          if (cleaningVideosData && cleaningVideosData.length > 0) {
+            const userIds = [...new Set(cleaningVideosData.map(m => m.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = cleaningVideosData.map(m => ({
+              ...m,
+              employees: { full_name: employeeMap.get(m.user_id) }
+            }));
+          }
           break;
 
         case 'attendance':
-          const { data: sessions } = await supabase
+          const { data: sessionsData } = await supabase
             .from('sessions')
-            .select('*, employees(full_name)')
+            .select('*')
             .eq('market_id', marketId)
             .eq('session_date', todayDate)
             .order('punch_in_time', { ascending: false });
-          data = sessions || [];
+          
+          if (sessionsData && sessionsData.length > 0) {
+            const userIds = [...new Set(sessionsData.map(s => s.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = sessionsData.map(s => ({
+              ...s,
+              employees: { full_name: employeeMap.get(s.user_id) }
+            }));
+          }
           break;
       }
 
