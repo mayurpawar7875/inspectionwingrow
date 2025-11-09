@@ -155,27 +155,28 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Organiser Feedback & Difficulties</CardTitle>
-        <CardDescription>Report any difficulties faced and provide feedback about the organiser</CardDescription>
+        <CardTitle className="text-base sm:text-lg">Organiser Feedback & Difficulties</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Report any difficulties faced and provide feedback about the organiser</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-3 sm:space-y-4">
             <FormField
               control={form.control}
               name="difficulties"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Difficulties Faced</FormLabel>
+                  <FormLabel className="text-xs sm:text-sm">Difficulties Faced</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe any difficulties or challenges you faced today..."
+                      className="text-xs sm:text-sm"
                       rows={4}
                       disabled={saving}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -185,38 +186,39 @@ export default function OrganiserFeedbackForm({ sessionId, marketId, marketDate,
               name="feedback"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Feedback about Organiser</FormLabel>
+                  <FormLabel className="text-xs sm:text-sm">Feedback about Organiser</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Provide feedback about the organiser's performance..."
+                      className="text-xs sm:text-sm"
                       rows={4}
                       disabled={saving}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} className="h-8 sm:h-10 text-xs sm:text-sm">
                 {saving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     {existingEntry ? 'Update' : 'Save'}
                   </>
                 )}
               </Button>
 
               {existingEntry && (
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving}>
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} className="h-8 sm:h-10 text-xs sm:text-sm">
+                  <Trash2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Delete
                 </Button>
               )}
