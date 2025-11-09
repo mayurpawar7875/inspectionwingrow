@@ -1061,6 +1061,8 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          read: boolean
+          read_at: string | null
           target_user_id: string | null
           title: string
         }
@@ -1068,6 +1070,8 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          read?: boolean
+          read_at?: string | null
           target_user_id?: string | null
           title: string
         }
@@ -1075,6 +1079,8 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          read?: boolean
+          read_at?: string | null
           target_user_id?: string | null
           title?: string
         }

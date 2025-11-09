@@ -4,7 +4,8 @@ import { useAuth } from '@/lib/auth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 interface AdminLayoutProps {
   children: ReactNode;
 }
@@ -31,6 +32,7 @@ export function AdminLayout({
               <p className="text-xs text-muted-foreground truncate hidden sm:block">{user?.email}</p>
             </div>
             <div className="flex gap-2">
+              <NotificationBell />
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Sign Out</span>

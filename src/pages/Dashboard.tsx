@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   LogOut,
   Clock,
@@ -340,6 +341,7 @@ export default function Dashboard() {
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
               <History className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">My Sessions</span>
