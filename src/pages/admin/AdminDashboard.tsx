@@ -317,6 +317,8 @@ export default function AdminDashboard() {
     const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     let data: any[] = [];
 
+    console.log(`[${taskType}] Fetching data for market:`, marketId, marketName, todayDate);
+
     try {
       switch (taskType) {
         case 'stall_confirmations':
@@ -327,6 +329,7 @@ export default function AdminDashboard() {
             .eq('market_date', todayDate)
             .order('created_at', { ascending: false });
           data = confirmations || [];
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'offers':
@@ -335,7 +338,7 @@ export default function AdminDashboard() {
             .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false});
           
           if (offersData && offersData.length > 0) {
             const userIds = [...new Set(offersData.map(o => o.user_id).filter(Boolean))];
@@ -350,6 +353,7 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(o.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'commodities':
@@ -373,6 +377,7 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(c.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'feedback':
@@ -396,6 +401,7 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(f.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'inspections':
@@ -419,28 +425,42 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(i.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'planning':
-          const { data: planningData } = await supabase
-            .from('next_day_planning')
-            .select('*')
-            .eq('current_market_date', todayDate)
-            .order('created_at', { ascending: false });
+          // Get users who have sessions at this market on this date
+          const { data: marketSessionsForPlanning } = await supabase
+            .from('sessions')
+            .select('user_id')
+            .eq('market_id', marketId)
+            .eq('session_date', todayDate);
           
-          if (planningData && planningData.length > 0) {
-            const userIds = [...new Set(planningData.map(p => p.user_id).filter(Boolean))];
-            const { data: employeesData } = await supabase
-              .from('employees')
-              .select('id, full_name')
-              .in('id', userIds);
+          const sessionUserIds = marketSessionsForPlanning?.map(s => s.user_id).filter(Boolean) || [];
+          
+          if (sessionUserIds.length > 0) {
+            const { data: planningData } = await supabase
+              .from('next_day_planning')
+              .select('*')
+              .eq('current_market_date', todayDate)
+              .in('user_id', sessionUserIds)
+              .order('created_at', { ascending: false });
             
-            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
-            data = planningData.map(p => ({
-              ...p,
-              employees: { full_name: employeeMap.get(p.user_id) }
-            }));
+            if (planningData && planningData.length > 0) {
+              const userIds = [...new Set(planningData.map(p => p.user_id).filter(Boolean))];
+              const { data: employeesData } = await supabase
+                .from('employees')
+                .select('id, full_name')
+                .in('id', userIds);
+              
+              const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+              data = planningData.map(p => ({
+                ...p,
+                employees: { full_name: employeeMap.get(p.user_id) }
+              }));
+            }
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'market_video':
@@ -465,6 +485,7 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(m.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'cleaning_video':
@@ -489,6 +510,7 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(m.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
         case 'attendance':
@@ -512,12 +534,14 @@ export default function AdminDashboard() {
               employees: { full_name: employeeMap.get(s.user_id) }
             }));
           }
+          console.log(`[${taskType}] Found ${data.length} records`);
           break;
       }
 
+      console.log(`[${taskType}] Setting dialog with ${data.length} records`);
       setTaskDialog({ open: true, taskType, data, marketName });
     } catch (error) {
-      console.error('Error fetching task data:', error);
+      console.error(`Error fetching ${taskType} data:`, error);
     }
   };
 
