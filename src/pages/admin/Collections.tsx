@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 type PaymentMode = 'cash' | 'online';
 
@@ -275,8 +276,18 @@ export default function Collections() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container-responsive py-3">
-          <h1 className="text-xl font-bold">Market Collections</h1>
-          <p className="text-sm text-muted-foreground">Date: {sessionDate}</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/dashboard')}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-bold">Market Collections</h1>
+          </div>
+          <p className="text-sm text-muted-foreground ml-11">Date: {sessionDate}</p>
         </div>
       </header>
 
