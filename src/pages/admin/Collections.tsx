@@ -275,45 +275,48 @@ export default function Collections() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container-responsive py-3">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="container-responsive py-2">
+          <div className="flex items-center gap-2 mb-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/dashboard')}
-              className="h-8 w-8"
+              className="h-7 w-7"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl font-bold">Market Collections</h1>
+            <h1 className="text-base font-bold">Market Collections</h1>
           </div>
-          <p className="text-sm text-muted-foreground ml-11">Date: {sessionDate}</p>
+          <p className="text-xs text-muted-foreground ml-9">Date: {sessionDate}</p>
         </div>
       </header>
 
-      <main className="container-responsive py-4 space-y-6">
+      <main className="container-responsive py-3 space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Stall Confirmations (Today)</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Stall Confirmations (Today)</CardTitle>
           </CardHeader>
-          <CardContent className="card-padding-responsive">
-            <div className="mb-4 p-3 rounded border space-y-3">
-              <div className="text-sm font-medium">Add Stall & Collection</div>
+          <CardContent className="card-padding-responsive pt-0">
+            <div className="mb-3 p-2 rounded border space-y-2">
+              <div className="text-xs font-medium">Add Stall & Collection</div>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
                 <Input
                   placeholder="Farmer name"
                   value={manualFarmer}
                   onChange={(e) => setManualFarmer(e.target.value)}
+                  className="h-8 text-xs"
                 />
                 <Input
                   placeholder="Stall name"
                   value={manualStallName}
                   onChange={(e) => setManualStallName(e.target.value)}
+                  className="h-8 text-xs"
                 />
                 <Input
                   placeholder="Stall no (optional)"
                   value={manualStallNo}
                   onChange={(e) => setManualStallNo(e.target.value)}
+                  className="h-8 text-xs"
                 />
                 <Input
                   type="number"
@@ -322,18 +325,19 @@ export default function Collections() {
                   placeholder="Amount"
                   value={manualAmount}
                   onChange={(e) => setManualAmount(e.target.value)}
+                  className="h-8 text-xs"
                 />
                 <div className="flex gap-2">
                   <Select value={manualMode} onValueChange={(v) => setManualMode(v as PaymentMode)}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-[140px] h-8 text-xs">
                       <SelectValue placeholder="Mode" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="cash" className="text-xs">Cash</SelectItem>
+                      <SelectItem value="online" className="text-xs">Online</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button onClick={handleAddManualStall} disabled={addingManual}>
+                  <Button onClick={handleAddManualStall} disabled={addingManual} className="h-8 text-xs px-3">
                     {addingManual ? 'Adding…' : 'Add'}
                   </Button>
                 </div>
@@ -343,25 +347,25 @@ export default function Collections() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Farmer</TableHead>
-                    <TableHead>Stall</TableHead>
-                    <TableHead className="w-[140px]">Amount (₹)</TableHead>
-                    <TableHead className="w-[140px]">Mode</TableHead>
+                    <TableHead className="text-xs py-2">Farmer</TableHead>
+                    <TableHead className="text-xs py-2">Stall</TableHead>
+                    <TableHead className="w-[120px] text-xs py-2">Amount (₹)</TableHead>
+                    <TableHead className="w-[120px] text-xs py-2">Mode</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground text-xs py-3">
                         No stall confirmations found for today
                       </TableCell>
                     </TableRow>
                   ) : (
                     rows.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.farmer_name}</TableCell>
-                        <TableCell>{r.stall_name}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium text-xs py-2">{r.farmer_name}</TableCell>
+                        <TableCell className="text-xs py-2">{r.stall_name}</TableCell>
+                        <TableCell className="py-2">
                           <Input
                             type="number"
                             min="0"
@@ -369,19 +373,20 @@ export default function Collections() {
                             value={r.amount}
                             onChange={(e) => setRowValue(r.id, 'amount', e.target.value)}
                             placeholder="0"
+                            className="h-7 text-xs"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-2">
                           <Select
                             value={r.mode}
                             onValueChange={(v) => setRowValue(r.id, 'mode', v as PaymentMode)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="h-7 text-xs">
                               <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="cash">Cash</SelectItem>
-                              <SelectItem value="online">Online</SelectItem>
+                              <SelectItem value="cash" className="text-xs">Cash</SelectItem>
+                              <SelectItem value="online" className="text-xs">Online</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -395,33 +400,33 @@ export default function Collections() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Totals</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Totals</CardTitle>
           </CardHeader>
-          <CardContent className="card-padding-responsive">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-3 rounded border">
-                <div className="text-sm text-muted-foreground">Total Cash</div>
-                <div className="text-xl font-semibold">₹{totals.cash.toLocaleString('en-IN')}</div>
+          <CardContent className="card-padding-responsive pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-2 rounded border">
+                <div className="text-xs text-muted-foreground">Total Cash</div>
+                <div className="text-base font-semibold">₹{totals.cash.toLocaleString('en-IN')}</div>
               </div>
-              <div className="p-3 rounded border">
-                <div className="text-sm text-muted-foreground">Total Online</div>
-                <div className="text-xl font-semibold">₹{totals.online.toLocaleString('en-IN')}</div>
+              <div className="p-2 rounded border">
+                <div className="text-xs text-muted-foreground">Total Online</div>
+                <div className="text-base font-semibold">₹{totals.online.toLocaleString('en-IN')}</div>
               </div>
-              <div className="p-3 rounded border">
-                <div className="text-sm text-muted-foreground">Grand Total</div>
-                <div className="text-xl font-semibold">₹{totals.grand.toLocaleString('en-IN')}</div>
+              <div className="p-2 rounded border">
+                <div className="text-xs text-muted-foreground">Grand Total</div>
+                <div className="text-base font-semibold">₹{totals.grand.toLocaleString('en-IN')}</div>
               </div>
             </div>
 
-            <div className="mt-6 p-3 rounded border space-y-3">
-              <div className="text-sm font-medium">Cash Deposit Proof (optional)</div>
-              <div className="text-sm text-muted-foreground">
+            <div className="mt-4 p-2 rounded border space-y-2">
+              <div className="text-xs font-medium">Cash Deposit Proof (optional)</div>
+              <div className="text-xs text-muted-foreground">
                 Upload the bank cash deposit slip/screenshot for today.
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                <Input type="file" accept="image/*" onChange={handleDepositFileChange} />
-                <Button variant="secondary" onClick={uploadCashDepositProof} disabled={uploadingDeposit || !depositFile}>
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                <Input type="file" accept="image/*" onChange={handleDepositFileChange} className="h-8 text-xs" />
+                <Button variant="secondary" onClick={uploadCashDepositProof} disabled={uploadingDeposit || !depositFile} className="h-8 text-xs px-3">
                   {uploadingDeposit ? 'Uploading…' : 'Upload Proof'}
                 </Button>
               </div>
@@ -432,8 +437,8 @@ export default function Collections() {
               )}
             </div>
 
-            <div className="mt-4 flex justify-end">
-              <Button onClick={finalize} disabled={saving || rows.length === 0}>
+            <div className="mt-3 flex justify-end">
+              <Button onClick={finalize} disabled={saving || rows.length === 0} className="h-8 text-xs px-4">
                 {saving ? 'Saving…' : 'Finalize & Save'}
               </Button>
             </div>
