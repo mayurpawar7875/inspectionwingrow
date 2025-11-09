@@ -332,7 +332,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error (ignoring):', error);
+      // Ignore errors - clear local state anyway
+    }
+    // Force clear local state
+    setUser(null);
+    setSession(null);
+    setUserRoles([]);
+    setCurrentRole(null);
+    setIsAdmin(false);
   };
 
   return (
