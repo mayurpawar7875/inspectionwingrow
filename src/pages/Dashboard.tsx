@@ -354,6 +354,10 @@ export default function Dashboard() {
               <History className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">My Sessions</span>
             </Button>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setLeaveDialog(true)}>
+              <Umbrella className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Request Leave</span>
+            </Button>
             <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
               Install App
             </Button>
@@ -582,14 +586,6 @@ export default function Dashboard() {
                   </CardHeader>
                 </Card>
 
-                {/* Leave Request */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setLeaveDialog(true)}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Umbrella className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Leave</CardTitle>
-                    <CardDescription className="text-xs">Request leave</CardDescription>
-                  </CardHeader>
-                </Card>
 
                 {/* Collection Sheet */}
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleOpenCollectionSheet}>
