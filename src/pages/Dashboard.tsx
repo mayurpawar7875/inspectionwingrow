@@ -495,14 +495,6 @@ export default function Dashboard() {
                   </CardHeader>
                 </Card>
 
-                {/* Selfie + GPS */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Camera className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Selfie + GPS</CardTitle>
-                    <CardDescription className="text-xs">With location</CardDescription>
-                  </CardHeader>
-                </Card>
 
                 {/* Rate Board Photo */}
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
