@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,8 @@ interface MediaFile {
 export default function MediaUpload() {
   const { user, currentRole } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const uploadType = searchParams.get('type');
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -930,8 +932,62 @@ export default function MediaUpload() {
           </>
         ) : (
           <>
+            {/* Outside Market Rates */}
+            {uploadType === 'outside_rates' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/10 rounded-lg">
+                      <Upload className="h-6 w-6 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Outside Market Rates</CardTitle>
+                      <CardDescription>Suggested: 2:00 PM - 2:15 PM IST</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="outside-rates">Upload Media (Image/Video/Audio)</Label>
+                    <Input
+                      id="outside-rates"
+                      type="file"
+                      accept="image/*,video/*,audio/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await handleFileUpload(file, 'outside_rates');
+                      }}
+                      disabled={uploading}
+                    />
+                  </div>
+                  {media.filter((m) => m.media_type === 'outside_rates').length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Uploaded Files ({media.filter((m) => m.media_type === 'outside_rates').length})</h4>
+                      {media.filter((m) => m.media_type === 'outside_rates').map((file) => (
+                        <div key={file.id} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded at {new Date(file.captured_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                              </p>
+                            </div>
+                            {file.is_late && (
+                              <span className="text-xs font-semibold text-destructive">Late Upload</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Big Rate Board Photo */}
-            <Card>
+            {uploadType === 'rate_board' && (
+              <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-accent/10 rounded-lg">
@@ -980,6 +1036,166 @@ export default function MediaUpload() {
                 )}
               </CardContent>
             </Card>
+            )}
+
+            {/* Market Video */}
+            {uploadType === 'market_video' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/10 rounded-lg">
+                      <Upload className="h-6 w-6 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Market Video</CardTitle>
+                      <CardDescription>Suggested: 4:00 PM - 4:15 PM IST</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="market-video">Upload Video</Label>
+                    <Input
+                      id="market-video"
+                      type="file"
+                      accept="video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await handleFileUpload(file, 'market_video');
+                      }}
+                      disabled={uploading}
+                    />
+                  </div>
+                  {media.filter((m) => m.media_type === 'market_video').length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Uploaded Videos ({media.filter((m) => m.media_type === 'market_video').length})</h4>
+                      {media.filter((m) => m.media_type === 'market_video').map((file) => (
+                        <div key={file.id} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded at {new Date(file.captured_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                              </p>
+                            </div>
+                            {file.is_late && (
+                              <span className="text-xs font-semibold text-destructive">Late Upload</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Market Space Cleaning Video */}
+            {uploadType === 'cleaning_video' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/10 rounded-lg">
+                      <Upload className="h-6 w-6 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Market Space Cleaning Video</CardTitle>
+                      <CardDescription>Suggested: 9:15 PM - 9:30 PM IST</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaning-video">Upload Video</Label>
+                    <Input
+                      id="cleaning-video"
+                      type="file"
+                      accept="video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await handleFileUpload(file, 'cleaning_video');
+                      }}
+                      disabled={uploading}
+                    />
+                  </div>
+                  {media.filter((m) => m.media_type === 'cleaning_video').length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Uploaded Videos ({media.filter((m) => m.media_type === 'cleaning_video').length})</h4>
+                      {media.filter((m) => m.media_type === 'cleaning_video').map((file) => (
+                        <div key={file.id} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded at {new Date(file.captured_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                              </p>
+                            </div>
+                            {file.is_late && (
+                              <span className="text-xs font-semibold text-destructive">Late Upload</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Customer Feedback Video */}
+            {uploadType === 'customer_feedback' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/10 rounded-lg">
+                      <Upload className="h-6 w-6 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Customer Feedback Video</CardTitle>
+                      <CardDescription>Record customer feedback and experiences</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customer-feedback">Upload Video</Label>
+                    <Input
+                      id="customer-feedback"
+                      type="file"
+                      accept="video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await handleFileUpload(file, 'customer_feedback');
+                      }}
+                      disabled={uploading}
+                    />
+                  </div>
+                  {media.filter((m) => m.media_type === 'customer_feedback').length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Uploaded Videos ({media.filter((m) => m.media_type === 'customer_feedback').length})</h4>
+                      {media.filter((m) => m.media_type === 'customer_feedback').map((file) => (
+                        <div key={file.id} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded at {new Date(file.captured_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                              </p>
+                            </div>
+                            {file.is_late && (
+                              <span className="text-xs font-semibold text-destructive">Late Upload</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 

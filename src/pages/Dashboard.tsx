@@ -487,7 +487,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Outside Market Rates */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload?type=outside_rates')}>
                   <CardHeader className="p-3 sm:p-4">
                     <Upload className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Outside Rates</CardTitle>
@@ -496,7 +496,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Rate Board Photo */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload?type=rate_board')}>
                   <CardHeader className="p-3 sm:p-4">
                     <ImageIcon className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Rate Board</CardTitle>
@@ -505,7 +505,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Market Video */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload?type=market_video')}>
                   <CardHeader className="p-3 sm:p-4">
                     <Video className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Market Video</CardTitle>
@@ -514,7 +514,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Cleaning Video */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload?type=cleaning_video')}>
                   <CardHeader className="p-3 sm:p-4">
                     <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Cleaning</CardTitle>
@@ -523,7 +523,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Customer Feedback */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload')}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/media-upload?type=customer_feedback')}>
                   <CardHeader className="p-3 sm:p-4">
                     <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Feedback</CardTitle>
