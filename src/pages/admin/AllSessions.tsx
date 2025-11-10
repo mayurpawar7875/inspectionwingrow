@@ -27,6 +27,7 @@ interface Session {
   punch_in_time: string | null;
   punch_out_time: string | null;
   status: string;
+  statuses?: string[]; // Array of all statuses (for expired + incomplete)
   finalized_at: string | null;
   employees: { full_name: string; phone: string | null } | null;
   markets: { name: string; location: string } | null;
@@ -226,11 +227,11 @@ export default function AllSessions() {
         }
       });
 
-      // Helper to calculate actual status
-      const calculateStatus = (session: any, tasks: any) => {
+      // Helper to calculate actual status - returns array of statuses
+      const calculateStatus = (session: any, tasks: any): string[] => {
         // If already finalized, keep it
         if (session.status === 'finalized' || session.status === 'locked') {
-          return session.status;
+          return [session.status];
         }
 
         // Check if all required tasks are completed
@@ -246,47 +247,36 @@ export default function AllSessions() {
 
         // If all tasks done and punched out, mark as completed
         if (allTasksCompleted && session.punch_out_time) {
-          console.log(`Session ${session.id} - COMPLETED (all tasks + punch out)`);
-          return 'completed';
+          return ['completed'];
         }
 
         // Otherwise, determine if session date has passed
-        // Get today's date in IST timezone (date only, no time)
         const nowUTC = new Date();
         const istTimeString = nowUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
         const istDate = new Date(istTimeString);
         const todayIST = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
         
-        const sessionDateStr = session.session_date; // Format: YYYY-MM-DD
-        
-        console.log(`Session ${session.id} - Date comparison:`, {
-          sessionDate: sessionDateStr,
-          todayIST: todayIST,
-          isPast: sessionDateStr < todayIST,
-          tasks,
-          employee: session.employees?.full_name
-        });
+        const sessionDateStr = session.session_date;
 
         // Compare dates as strings (YYYY-MM-DD format allows direct comparison)
         if (sessionDateStr < todayIST) {
-          // Date has passed (after midnight)
-          console.log(`Session ${session.id} - EXPIRED (past date, incomplete tasks)`);
-          return 'expired';
+          // Date has passed (after midnight) - show BOTH expired AND incomplete
+          return ['expired', 'incomplete'];
         } else {
-          // Current day or future
-          console.log(`Session ${session.id} - INCOMPLETE (current/future date, incomplete tasks)`);
-          return 'incomplete';
+          // Current day or future - just incomplete
+          return ['incomplete'];
         }
       };
 
       // Match stalls (prefer new stall_confirmations by market/date; fallback to legacy stalls by session)
       const sessionsWithData = sessions.map((session: any) => {
         const tasks = tasksBySession[session.id];
-        const actualStatus = calculateStatus(session, tasks);
+        const statuses = calculateStatus(session, tasks);
         
         return {
           ...session,
-          status: actualStatus, // Override with calculated status
+          status: statuses[0], // Primary status for filtering
+          statuses: statuses, // All statuses for display
           employees: empById[session.user_id] || null,
           markets: mktById[session.market_id] || null,
           stalls: (() => {
@@ -523,7 +513,11 @@ export default function AllSessions() {
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">{session.employees?.full_name || 'Unknown'}</h3>
-                      {getStatusBadge(session.status)}
+                      <div className="flex gap-2">
+                        {(session.statuses || [session.status]).map((status: string, idx: number) => (
+                          <span key={idx}>{getStatusBadge(status)}</span>
+                        ))}
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
