@@ -178,19 +178,110 @@ export default function AllSessions() {
         mediaBySession[media.session_id].push(media);
       });
 
+      // Fetch task data for all sessions to determine actual completion status
+      const taskChecks = await Promise.all([
+        supabase.from('offers').select('session_id').in('session_id', sessionIds),
+        supabase.from('non_available_commodities').select('session_id').in('session_id', sessionIds),
+        supabase.from('organiser_feedback').select('session_id').in('session_id', sessionIds),
+        supabase.from('stall_inspections').select('session_id').in('session_id', sessionIds),
+        supabase.from('next_day_planning').select('session_id').in('session_id', sessionIds)
+      ]);
+
+      const [offersData, commoditiesData, feedbackData, inspectionsData, planningData] = taskChecks.map(r => r.data || []);
+      
+      const tasksBySession: Record<string, { offers: boolean; commodities: boolean; feedback: boolean; inspections: boolean; planning: boolean; attendance: boolean; marketVideo: boolean; cleaningVideo: boolean }> = {};
+      
+      offersData.forEach((o: any) => {
+        if (!tasksBySession[o.session_id]) tasksBySession[o.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        tasksBySession[o.session_id].offers = true;
+      });
+      commoditiesData.forEach((c: any) => {
+        if (!tasksBySession[c.session_id]) tasksBySession[c.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        tasksBySession[c.session_id].commodities = true;
+      });
+      feedbackData.forEach((f: any) => {
+        if (!tasksBySession[f.session_id]) tasksBySession[f.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        tasksBySession[f.session_id].feedback = true;
+      });
+      inspectionsData.forEach((i: any) => {
+        if (!tasksBySession[i.session_id]) tasksBySession[i.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        tasksBySession[i.session_id].inspections = true;
+      });
+      planningData.forEach((p: any) => {
+        if (!tasksBySession[p.session_id]) tasksBySession[p.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        tasksBySession[p.session_id].planning = true;
+      });
+
+      // Check media for attendance (photo), market_video, and cleaning_video
+      (mediaData || []).forEach((media: any) => {
+        if (!tasksBySession[media.session_id]) tasksBySession[media.session_id] = { offers: false, commodities: false, feedback: false, inspections: false, planning: false, attendance: false, marketVideo: false, cleaningVideo: false };
+        if (media.media_type === 'photo' || media.media_type === 'attendance') {
+          tasksBySession[media.session_id].attendance = true;
+        }
+        if (media.media_type === 'market_video') {
+          tasksBySession[media.session_id].marketVideo = true;
+        }
+        if (media.media_type === 'cleaning_video') {
+          tasksBySession[media.session_id].cleaningVideo = true;
+        }
+      });
+
+      // Helper to calculate actual status
+      const calculateStatus = (session: any, tasks: any) => {
+        // If already finalized, keep it
+        if (session.status === 'finalized' || session.status === 'locked') {
+          return session.status;
+        }
+
+        const sessionDate = new Date(session.session_date);
+        const now = new Date();
+        const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const istMidnight = new Date(istNow);
+        istMidnight.setHours(0, 0, 0, 0);
+        
+        // Check if session date has passed (it's past midnight IST)
+        const isPastMidnight = sessionDate < istMidnight;
+
+        // Check if all required tasks are completed
+        const allTasksCompleted = tasks && 
+          tasks.offers && 
+          tasks.commodities && 
+          tasks.feedback && 
+          tasks.inspections && 
+          tasks.planning && 
+          tasks.attendance && 
+          tasks.marketVideo && 
+          tasks.cleaningVideo;
+
+        // Determine status
+        if (isPastMidnight && !allTasksCompleted) {
+          return 'expired';
+        } else if (allTasksCompleted && session.punch_out_time) {
+          return 'completed';
+        } else {
+          return 'incomplete';
+        }
+      };
+
       // Match stalls (prefer new stall_confirmations by market/date; fallback to legacy stalls by session)
-      const sessionsWithData = sessions.map((session: any) => ({
-        ...session,
-        employees: empById[session.user_id] || null,
-        markets: mktById[session.market_id] || null,
-        stalls: (() => {
-          const dateStr = toIST(session.market_date || session.session_date);
-          const key = `${session.market_id}|${dateStr}|${session.user_id}`;
-          if (stallConfsByKey[key] && stallConfsByKey[key].length) return stallConfsByKey[key];
-          return stallsBySession[session.id] || [];
-        })(),
-        media: mediaBySession[session.id] || []
-      }));
+      const sessionsWithData = sessions.map((session: any) => {
+        const tasks = tasksBySession[session.id];
+        const actualStatus = calculateStatus(session, tasks);
+        
+        return {
+          ...session,
+          status: actualStatus, // Override with calculated status
+          employees: empById[session.user_id] || null,
+          markets: mktById[session.market_id] || null,
+          stalls: (() => {
+            const dateStr = toIST(session.market_date || session.session_date);
+            const key = `${session.market_id}|${dateStr}|${session.user_id}`;
+            if (stallConfsByKey[key] && stallConfsByKey[key].length) return stallConfsByKey[key];
+            return stallsBySession[session.id] || [];
+          })(),
+          media: mediaBySession[session.id] || []
+        };
+      });
 
       // Create virtual sessions for users who have stall confirmations but no sessions
       const existingSessionKeys = new Set(sessions.map((s: any) => `${s.market_id}|${toIST(s.market_date || s.session_date)}|${s.user_id}`));
@@ -287,11 +378,13 @@ export default function AllSessions() {
     const colors = {
       active: 'bg-info text-info-foreground',
       completed: 'bg-success text-success-foreground',
+      incomplete: 'bg-warning text-warning-foreground',
+      expired: 'bg-destructive text-destructive-foreground',
       finalized: 'bg-success text-success-foreground',
       locked: 'bg-muted text-muted-foreground',
       stall_confirmations_only: 'bg-orange-100 text-orange-800',
     };
-    return <Badge className={colors[status as keyof typeof colors]}>{status.replace('_', ' ')}</Badge>;
+    return <Badge className={colors[status as keyof typeof colors] || 'bg-muted text-muted-foreground'}>{status.replace('_', ' ')}</Badge>;
   };
 
   if (loading) {
@@ -353,6 +446,8 @@ export default function AllSessions() {
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="incomplete">Incomplete</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
                   <SelectItem value="finalized">Finalized</SelectItem>
                   <SelectItem value="locked">Locked</SelectItem>
                   <SelectItem value="stall_confirmations_only">Stall Confirmations Only</SelectItem>
