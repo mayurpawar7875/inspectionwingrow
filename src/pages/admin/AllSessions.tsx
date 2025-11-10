@@ -233,14 +233,17 @@ export default function AllSessions() {
           return session.status;
         }
 
-        const sessionDate = new Date(session.session_date);
+        // Get current date in IST (only date part, no time)
         const now = new Date();
         const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        const istMidnight = new Date(istNow);
-        istMidnight.setHours(0, 0, 0, 0);
+        const todayIST = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
         
-        // Check if session date has passed (it's past midnight IST)
-        const isPastMidnight = sessionDate < istMidnight;
+        // Parse session date (YYYY-MM-DD format)
+        const [year, month, day] = session.session_date.split('-').map(Number);
+        const sessionDate = new Date(year, month - 1, day);
+        
+        // Check if session date is before today (past midnight)
+        const isPastMidnight = sessionDate < todayIST;
 
         // Check if all required tasks are completed
         const allTasksCompleted = tasks && 
@@ -254,10 +257,10 @@ export default function AllSessions() {
           tasks.cleaningVideo;
 
         // Determine status
-        if (isPastMidnight && !allTasksCompleted) {
-          return 'expired';
-        } else if (allTasksCompleted && session.punch_out_time) {
+        if (allTasksCompleted && session.punch_out_time) {
           return 'completed';
+        } else if (isPastMidnight && !allTasksCompleted) {
+          return 'expired';
         } else {
           return 'incomplete';
         }
