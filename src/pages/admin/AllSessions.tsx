@@ -233,18 +233,6 @@ export default function AllSessions() {
           return session.status;
         }
 
-        // Get current date in IST (only date part, no time)
-        const now = new Date();
-        const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        const todayIST = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
-        
-        // Parse session date (YYYY-MM-DD format)
-        const [year, month, day] = session.session_date.split('-').map(Number);
-        const sessionDate = new Date(year, month - 1, day);
-        
-        // Check if session date is before today (past midnight)
-        const isPastMidnight = sessionDate < todayIST;
-
         // Check if all required tasks are completed
         const allTasksCompleted = tasks && 
           tasks.offers && 
@@ -256,23 +244,37 @@ export default function AllSessions() {
           tasks.marketVideo && 
           tasks.cleaningVideo;
 
-        console.log('Status Calculation:', {
-          sessionDate: session.session_date,
-          sessionDateParsed: sessionDate,
-          todayIST,
-          isPastMidnight,
+        // If all tasks done and punched out, mark as completed
+        if (allTasksCompleted && session.punch_out_time) {
+          console.log(`Session ${session.id} - COMPLETED (all tasks + punch out)`);
+          return 'completed';
+        }
+
+        // Otherwise, determine if session date has passed
+        // Get today's date in IST timezone (date only, no time)
+        const nowUTC = new Date();
+        const istTimeString = nowUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        const istDate = new Date(istTimeString);
+        const todayIST = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
+        
+        const sessionDateStr = session.session_date; // Format: YYYY-MM-DD
+        
+        console.log(`Session ${session.id} - Date comparison:`, {
+          sessionDate: sessionDateStr,
+          todayIST: todayIST,
+          isPast: sessionDateStr < todayIST,
           tasks,
-          allTasksCompleted,
-          punchOut: session.punch_out_time,
           employee: session.employees?.full_name
         });
 
-        // Determine status
-        if (allTasksCompleted && session.punch_out_time) {
-          return 'completed';
-        } else if (isPastMidnight && !allTasksCompleted) {
+        // Compare dates as strings (YYYY-MM-DD format allows direct comparison)
+        if (sessionDateStr < todayIST) {
+          // Date has passed (after midnight)
+          console.log(`Session ${session.id} - EXPIRED (past date, incomplete tasks)`);
           return 'expired';
         } else {
+          // Current day or future
+          console.log(`Session ${session.id} - INCOMPLETE (current/future date, incomplete tasks)`);
           return 'incomplete';
         }
       };
