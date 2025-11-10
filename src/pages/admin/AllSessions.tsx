@@ -256,6 +256,17 @@ export default function AllSessions() {
           tasks.marketVideo && 
           tasks.cleaningVideo;
 
+        console.log('Status Calculation:', {
+          sessionDate: session.session_date,
+          sessionDateParsed: sessionDate,
+          todayIST,
+          isPastMidnight,
+          tasks,
+          allTasksCompleted,
+          punchOut: session.punch_out_time,
+          employee: session.employees?.full_name
+        });
+
         // Determine status
         if (allTasksCompleted && session.punch_out_time) {
           return 'completed';
