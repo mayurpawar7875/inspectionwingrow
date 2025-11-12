@@ -34,6 +34,8 @@ import EmployeeReporting from "./pages/admin/EmployeeReporting";
 import EmployeeCitySelection from "./pages/admin/EmployeeCitySelection";
 import EmployeeMarketsList from "./pages/admin/EmployeeMarketsList";
 import MarketManagerReporting from "./pages/admin/MarketManagerReporting";
+import AssetRequests from "./pages/AssetRequests";
+import { AssetManagement } from "./components/admin/AssetManagement";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,7 +70,9 @@ const App = () => (
               <Route path="/finalize" element={<ProtectedRoute><Finalize /></ProtectedRoute>} />
               <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
               <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
+              <Route path="/asset-requests" element={<ProtectedRoute><AssetRequests /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/asset-management" element={<ProtectedRoute><AdminLayout><AssetManagement /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/bdo-reporting" element={<ProtectedRoute><AdminLayout><BDOReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/employee-reporting" element={<ProtectedRoute><AdminLayout><EmployeeCitySelection /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/employee-reporting/city/:city" element={<ProtectedRoute><AdminLayout><EmployeeMarketsList /></AdminLayout></ProtectedRoute>} />

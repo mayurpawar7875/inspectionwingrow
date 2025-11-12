@@ -28,6 +28,7 @@ import {
   Video,
   ImageIcon,
   Sparkles,
+  Package,
 } from 'lucide-react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { Textarea } from '@/components/ui/textarea';
@@ -605,6 +606,14 @@ export default function Dashboard() {
                   </CardHeader>
                 </Card>
 
+                {/* Asset Requests */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/asset-requests')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <Package className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Assets</CardTitle>
+                    <CardDescription className="text-xs">Request items</CardDescription>
+                  </CardHeader>
+                </Card>
 
                 {/* Collection Sheet */}
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleOpenCollectionSheet}>

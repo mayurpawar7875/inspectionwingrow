@@ -83,6 +83,190 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_inventory: {
+        Row: {
+          asset_name: string
+          available_quantity: number
+          created_at: string
+          description: string | null
+          id: string
+          issued_quantity: number
+          total_quantity: number
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          asset_name: string
+          available_quantity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          issued_quantity?: number
+          total_quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          asset_name?: string
+          available_quantity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          issued_quantity?: number
+          total_quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asset_payments: {
+        Row: {
+          amount_received: number
+          asset_id: string
+          created_at: string
+          id: string
+          payment_date: string
+          payment_mode: string
+          payment_proof_url: string | null
+          request_id: string
+          requester_id: string
+          updated_at: string
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount_received: number
+          asset_id: string
+          created_at?: string
+          id?: string
+          payment_date: string
+          payment_mode: string
+          payment_proof_url?: string | null
+          request_id: string
+          requester_id: string
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount_received?: number
+          asset_id?: string
+          created_at?: string
+          id?: string
+          payment_date?: string
+          payment_mode?: string
+          payment_proof_url?: string | null
+          request_id?: string
+          requester_id?: string
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_payments_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "asset_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_payments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "asset_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_requests: {
+        Row: {
+          actual_return_date: string | null
+          approval_date: string | null
+          approved_by: string | null
+          asset_id: string
+          created_at: string
+          expected_return_date: string | null
+          id: string
+          market_id: string | null
+          purpose: string
+          quantity: number
+          rejection_reason: string | null
+          remarks: string | null
+          request_date: string
+          requester_id: string
+          requester_role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_return_date?: string | null
+          approval_date?: string | null
+          approved_by?: string | null
+          asset_id: string
+          created_at?: string
+          expected_return_date?: string | null
+          id?: string
+          market_id?: string | null
+          purpose: string
+          quantity: number
+          rejection_reason?: string | null
+          remarks?: string | null
+          request_date?: string
+          requester_id: string
+          requester_role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_return_date?: string | null
+          approval_date?: string | null
+          approved_by?: string | null
+          asset_id?: string
+          created_at?: string
+          expected_return_date?: string | null
+          id?: string
+          market_id?: string | null
+          purpose?: string
+          quantity?: number
+          rejection_reason?: string | null
+          remarks?: string | null
+          request_date?: string
+          requester_id?: string
+          requester_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_requests_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "asset_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_requests_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "asset_requests_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assets_money_recovery: {
         Row: {
           created_at: string
