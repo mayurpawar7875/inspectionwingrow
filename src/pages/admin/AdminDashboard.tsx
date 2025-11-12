@@ -205,8 +205,6 @@ export default function AdminDashboard() {
               .eq('session_date', todayDate)
               .eq('status', 'active');
             
-            console.log('Sessions for market', market.market_name, ':', sessionsData, sessionsError);
-            
             const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
             let employeeNames: string[] = [];
             
@@ -216,11 +214,8 @@ export default function AdminDashboard() {
                 .select('full_name')
                 .in('id', userIds);
               
-              console.log('Profiles data:', profilesData, 'for userIds:', userIds, profilesError);
               employeeNames = profilesData?.map((p: any) => p.full_name).filter(Boolean) || [];
             }
-            
-            console.log('Employee names for', market.market_name, ':', employeeNames);
             
             return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
@@ -913,36 +908,34 @@ export default function AdminDashboard() {
             <div className="grid gap-4">
               {liveMarkets.map((market) => (
                 <Card key={market.market_id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="grid md:grid-cols-[1fr,auto] gap-6 p-6">
-                    {/* Left: Market Info */}
-                    <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
+                    {/* Left Column: Market Info */}
+                    <div className="space-y-3">
                       <div 
                         className="cursor-pointer"
                         onClick={() => navigate(`/admin/market/${market.market_id}`)}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <h3 className="text-xl font-semibold">{market.market_name}</h3>
-                          <Badge variant="default" className="ml-2">{market.active_sessions} active</Badge>
+                          <h3 className="text-lg md:text-xl font-semibold">{market.market_name}</h3>
+                          <Badge variant="default" className="ml-2 text-xs">{market.active_sessions} active</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
                           {market.city || 'N/A'}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="h-4 w-4" />
-                            <span>Employees</span>
-                          </div>
-                          <p className="text-2xl font-bold">{market.active_employees}</p>
-                          {market.employee_names && market.employee_names.length > 0 ? (
-                            <p className="text-sm text-foreground font-medium mt-1">{market.employee_names.join(', ')}</p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground mt-1">No employee data</p>
-                          )}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>Employees</span>
                         </div>
+                        <p className="text-xl md:text-2xl font-bold">{market.active_employees}</p>
+                        {market.employee_names && market.employee_names.length > 0 ? (
+                          <p className="text-xs md:text-sm text-foreground font-medium">{market.employee_names.join(', ')}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No employee data</p>
+                        )}
                       </div>
 
                       <div className="pt-2 border-t">
@@ -953,9 +946,9 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Right: Task Checklist */}
-                    <div className="md:border-l md:pl-6 md:min-w-[280px]">
-                      <h4 className="text-sm font-medium mb-4">Task Status</h4>
+                    {/* Right Column: Task Status */}
+                    <div className="md:border-l md:pl-6 space-y-3">
+                      <h4 className="text-sm font-semibold">Task Status</h4>
                       {renderTaskChecklist(market)}
                     </div>
                   </div>
