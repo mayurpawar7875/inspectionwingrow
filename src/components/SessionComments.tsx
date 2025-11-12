@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { MessageSquare } from 'lucide-react';
+
+const commentSchema = z.object({
+  comment: z.string().trim().min(1, 'Comment cannot be empty').max(1000, 'Comment must be less than 1000 characters'),
+});
 
 interface Comment {
   id: string;
@@ -45,7 +50,16 @@ export function SessionComments({ sessionId }: SessionCommentsProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    
+    // Validate input
+    try {
+      commentSchema.parse({ comment: newComment });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
 
     setLoading(true);
     try {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,12 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Save, Trash2, Calendar, Plus, X } from 'lucide-react';
+
+const nextDayPlanSchema = z.object({
+  marketName: z.string().trim().min(1, 'Market name is required').max(200, 'Market name must be less than 200 characters'),
+  farmerName: z.string().trim().min(1, 'Farmer name is required').max(200, 'Farmer name must be less than 200 characters'),
+  stallName: z.string().trim().min(1, 'Stall name is required').max(200, 'Stall name must be less than 200 characters'),
+});
 
 interface Props {
   sessionId: string;
@@ -69,13 +76,14 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
   };
 
   const handleAddConfirmation = () => {
-    if (!farmerName.trim()) {
-      toast.error('Please enter farmer name');
-      return;
-    }
-    if (!stallName.trim()) {
-      toast.error('Please enter stall name');
-      return;
+    // Validate input
+    try {
+      nextDayPlanSchema.parse({ marketName, farmerName, stallName });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
     }
 
     setConfirmations([...confirmations, { farmerName: farmerName.trim(), stallName: stallName.trim() }]);
@@ -88,9 +96,14 @@ export default function NextDayPlanningForm({ sessionId, marketDate, userId, onS
   };
 
   const handleSave = async () => {
-    if (!marketName.trim()) {
-      toast.error('Please enter next day market name');
-      return;
+    // Validate market name
+    try {
+      z.object({ marketName: z.string().trim().min(1).max(200) }).parse({ marketName });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
     }
 
     if (confirmations.length === 0) {

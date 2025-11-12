@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,13 @@ import { toast } from 'sonner';
 import { Store } from 'lucide-react';
 import { TaskHistoryView } from './TaskHistoryView';
 import { format } from 'date-fns';
+
+const stallSearchSchema = z.object({
+  farmerName: z.string().trim().min(1, 'Farmer name is required').max(200, 'Farmer name must be less than 200 characters'),
+  stallName: z.string().trim().min(1, 'Stall name is required').max(200, 'Stall name must be less than 200 characters'),
+  contactPhone: z.string().trim().min(10, 'Phone number must be at least 10 digits').max(15, 'Phone number must be less than 15 digits'),
+  joiningDate: z.string().optional(),
+});
 
 interface StallSearchFormProps {
   sessionId: string;
@@ -27,9 +35,15 @@ export function StallSearchForm({ sessionId, onComplete }: StallSearchFormProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.farmerName || !formData.stallName || !formData.contactPhone) {
-      toast.error('Please fill all required fields');
-      return;
+    
+    // Validate input
+    try {
+      stallSearchSchema.parse(formData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
     }
 
     setLoading(true);

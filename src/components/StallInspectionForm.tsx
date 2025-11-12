@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+
+const inspectionSchema = z.object({
+  farmer_name: z.string().trim().min(1, 'Farmer name is required').max(200, 'Farmer name must be less than 200 characters'),
+});
 
 interface Props {
   sessionId: string;
@@ -89,9 +94,14 @@ export default function StallInspectionForm({ sessionId, marketId, marketDate, u
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!farmerName.trim()) {
-      toast.error('Please enter farmer name');
-      return;
+    // Validate input
+    try {
+      inspectionSchema.parse({ farmer_name: farmerName });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
     }
 
     setSaving(true);
