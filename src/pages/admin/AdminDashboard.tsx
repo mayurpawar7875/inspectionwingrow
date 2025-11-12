@@ -203,7 +203,7 @@ export default function AdminDashboard() {
               .select('user_id')
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
-              .not('punch_in_time', 'is', null);
+              .eq('status', 'active');
             
             const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
             let employeeNames: string[] = [];
