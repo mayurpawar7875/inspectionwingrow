@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Building2 } from 'lucide-react';
+import wingrowLogo from '@/assets/wingrow-logo.png';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -109,9 +109,11 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-accent/10 rounded-full">
-              <Building2 className="h-8 w-8 text-accent" />
-            </div>
+            <img 
+              src={wingrowLogo} 
+              alt="Wingrow Market" 
+              className="h-24 w-auto"
+            />
           </div>
           <CardTitle className="text-2xl font-bold">
             {isLogin ? 'Welcome Back' : 'Create Account'}
