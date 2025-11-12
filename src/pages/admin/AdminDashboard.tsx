@@ -198,24 +198,29 @@ export default function AdminDashboard() {
           (data as any[]).map(async (market) => {
             const taskStats = await fetchTaskStats(market.market_id, todayDate);
             
-            const { data: sessionsData } = await supabase
+            const { data: sessionsData, error: sessionsError } = await supabase
               .from('sessions')
               .select('user_id')
               .eq('market_id', market.market_id)
               .eq('session_date', todayDate)
               .eq('status', 'active');
             
+            console.log('Sessions for market', market.market_name, ':', sessionsData, sessionsError);
+            
             const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
             let employeeNames: string[] = [];
             
             if (userIds.length > 0) {
-              const { data: profilesData } = await supabase
+              const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
                 .select('full_name')
                 .in('id', userIds);
               
+              console.log('Profiles data:', profilesData, 'for userIds:', userIds, profilesError);
               employeeNames = profilesData?.map((p: any) => p.full_name).filter(Boolean) || [];
             }
+            
+            console.log('Employee names for', market.market_name, ':', employeeNames);
             
             return { ...market, task_stats: taskStats, employee_names: employeeNames };
           })
