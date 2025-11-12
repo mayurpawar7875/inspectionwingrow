@@ -14,7 +14,7 @@ const assetRequestSchema = z.object({
   assetId: z.string().min(1, "Please select an asset"),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   purpose: z.string().min(3, "Purpose must be at least 3 characters").max(500),
-  expectedReturnDate: z.string().min(1, "Please select expected return date"),
+  expectedReturnDate: z.string().optional(),
   remarks: z.string().max(1000).optional(),
 });
 
@@ -89,7 +89,7 @@ export function AssetRequestForm() {
         quantity: validatedData.quantity,
         market_id: formData.marketId || null,
         purpose: validatedData.purpose,
-        expected_return_date: validatedData.expectedReturnDate,
+        expected_return_date: validatedData.expectedReturnDate || null,
         remarks: validatedData.remarks || null,
       });
 
@@ -178,14 +178,13 @@ export function AssetRequestForm() {
           </div>
 
           <div>
-            <Label htmlFor="returnDate">Expected Return Date *</Label>
+            <Label htmlFor="returnDate">Expected Return Date</Label>
             <Input
               id="returnDate"
               type="date"
               value={formData.expectedReturnDate}
               onChange={(e) => setFormData({ ...formData, expectedReturnDate: e.target.value })}
               min={new Date().toISOString().split('T')[0]}
-              required
             />
           </div>
 
