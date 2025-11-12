@@ -377,6 +377,18 @@ export default function Dashboard() {
                 </TooltipContent>
               </Tooltip>
               
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/asset-requests')}>
+                    <Package className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Assets</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Request Assets</p>
+                </TooltipContent>
+              </Tooltip>
+              
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
                 Install App
               </Button>
@@ -603,15 +615,6 @@ export default function Dashboard() {
                     <Calendar className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Planning</CardTitle>
                     <CardDescription className="text-xs">Next day</CardDescription>
-                  </CardHeader>
-                </Card>
-
-                {/* Asset Requests */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/asset-requests')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <Package className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Assets</CardTitle>
-                    <CardDescription className="text-xs">Request items</CardDescription>
                   </CardHeader>
                 </Card>
 
