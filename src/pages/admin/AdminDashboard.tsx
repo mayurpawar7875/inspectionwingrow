@@ -227,12 +227,12 @@ export default function AdminDashboard() {
             let employeeNames: string[] = [];
             
             if (userIds.length > 0) {
-              const { data: profilesData } = await supabase
-                .from('profiles')
+              const { data: employeesData } = await supabase
+                .from('employees')
                 .select('full_name')
                 .in('id', userIds);
               
-              employeeNames = profilesData?.map((p: any) => p.full_name).filter(Boolean) || [];
+              employeeNames = employeesData?.map((e: any) => e.full_name).filter(Boolean) || [];
             }
 
             // Get counts
