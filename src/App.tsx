@@ -34,6 +34,8 @@ import EmployeeReporting from "./pages/admin/EmployeeReporting";
 import EmployeeCitySelection from "./pages/admin/EmployeeCitySelection";
 import EmployeeMarketsList from "./pages/admin/EmployeeMarketsList";
 import MarketManagerReporting from "./pages/admin/MarketManagerReporting";
+import AttendanceReporting from "./pages/admin/AttendanceReporting";
+import MyAttendance from "./pages/MyAttendance";
 import AssetRequests from "./pages/AssetRequests";
 import { AssetManagement } from "./components/admin/AssetManagement";
 
@@ -78,6 +80,8 @@ const App = () => (
               <Route path="/admin/employee-reporting/city/:city" element={<ProtectedRoute><AdminLayout><EmployeeMarketsList /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/employee-reporting/market/:marketId" element={<ProtectedRoute><AdminLayout><EmployeeReporting /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/market-reporting" element={<ProtectedRoute><AdminLayout><MarketManagerReporting /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/attendance" element={<ProtectedRoute><AdminLayout><AttendanceReporting /></AdminLayout></ProtectedRoute>} />
+              <Route path="/my-attendance" element={<ProtectedRoute><MyAttendance /></ProtectedRoute>} />
               <Route path="/admin/live-market" element={<ProtectedRoute><AdminLayout><LiveMarket /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/sessions" element={<ProtectedRoute><AdminLayout><AllSessions /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AdminLayout><Users /></AdminLayout></ProtectedRoute>} />

@@ -369,6 +369,90 @@ export type Database = {
           },
         ]
       }
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          city: string | null
+          completed_tasks: number
+          created_at: string
+          id: string
+          market_id: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["attendance_status"]
+          total_tasks: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendance_date: string
+          city?: string | null
+          completed_tasks?: number
+          created_at?: string
+          id?: string
+          market_id?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["attendance_status"]
+          total_tasks?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendance_date?: string
+          city?: string | null
+          completed_tasks?: number
+          created_at?: string
+          id?: string
+          market_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["attendance_status"]
+          total_tasks?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "live_markets_today"
+            referencedColumns: ["market_id"]
+          },
+          {
+            foreignKeyName: "attendance_records_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          role: Database["public"]["Enums"]["user_role"]
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          role: Database["public"]["Enums"]["user_role"]
+          task_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          role?: Database["public"]["Enums"]["user_role"]
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bdo_market_submissions: {
         Row: {
           address: string
@@ -1875,6 +1959,14 @@ export type Database = {
     }
     Functions: {
       backfill_media_metadata: { Args: never; Returns: undefined }
+      calculate_attendance: {
+        Args: {
+          p_date: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       expire_old_market_manager_sessions: { Args: never; Returns: undefined }
       get_employee_by_username: {
         Args: { _username: string }
@@ -1898,6 +1990,7 @@ export type Database = {
       }
     }
     Enums: {
+      attendance_status: "full_day" | "half_day" | "absent" | "weekly_off"
       media_type:
         | "outside_rates"
         | "selfie_gps"
@@ -2049,6 +2142,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attendance_status: ["full_day", "half_day", "absent", "weekly_off"],
       media_type: [
         "outside_rates",
         "selfie_gps",
