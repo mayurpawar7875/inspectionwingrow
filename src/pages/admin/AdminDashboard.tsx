@@ -188,21 +188,30 @@ export default function AdminDashboard() {
         new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       );
       const todayDate = istNow.toISOString().split('T')[0];
+      const dayOfWeek = istNow.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-      const { data, error } = await supabase
-        .from('live_markets_today')
-        .select('*');
+      // Get markets scheduled for today
+      const { data: scheduledMarkets, error: scheduleError } = await supabase
+        .from('market_schedule')
+        .select('market_id, markets(id, name, city, location)')
+        .eq('is_active', true)
+        .or(`day_of_week.eq.${dayOfWeek},schedule_date.eq.${todayDate}`);
 
-      if (error) throw error;
-      if (data && data.length > 0) {
+      if (scheduleError) throw scheduleError;
+
+      if (scheduledMarkets && scheduledMarkets.length > 0) {
         const marketsWithStats = await Promise.all(
-          (data as any[]).map(async (market) => {
-            const taskStats = await fetchTaskStats(market.market_id, todayDate);
+          scheduledMarkets.map(async (schedule: any) => {
+            const market = schedule.markets;
+            if (!market) return null;
+
+            const taskStats = await fetchTaskStats(market.id, todayDate);
             
-            const { data: sessionsData, error: sessionsError } = await supabase
+            // Get active sessions for this market
+            const { data: sessionsData } = await supabase
               .from('sessions')
               .select('user_id')
-              .eq('market_id', market.market_id)
+              .eq('market_id', market.id)
               .eq('session_date', todayDate)
               .eq('status', 'active');
             
@@ -210,18 +219,44 @@ export default function AdminDashboard() {
             let employeeNames: string[] = [];
             
             if (userIds.length > 0) {
-              const { data: profilesData, error: profilesError } = await supabase
+              const { data: profilesData } = await supabase
                 .from('profiles')
                 .select('full_name')
                 .in('id', userIds);
               
               employeeNames = profilesData?.map((p: any) => p.full_name).filter(Boolean) || [];
             }
+
+            // Get counts
+            const { count: stallsCount } = await supabase
+              .from('stall_confirmations')
+              .select('*', { count: 'exact', head: true })
+              .eq('market_id', market.id)
+              .eq('market_date', todayDate);
+
+            const { count: mediaCount } = await supabase
+              .from('media')
+              .select('*', { count: 'exact', head: true })
+              .eq('market_id', market.id)
+              .eq('market_date', todayDate);
             
-            return { ...market, task_stats: taskStats, employee_names: employeeNames };
+            return {
+              market_id: market.id,
+              market_name: market.name,
+              city: market.city,
+              active_sessions: sessionsData?.length || 0,
+              active_employees: userIds.length,
+              stall_confirmations_count: stallsCount || 0,
+              media_uploads_count: mediaCount || 0,
+              last_upload_time: null,
+              last_punch_in: null,
+              task_stats: taskStats,
+              employee_names: employeeNames
+            };
           })
         );
-        setLiveMarkets(marketsWithStats);
+        
+        setLiveMarkets(marketsWithStats.filter(m => m !== null) as LiveMarket[]);
       } else {
         setLiveMarkets([]);
       }
