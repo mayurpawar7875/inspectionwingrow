@@ -884,14 +884,14 @@ export default function AdminDashboard() {
     ];
 
     return (
-      <div className="space-y-1.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
         {tasks.map((task, index) => (
           <div 
             key={index} 
             className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 px-1.5 py-1 rounded transition-colors"
             onClick={task.onClick}
           >
-            <Checkbox checked={task.completed} disabled className="pointer-events-none h-3.5 w-3.5" />
+            <Checkbox checked={task.completed} disabled className="pointer-events-none h-3.5 w-3.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium leading-tight truncate">{task.label}</div>
               {task.value && (
