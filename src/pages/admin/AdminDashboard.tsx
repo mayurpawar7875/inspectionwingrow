@@ -190,20 +190,18 @@ export default function AdminDashboard() {
       const todayDate = istNow.toISOString().split('T')[0];
       const dayOfWeek = istNow.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-      // Get markets scheduled for today
-      const { data: scheduledMarkets, error: scheduleError } = await supabase
-        .from('market_schedule')
-        .select('market_id, markets(id, name, city, location)')
+      // Get markets scheduled for today based on day_of_week
+      const { data: todaysMarkets, error: marketsError } = await supabase
+        .from('markets')
+        .select('id, name, city, location')
         .eq('is_active', true)
-        .or(`day_of_week.eq.${dayOfWeek},schedule_date.eq.${todayDate}`);
+        .eq('day_of_week', dayOfWeek);
 
-      if (scheduleError) throw scheduleError;
+      if (marketsError) throw marketsError;
 
-      if (scheduledMarkets && scheduledMarkets.length > 0) {
+      if (todaysMarkets && todaysMarkets.length > 0) {
         const marketsWithStats = await Promise.all(
-          scheduledMarkets.map(async (schedule: any) => {
-            const market = schedule.markets;
-            if (!market) return null;
+          todaysMarkets.map(async (market: any) => {
 
             const taskStats = await fetchTaskStats(market.id, todayDate);
             
