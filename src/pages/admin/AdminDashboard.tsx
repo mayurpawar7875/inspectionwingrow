@@ -64,6 +64,7 @@ export default function AdminDashboard() {
       return;
     }
     fetchAllStats();
+    fetchLiveMarkets();
 
     const statsChannel = supabase
       .channel('dashboard-overview')
