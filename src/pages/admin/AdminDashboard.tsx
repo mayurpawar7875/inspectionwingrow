@@ -884,18 +884,18 @@ export default function AdminDashboard() {
     ];
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {tasks.map((task, index) => (
           <div 
             key={index} 
-            className="flex items-center gap-3 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
+            className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 px-1.5 py-1 rounded transition-colors"
             onClick={task.onClick}
           >
-            <Checkbox checked={task.completed} disabled className="pointer-events-none" />
-            <div className="flex-1">
-              <div className="text-sm font-medium">{task.label}</div>
+            <Checkbox checked={task.completed} disabled className="pointer-events-none h-3.5 w-3.5" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium leading-tight truncate">{task.label}</div>
               {task.value && (
-                <div className="text-xs text-muted-foreground">{task.value}</div>
+                <div className="text-[10px] text-muted-foreground leading-tight">{task.value}</div>
               )}
             </div>
           </div>
@@ -924,56 +924,56 @@ export default function AdminDashboard() {
         </div>
 
         {/* Live Markets Section */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Live Markets Today</h2>
-            <Badge variant="outline" className="text-sm">{liveMarkets.length} Active</Badge>
+            <h2 className="text-xl font-bold">Live Markets Today</h2>
+            <Badge variant="outline" className="text-xs px-2 py-0.5">{liveMarkets.length} Active</Badge>
           </div>
 
           {liveMarkets.length === 0 ? (
             <Card>
-              <CardContent className="flex items-center justify-center h-32">
-                <p className="text-muted-foreground">
+              <CardContent className="flex items-center justify-center h-24">
+                <p className="text-sm text-muted-foreground">
                   {isISTMonday() ? 'Markets are closed on Mondays' : 'No active markets today'}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-2.5">
               {liveMarkets.map((market) => (
-                <Card key={market.market_id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="grid md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
+                <Card key={market.market_id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="grid md:grid-cols-2 gap-2 md:gap-3 p-3">
                     {/* Left Column: Market Info */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div 
                         className="cursor-pointer"
                         onClick={() => navigate(`/admin/market/${market.market_id}`)}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="text-lg md:text-xl font-semibold">{market.market_name}</h3>
-                          <Badge variant="default" className="ml-2 text-xs">{market.active_sessions} active</Badge>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base font-semibold leading-tight">{market.market_name}</h3>
+                          <Badge variant="default" className="ml-2 text-[10px] px-1.5 py-0 h-5">{market.active_sessions} active</Badge>
                         </div>
-                        <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3" />
                           {market.city || 'N/A'}
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                          <Users className="h-4 w-4" />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Users className="h-3 w-3" />
                           <span>Employees</span>
                         </div>
-                        <p className="text-xl md:text-2xl font-bold">{market.active_employees}</p>
+                        <p className="text-lg font-bold leading-tight">{market.active_employees}</p>
                         {market.employee_names && market.employee_names.length > 0 ? (
-                          <p className="text-xs md:text-sm text-foreground font-medium">{market.employee_names.join(', ')}</p>
+                          <p className="text-[11px] text-foreground font-medium leading-tight">{market.employee_names.join(', ')}</p>
                         ) : (
-                          <p className="text-xs text-muted-foreground">No employee data</p>
+                          <p className="text-[11px] text-muted-foreground">No employee data</p>
                         )}
                       </div>
 
-                      <div className="pt-2 border-t">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="pt-1 border-t">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           <span>Last upload: {formatTime(market.last_upload_time)}</span>
                         </div>
@@ -981,8 +981,8 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Right Column: Task Status */}
-                    <div className="md:border-l md:pl-6 space-y-3">
-                      <h4 className="text-sm font-semibold">Task Status</h4>
+                    <div className="md:border-l md:pl-3 space-y-1.5">
+                      <h4 className="text-xs font-semibold">Task Status</h4>
                       {renderTaskChecklist(market)}
                     </div>
                   </div>
