@@ -817,27 +817,28 @@ export default function AdminDashboard() {
   const renderTaskChecklist = (market: LiveMarket) => {
     const tasks = [
       { 
-        label: 'Punch-in Time', 
-        completed: !!market.last_punch_in,
-        value: market.last_punch_in ? formatTime(market.last_punch_in) : null,
-        taskType: 'attendance',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'attendance')
-      },
-      { 
-        label: 'Selfie Uploaded', 
+        label: 'Employees Checked In', 
         completed: market.task_stats ? market.task_stats.attendance > 0 : false,
-        taskType: 'attendance',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'attendance')
+        value: market.task_stats && market.task_stats.attendance > 0 ? `${market.task_stats.attendance} checked in` : null,
+        taskType: 'punch',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'punch')
       },
       { 
-        label: 'Stall Confirmations', 
-        completed: market.stall_confirmations_count > 0,
-        value: market.stall_confirmations_count > 0 ? `${market.stall_confirmations_count} stalls` : null,
-        taskType: 'stall_confirmations',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'stall_confirmations')
+        label: 'Stall Confirmation', 
+        completed: market.task_stats ? market.task_stats.stall_confirmations > 0 : false,
+        value: market.task_stats && market.task_stats.stall_confirmations > 0 ? `${market.task_stats.stall_confirmations} confirmed` : null,
+        taskType: 'stalls',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'stalls')
       },
       { 
-        label: "Today's Offers", 
+        label: 'Media Upload', 
+        completed: market.media_uploads_count > 0,
+        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} uploads` : null,
+        taskType: 'media',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'media')
+      },
+      { 
+        label: 'Today\'s Offer', 
         completed: market.task_stats ? market.task_stats.offers > 0 : false,
         value: market.task_stats && market.task_stats.offers > 0 ? `${market.task_stats.offers} items` : null,
         taskType: 'offers',
@@ -881,6 +882,13 @@ export default function AdminDashboard() {
         taskType: 'cleaning_video',
         onClick: () => fetchTaskData(market.market_id, market.market_name, 'cleaning_video')
       },
+      { 
+        label: 'Collection', 
+        completed: false,
+        value: null,
+        taskType: 'collection',
+        onClick: () => {}
+      },
     ];
 
     return (
@@ -892,8 +900,8 @@ export default function AdminDashboard() {
             onClick={task.onClick}
           >
             <Checkbox checked={task.completed} disabled className="pointer-events-none h-3.5 w-3.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium leading-tight truncate">{task.label}</div>
+            <div className="flex-1">
+              <div className="text-xs font-medium leading-tight">{task.label}</div>
               {task.value && (
                 <div className="text-[10px] text-muted-foreground leading-tight">{task.value}</div>
               )}
@@ -942,7 +950,7 @@ export default function AdminDashboard() {
             <div className="grid gap-2.5">
               {liveMarkets.map((market) => (
                 <Card key={market.market_id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="grid md:grid-cols-2 gap-2 md:gap-3 p-3">
+                  <div className="grid md:grid-cols-[38%_62%] gap-2 md:gap-3 p-3">
                     {/* Left Column: Market Info */}
                     <div className="space-y-2">
                       <div 
