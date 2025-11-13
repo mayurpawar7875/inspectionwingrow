@@ -31,6 +31,7 @@ interface LiveMarket {
     feedback: number;
     inspections: number;
     planning: number;
+    collections: number;
   };
 }
 
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
         fetchAllStats();
         fetchLiveMarkets();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, fetchLiveMarkets)
       .subscribe();
 
     const stallsChannel = supabase
@@ -150,22 +152,29 @@ export default function AdminDashboard() {
         .eq('market_id', marketId)
         .eq('market_date', todayDate);
 
-      const { count: planningCount } = await supabase
-        .from('next_day_planning')
-        .select('*', { count: 'exact', head: true })
-        .eq('current_market_date', todayDate);
+    const { count: planningCount } = await supabase
+      .from('next_day_planning')
+      .select('*', { count: 'exact', head: true })
+      .eq('current_market_date', todayDate);
 
-      return {
-        attendance: attendanceCount || 0,
-        stall_confirmations: stallsCount || 0,
-        market_video: marketVideoCount || 0,
-        cleaning_video: cleaningVideoCount || 0,
-        offers: offersCount || 0,
-        commodities: commoditiesCount || 0,
-        feedback: feedbackCount || 0,
-        inspections: inspectionsCount || 0,
-        planning: planningCount || 0,
-      };
+    const { count: collectionsCount } = await supabase
+      .from('collections')
+      .select('*', { count: 'exact', head: true })
+      .eq('market_id', marketId)
+      .eq('market_date', todayDate);
+
+    return {
+      attendance: attendanceCount || 0,
+      stall_confirmations: stallsCount || 0,
+      market_video: marketVideoCount || 0,
+      cleaning_video: cleaningVideoCount || 0,
+      offers: offersCount || 0,
+      commodities: commoditiesCount || 0,
+      feedback: feedbackCount || 0,
+      inspections: inspectionsCount || 0,
+      planning: planningCount || 0,
+      collections: collectionsCount || 0,
+    };
     } catch (error) {
       console.error('Error fetching task stats:', error);
       return {
@@ -178,6 +187,7 @@ export default function AdminDashboard() {
         feedback: 0,
         inspections: 0,
         planning: 0,
+        collections: 0,
       };
     }
   };
@@ -570,6 +580,30 @@ export default function AdminDashboard() {
           }
           console.log(`[${taskType}] Found ${data.length} records`);
           break;
+
+        case 'collections':
+          const { data: collectionsData } = await supabase
+            .from('collections')
+            .select('*')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          
+          if (collectionsData && collectionsData.length > 0) {
+            const userIds = [...new Set(collectionsData.map(c => c.collected_by).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = collectionsData.map(c => ({
+              ...c,
+              employees: { full_name: employeeMap.get(c.collected_by) }
+            }));
+          }
+          console.log(`[${taskType}] Found ${data.length} records`);
+          break;
       }
 
       console.log(`[${taskType}] Setting dialog with ${data.length} records`);
@@ -590,6 +624,7 @@ export default function AdminDashboard() {
       market_video: 'Market Videos',
       cleaning_video: 'Cleaning Videos',
       attendance: 'Attendance Records',
+      collections: 'Collections',
     };
     return titles[taskType] || taskType;
   };
@@ -809,6 +844,34 @@ export default function AdminDashboard() {
           </Table>
         );
 
+      case 'collections':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Collected By</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Mode</TableHead>
+                <TableHead>Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.employees?.full_name || 'N/A'}</TableCell>
+                  <TableCell>₹{item.amount}</TableCell>
+                  <TableCell>
+                    <Badge variant={item.mode === 'cash' ? 'default' : 'secondary'}>
+                      {item.mode}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">{format(new Date(item.created_at), 'HH:mm')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+
       default:
         return <div>Unknown task type</div>;
     }
@@ -884,10 +947,10 @@ export default function AdminDashboard() {
       },
       { 
         label: 'Collection', 
-        completed: false,
-        value: null,
-        taskType: 'collection',
-        onClick: () => {}
+        completed: market.task_stats ? market.task_stats.collections > 0 : false,
+        value: market.task_stats && market.task_stats.collections > 0 ? `${market.task_stats.collections} collected` : null,
+        taskType: 'collections',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'collections')
       },
     ];
 
