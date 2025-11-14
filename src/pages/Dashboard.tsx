@@ -83,6 +83,13 @@ export default function Dashboard() {
   const [submittingLeave, setSubmittingLeave] = useState(false);
   const [stallsCount, setStallsCount] = useState<number>(0);
   const [collectionSheetUrl, setCollectionSheetUrl] = useState<string | null>(null);
+  const [attendanceStats, setAttendanceStats] = useState<{
+    fullDays: number;
+    halfDays: number;
+    absences: number;
+    weeklyOffs: number;
+    totalDays: number;
+  } | null>(null);
 
   useEffect(() => {
     console.log('Dashboard useEffect:', { authLoading, currentRole, user: !!user });
@@ -188,6 +195,32 @@ export default function Dashboard() {
       setLoading(true);
       // Use IST date for session validation
       const today = getISTDateString(new Date());
+      
+      // Fetch attendance stats for current month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      const startDate = getISTDateString(startOfMonth);
+      
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance_records')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('role', 'employee')
+        .gte('attendance_date', startDate)
+        .lte('attendance_date', today);
+      
+      if (!attendanceError && attendanceData) {
+        const stats = attendanceData.reduce((acc, record) => {
+          if (record.status === 'full_day') acc.fullDays++;
+          else if (record.status === 'half_day') acc.halfDays++;
+          else if (record.status === 'absent') acc.absences++;
+          else if (record.status === 'weekly_off') acc.weeklyOffs++;
+          return acc;
+        }, { fullDays: 0, halfDays: 0, absences: 0, weeklyOffs: 0, totalDays: attendanceData.length });
+        
+        setAttendanceStats(stats);
+      }
+      
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -390,6 +423,18 @@ export default function Dashboard() {
                 </TooltipContent>
               </Tooltip>
               
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/my-attendance')}>
+                    <CalendarCheck className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Attendance</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View My Attendance</p>
+                </TooltipContent>
+              </Tooltip>
+              
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/install')}>
                 Install App
               </Button>
@@ -503,6 +548,52 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Attendance Summary */}
+            {attendanceStats && (
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl">My Attendance (This Month)</CardTitle>
+                      <CardDescription className="mt-1.5">Track your monthly attendance status</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/my-attendance')}>
+                      View All
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="flex flex-col items-center p-3 bg-success/10 rounded-lg">
+                      <CheckCircle className="h-6 w-6 text-success mb-2" />
+                      <p className="text-2xl font-bold text-success">{attendanceStats.fullDays}</p>
+                      <p className="text-xs text-muted-foreground text-center">Full Days</p>
+                    </div>
+                    <div className="flex flex-col items-center p-3 bg-warning/10 rounded-lg">
+                      <AlertCircle className="h-6 w-6 text-warning mb-2" />
+                      <p className="text-2xl font-bold text-warning">{attendanceStats.halfDays}</p>
+                      <p className="text-xs text-muted-foreground text-center">Half Days</p>
+                    </div>
+                    <div className="flex flex-col items-center p-3 bg-destructive/10 rounded-lg">
+                      <AlertCircle className="h-6 w-6 text-destructive mb-2" />
+                      <p className="text-2xl font-bold text-destructive">{attendanceStats.absences}</p>
+                      <p className="text-xs text-muted-foreground text-center">Absences</p>
+                    </div>
+                    <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
+                      <Calendar className="h-6 w-6 text-muted-foreground mb-2" />
+                      <p className="text-2xl font-bold">{attendanceStats.weeklyOffs}</p>
+                      <p className="text-xs text-muted-foreground text-center">Weekly Offs</p>
+                    </div>
+                    <div className="flex flex-col items-center p-3 bg-primary/10 rounded-lg">
+                      <CalendarCheck className="h-6 w-6 text-primary mb-2" />
+                      <p className="text-2xl font-bold text-primary">{attendanceStats.totalDays}</p>
+                      <p className="text-xs text-muted-foreground text-center">Total Days</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Action Cards - Show until punch out */}
             {!todaySession.punch_out_time && (
