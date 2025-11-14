@@ -56,10 +56,6 @@ export default function AdminDashboard() {
     pending: 0,
     lastUpdate: '',
   });
-  const [employeeStats, setEmployeeStats] = useState({
-    active: 0,
-    lastUpdate: '',
-  });
   const [marketStats, setMarketStats] = useState({
     live: 0,
     lastUpdate: '',
@@ -397,11 +393,6 @@ export default function AdminDashboard() {
       setBdoStats({
         pending: bdoPending,
         lastUpdate: bdoLatest?.updated_at || '',
-      });
-
-      setEmployeeStats({
-        active: activeSessions.length,
-        lastUpdate: sessionLatest?.updated_at || '',
       });
 
       setMarketStats({
@@ -1253,33 +1244,6 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Activity className="h-3 w-3" />
                 <span>Last update: {getTimeAgo(bdoStats.lastUpdate)}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Employee Reporting Tile */}
-          <Card 
-            className="group cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-card to-card/80 border-2 hover:border-primary/50"
-            onClick={() => navigate('/admin/employee-reporting')}
-          >
-            <CardHeader className="pb-2 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                  <Users className="h-5 w-5 text-green-500" />
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <CardTitle className="text-lg">Employee Reporting</CardTitle>
-              <CardDescription className="text-xs">Field staff activities and submissions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-accent/50">
-                <span className="text-xs font-medium text-muted-foreground">Active Sessions</span>
-                <span className="text-xl font-bold text-green-500">{employeeStats.active}</span>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Activity className="h-3 w-3" />
-                <span>Last update: {getTimeAgo(employeeStats.lastUpdate)}</span>
               </div>
             </CardContent>
           </Card>
