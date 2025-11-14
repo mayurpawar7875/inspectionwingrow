@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +21,7 @@ export default function Punch() {
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const videoRef = useState<HTMLVideoElement | null>(null)[0];
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     fetchSession();
@@ -84,8 +84,8 @@ export default function Punch() {
       });
       setCameraStream(stream);
       setShowCamera(true);
-      if (videoRef) {
-        videoRef.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
     } catch (error) {
       toast.error('Unable to access camera. Please allow camera permissions.');
@@ -102,14 +102,14 @@ export default function Punch() {
   };
 
   const capturePhoto = () => {
-    if (!videoRef) return;
+    if (!videoRef.current) return;
     
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.videoWidth;
-    canvas.height = videoRef.videoHeight;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(videoRef, 0, 0);
+      ctx.drawImage(videoRef.current, 0, 0);
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
@@ -327,12 +327,7 @@ export default function Punch() {
                     {showCamera && (
                       <div className="space-y-2">
                         <video
-                          ref={(el) => {
-                            if (el) {
-                              (videoRef as any) = el;
-                              if (cameraStream) el.srcObject = cameraStream;
-                            }
-                          }}
+                          ref={videoRef}
                           autoPlay
                           playsInline
                           className="w-full rounded-lg"
