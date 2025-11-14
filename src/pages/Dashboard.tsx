@@ -565,27 +565,42 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-                    <div className="flex flex-col items-center p-3 bg-success/10 rounded-lg">
+                    <div 
+                      className="flex flex-col items-center p-3 bg-success/10 rounded-lg cursor-pointer hover:bg-success/20 transition-colors"
+                      onClick={() => navigate('/my-attendance')}
+                    >
                       <CheckCircle className="h-6 w-6 text-success mb-2" />
                       <p className="text-2xl font-bold text-success">{attendanceStats.fullDays}</p>
                       <p className="text-xs text-muted-foreground text-center">Full Days</p>
                     </div>
-                    <div className="flex flex-col items-center p-3 bg-warning/10 rounded-lg">
+                    <div 
+                      className="flex flex-col items-center p-3 bg-warning/10 rounded-lg cursor-pointer hover:bg-warning/20 transition-colors"
+                      onClick={() => navigate('/my-attendance')}
+                    >
                       <AlertCircle className="h-6 w-6 text-warning mb-2" />
                       <p className="text-2xl font-bold text-warning">{attendanceStats.halfDays}</p>
                       <p className="text-xs text-muted-foreground text-center">Half Days</p>
                     </div>
-                    <div className="flex flex-col items-center p-3 bg-destructive/10 rounded-lg">
+                    <div 
+                      className="flex flex-col items-center p-3 bg-destructive/10 rounded-lg cursor-pointer hover:bg-destructive/20 transition-colors"
+                      onClick={() => navigate('/my-attendance')}
+                    >
                       <AlertCircle className="h-6 w-6 text-destructive mb-2" />
                       <p className="text-2xl font-bold text-destructive">{attendanceStats.absences}</p>
                       <p className="text-xs text-muted-foreground text-center">Absences</p>
                     </div>
-                    <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
+                    <div 
+                      className="flex flex-col items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                      onClick={() => navigate('/my-attendance')}
+                    >
                       <Calendar className="h-6 w-6 text-muted-foreground mb-2" />
                       <p className="text-2xl font-bold">{attendanceStats.weeklyOffs}</p>
                       <p className="text-xs text-muted-foreground text-center">Weekly Offs</p>
                     </div>
-                    <div className="flex flex-col items-center p-3 bg-primary/10 rounded-lg">
+                    <div 
+                      className="flex flex-col items-center p-3 bg-primary/10 rounded-lg cursor-pointer hover:bg-primary/20 transition-colors"
+                      onClick={() => navigate('/my-attendance')}
+                    >
                       <CalendarCheck className="h-6 w-6 text-primary mb-2" />
                       <p className="text-2xl font-bold text-primary">{attendanceStats.totalDays}</p>
                       <p className="text-xs text-muted-foreground text-center">Total Days</p>
