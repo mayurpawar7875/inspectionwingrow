@@ -18,6 +18,9 @@ export default function Punch() {
   const [lastLocation, setLastLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useState<HTMLVideoElement | null>(null)[0];
 
   useEffect(() => {
     fetchSession();
@@ -70,6 +73,51 @@ export default function Punch() {
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+      if (videoRef) {
+        videoRef.srcObject = stream;
+      }
+    } catch (error) {
+      toast.error('Unable to access camera. Please allow camera permissions.');
+      console.error('Camera error:', error);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.videoWidth;
+    canvas.height = videoRef.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoRef, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setSelfieFile(file);
+          stopCamera();
+          toast.success('Selfie captured successfully!');
+        }
+      }, 'image/jpeg', 0.95);
+    }
   };
 
   const handlePunchIn = async () => {
