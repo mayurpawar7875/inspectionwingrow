@@ -29,6 +29,7 @@ import {
   ImageIcon,
   Sparkles,
   Package,
+  CalendarCheck,
 } from 'lucide-react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // import { Textarea } from '@/components/ui/textarea';
@@ -624,6 +625,15 @@ export default function Dashboard() {
                     <ExternalLink className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
                     <CardTitle className="text-sm sm:text-base">Collections</CardTitle>
                     <CardDescription className="text-xs">Record daily</CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {/* My Attendance */}
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/my-attendance')}>
+                  <CardHeader className="p-3 sm:p-4">
+                    <CalendarCheck className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
+                    <CardTitle className="text-sm sm:text-base">Attendance</CardTitle>
+                    <CardDescription className="text-xs">View records</CardDescription>
                   </CardHeader>
                 </Card>
 

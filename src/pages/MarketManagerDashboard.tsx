@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { LogOut, CheckCircle2, History } from 'lucide-react';
+import { LogOut, CheckCircle2, History, CalendarCheck } from 'lucide-react';
 import { SessionSelector } from '@/components/market-manager/SessionSelector';
 import { EmployeeAllocationForm } from '@/components/market-manager/EmployeeAllocationForm';
 import { PunchInForm } from '@/components/market-manager/PunchInForm';
@@ -222,6 +222,10 @@ export default function MarketManagerDashboard() {
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/my-attendance')}>
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              Attendance
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/my-manager-sessions')}>
               <History className="h-4 w-4 mr-2" />
               My Sessions
