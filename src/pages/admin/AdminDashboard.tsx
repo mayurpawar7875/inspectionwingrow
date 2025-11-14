@@ -1071,10 +1071,10 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Wingrow Admin Dashboard
           </h1>
-          <p className="text-lg text-muted-foreground">Real-time reporting and analytics</p>
+          <p className="text-sm text-muted-foreground">Real-time reporting and analytics</p>
         </div>
 
         {/* Live Markets Section */}
