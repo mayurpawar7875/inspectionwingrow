@@ -27,6 +27,12 @@ export default function Punch() {
     fetchSession();
   }, [user]);
 
+  useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
+
   const fetchSession = async () => {
     if (!user) return;
 
@@ -84,9 +90,6 @@ export default function Punch() {
       });
       setCameraStream(stream);
       setShowCamera(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
     } catch (error) {
       toast.error('Unable to access camera. Please allow camera permissions.');
       console.error('Camera error:', error);
