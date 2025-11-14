@@ -262,11 +262,15 @@ export default function AdminDashboard() {
               const nameParts = fullName.split(' ');
               const initials = nameParts.map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
+              const completedTasks = attendance?.completed_tasks || 0;
+              const totalTasks = attendance?.total_tasks || 0;
+
+              // Determine status based on task completion
               let status: 'active' | 'half_day' | 'completed' = 'active';
-              if (session.status === 'completed' || session.punch_out_time) {
+              if (totalTasks > 0 && completedTasks === totalTasks) {
                 status = 'completed';
-              } else if (attendance?.status === 'half_day') {
-                status = 'half_day';
+              } else if (completedTasks > 0 && completedTasks < totalTasks) {
+                status = 'half_day'; // This represents 'incomplete'
               }
 
               const duration = session.punch_in_time && session.punch_out_time
@@ -1110,13 +1114,13 @@ export default function AdminDashboard() {
                                     <div className="flex items-center justify-between">
                                       <h4 className="font-semibold">{employee.name}</h4>
                                       <Badge variant={
-                                        employee.status === 'active' ? 'default' :
+                                        employee.status === 'completed' ? 'default' :
                                         employee.status === 'half_day' ? 'secondary' :
                                         'outline'
                                       }>
-                                        {employee.status === 'active' ? '🟢 Active' :
-                                         employee.status === 'half_day' ? '🟡 Half Day' :
-                                         '🔴 Completed'}
+                                        {employee.status === 'completed' ? '🟢 Completed' :
+                                         employee.status === 'half_day' ? '🟡 Incomplete' :
+                                         '🔴 Active'}
                                       </Badge>
                                     </div>
                                     
