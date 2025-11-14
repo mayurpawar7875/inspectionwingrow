@@ -305,6 +305,25 @@ export default function AdminDashboard() {
               .eq('market_id', market.id)
               .eq('market_date', todayDate);
             
+            // Get last task update time - using ts-ignore to bypass complex type inference issue
+            let lastTaskTime = null;
+            try {
+              // @ts-ignore - Complex Supabase types cause TS depth issues
+              const { data: taskData } = await supabase
+                .from('task_events')
+                .select('created_at')
+                .eq('market_id', market.id)
+                .gte('created_at', todayDate)
+                .order('created_at', { ascending: false })
+                .limit(1);
+              
+              if (taskData && taskData.length > 0) {
+                lastTaskTime = taskData[0].created_at;
+              }
+            } catch (e) {
+              // Ignore error, keep lastTaskTime as null
+            }
+            
             return {
               market_id: market.id,
               market_name: market.name,
@@ -313,7 +332,7 @@ export default function AdminDashboard() {
               active_employees: employees.filter(e => e.status === 'active').length,
               stall_confirmations_count: stallsCount || 0,
               media_uploads_count: mediaCount || 0,
-              last_upload_time: null,
+              last_upload_time: lastTaskTime,
               last_punch_in: null,
               task_stats: taskStats,
               employee_names: employeeNames,
