@@ -17,6 +17,7 @@ export default function Punch() {
   const [actionLoading, setActionLoading] = useState(false);
   const [lastLocation, setLastLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -112,7 +113,9 @@ export default function Punch() {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const previewUrl = URL.createObjectURL(blob);
           setSelfieFile(file);
+          setSelfiePreview(previewUrl);
           stopCamera();
           toast.success('Selfie captured successfully!');
         }
@@ -345,11 +348,28 @@ export default function Punch() {
                         </div>
                       </div>
                     )}
-                    {selfieFile && (
+                    {selfieFile && selfiePreview && (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">✓ Selfie captured</p>
-                        <Button onClick={() => { setSelfieFile(null); startCamera(); }} variant="outline" size="sm">
-                          Retake
+                        <div className="relative">
+                          <img 
+                            src={selfiePreview} 
+                            alt="Captured selfie" 
+                            className="w-full rounded-lg border-2 border-primary"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => { 
+                            if (selfiePreview) URL.revokeObjectURL(selfiePreview);
+                            setSelfieFile(null); 
+                            setSelfiePreview(null);
+                            startCamera(); 
+                          }} 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Retake Selfie
                         </Button>
                       </div>
                     )}
