@@ -105,7 +105,7 @@ export default function AttendanceReporting() {
     setLoading(true);
 
     const startDate = format(startOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
-    the: const endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
+    const endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
 
     let query = supabase
       .from("attendance_records")
