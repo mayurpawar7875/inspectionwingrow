@@ -140,13 +140,17 @@ export default function Punch() {
         return;
       }
 
+      console.log('Starting punch in process...');
+      
       try {
         const pos = await getCurrentPosition();
         gpsLat = pos.coords.latitude;
         gpsLng = pos.coords.longitude;
         gpsAccuracy = pos.coords.accuracy;
         setLastLocation({ lat: gpsLat, lng: gpsLng });
+        console.log('GPS captured:', { gpsLat, gpsLng, gpsAccuracy });
       } catch (geoErr: any) {
+        console.error('GPS error:', geoErr);
         toast.error('Location is required for punch in. Please enable GPS.');
         setActionLoading(false);
         return;
@@ -155,33 +159,52 @@ export default function Punch() {
       // 1) Upload selfie to storage and create media entry with gps
       setUploadingSelfie(true);
       const fileName = `${user!.id}/${Date.now()}-${selfieFile.name}`;
+      console.log('Uploading selfie:', fileName);
+      
       const { error: uploadError } = await supabase.storage
         .from('employee-media')
         .upload(fileName, selfieFile);
-      if (uploadError) throw uploadError;
+      
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+      console.log('Selfie uploaded successfully');
 
+      console.log('Inserting media record...');
       const { error: insertMediaErr } = await supabase.from('media').insert({
         user_id: user!.id,
         market_id: session.market_id,
         media_type: 'selfie_gps',
-        file_url: fileName, // Store path, not full URL
+        file_url: fileName,
         file_name: selfieFile.name,
         content_type: selfieFile.type,
         gps_lat: gpsLat,
         gps_lng: gpsLng,
         captured_at: now,
-      } as any);
-      if (insertMediaErr) throw insertMediaErr;
+      });
+      
+      if (insertMediaErr) {
+        console.error('Media insert error:', insertMediaErr);
+        throw insertMediaErr;
+      }
+      console.log('Media record inserted');
 
       // Update session
+      console.log('Updating session...');
       const { error: sessionError } = await supabase
         .from('sessions')
         .update({ punch_in_time: now })
         .eq('id', session.id);
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Session update error:', sessionError);
+        throw sessionError;
+      }
+      console.log('Session updated');
 
       // Create task event
+      console.log('Creating task event...');
       const { data: eventData, error: eventError } = await supabase
         .from('task_events')
         .insert({
@@ -193,9 +216,14 @@ export default function Punch() {
         .select()
         .single();
 
-      if (eventError) throw eventError;
+      if (eventError) {
+        console.error('Task event error:', eventError);
+        throw eventError;
+      }
+      console.log('Task event created');
 
       // Update task status
+      console.log('Updating task status...');
       await supabase
         .from('task_status')
         .upsert({
@@ -205,13 +233,15 @@ export default function Punch() {
           latest_event_id: eventData.id,
           updated_at: now,
         });
-
+      
+      console.log('Punch in completed successfully');
       toast.success('Punched in successfully!');
       fetchSession();
       setSelfieFile(null);
+      setSelfiePreview(null);
     } catch (error: any) {
-      toast.error('Failed to punch in');
-      console.error(error);
+      console.error('Punch in error:', error);
+      toast.error(error?.message || 'Failed to punch in');
     } finally {
       setActionLoading(false);
       setUploadingSelfie(false);
