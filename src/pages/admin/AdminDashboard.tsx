@@ -8,7 +8,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Building2, ClipboardList, MapPin, TrendingUp, Activity, ChevronRight, Clock, Upload, Calendar } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { format } from 'date-fns';
+
+interface EmployeeStatus {
+  id: string;
+  name: string;
+  initials: string;
+  status: 'active' | 'half_day' | 'completed';
+  punch_in_time: string | null;
+  punch_out_time: string | null;
+  duration: number | null;
+  completed_tasks: number;
+  total_tasks: number;
+}
 
 interface LiveMarket {
   market_id: string;
@@ -17,6 +30,7 @@ interface LiveMarket {
   active_sessions: number;
   active_employees: number;
   employee_names: string[];
+  employees: EmployeeStatus[];
   stall_confirmations_count: number;
   media_uploads_count: number;
   last_upload_time: string | null;
@@ -215,25 +229,59 @@ export default function AdminDashboard() {
 
             const taskStats = await fetchTaskStats(market.id, todayDate);
             
-            // Get active sessions for this market
+            // Get all sessions for this market today
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select('user_id')
+              .select(`
+                id,
+                user_id,
+                punch_in_time,
+                punch_out_time,
+                status,
+                profiles:user_id (full_name)
+              `)
               .eq('market_id', market.id)
-              .eq('session_date', todayDate)
-              .eq('status', 'active');
-            
+              .eq('session_date', todayDate);
+
+            // Fetch attendance records to determine status
+            const { data: attendanceData } = await supabase
+              .from('attendance_records')
+              .select('user_id, status, completed_tasks, total_tasks')
+              .eq('market_id', market.id)
+              .eq('attendance_date', todayDate);
+
+            const employees: EmployeeStatus[] = (sessionsData || []).map((session: any) => {
+              const attendance = attendanceData?.find((a: any) => a.user_id === session.user_id);
+              const fullName = session.profiles?.full_name || 'Unknown';
+              const nameParts = fullName.split(' ');
+              const initials = nameParts.map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+              let status: 'active' | 'half_day' | 'completed' = 'active';
+              if (session.status === 'completed' || session.punch_out_time) {
+                status = 'completed';
+              } else if (attendance?.status === 'half_day') {
+                status = 'half_day';
+              }
+
+              const duration = session.punch_in_time && session.punch_out_time
+                ? Math.floor((new Date(session.punch_out_time).getTime() - new Date(session.punch_in_time).getTime()) / (1000 * 60))
+                : null;
+
+              return {
+                id: session.user_id,
+                name: fullName,
+                initials,
+                status,
+                punch_in_time: session.punch_in_time,
+                punch_out_time: session.punch_out_time,
+                duration,
+                completed_tasks: attendance?.completed_tasks || 0,
+                total_tasks: attendance?.total_tasks || 0,
+              };
+            });
+
             const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
-            let employeeNames: string[] = [];
-            
-            if (userIds.length > 0) {
-              const { data: employeesData } = await supabase
-                .from('employees')
-                .select('full_name')
-                .in('id', userIds);
-              
-              employeeNames = employeesData?.map((e: any) => e.full_name).filter(Boolean) || [];
-            }
+            const employeeNames = employees.map(e => e.name);
 
             // Get counts
             const { count: stallsCount } = await supabase
@@ -253,13 +301,14 @@ export default function AdminDashboard() {
               market_name: market.name,
               city: market.city,
               active_sessions: sessionsData?.length || 0,
-              active_employees: userIds.length,
+              active_employees: employees.filter(e => e.status === 'active').length,
               stall_confirmations_count: stallsCount || 0,
               media_uploads_count: mediaCount || 0,
               last_upload_time: null,
               last_punch_in: null,
               task_stats: taskStats,
-              employee_names: employeeNames
+              employee_names: employeeNames,
+              employees: employees
             };
           })
         );
@@ -1033,13 +1082,86 @@ export default function AdminDashboard() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <Users className="h-3 w-3" />
-                          <span>Employees</span>
+                          <span>Employees ({market.employees.length})</span>
                         </div>
-                        <p className="text-lg font-bold leading-tight">{market.active_employees}</p>
-                        {market.employee_names && market.employee_names.length > 0 ? (
-                          <p className="text-[11px] text-foreground font-medium leading-tight">{market.employee_names.join(', ')}</p>
+                        {market.employees.length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground italic">No active employees</p>
                         ) : (
-                          <p className="text-[11px] text-muted-foreground">No employee data</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {market.employees.map((employee) => (
+                              <HoverCard key={employee.id}>
+                                <HoverCardTrigger asChild>
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted hover:bg-muted/80 cursor-pointer transition-colors">
+                                    <span className={`h-2 w-2 rounded-full ${
+                                      employee.status === 'active' ? 'bg-green-500' :
+                                      employee.status === 'half_day' ? 'bg-yellow-500' :
+                                      'bg-red-500'
+                                    }`} />
+                                    <span className="text-xs font-medium">{employee.initials}</span>
+                                  </div>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-semibold">{employee.name}</h4>
+                                      <Badge variant={
+                                        employee.status === 'active' ? 'default' :
+                                        employee.status === 'half_day' ? 'secondary' :
+                                        'outline'
+                                      }>
+                                        {employee.status === 'active' ? '🟢 Active' :
+                                         employee.status === 'half_day' ? '🟡 Half Day' :
+                                         '🔴 Completed'}
+                                      </Badge>
+                                    </div>
+                                    
+                                    <div className="space-y-1.5 text-sm">
+                                      {employee.punch_in_time && (
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Punch In:</span>
+                                          <span className="font-medium">
+                                            {format(new Date(employee.punch_in_time), 'hh:mm a')}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      {employee.punch_out_time && (
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Punch Out:</span>
+                                          <span className="font-medium">
+                                            {format(new Date(employee.punch_out_time), 'hh:mm a')}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      {employee.duration && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-muted-foreground">Duration:</span>
+                                          <span className="font-medium">
+                                            {Math.floor(employee.duration / 60)}h {employee.duration % 60}m
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">Task Progress:</span>
+                                        <span className="font-medium">
+                                          {employee.completed_tasks}/{employee.total_tasks}
+                                        </span>
+                                        {employee.total_tasks > 0 && (
+                                          <span className="text-xs text-muted-foreground">
+                                            ({Math.round((employee.completed_tasks / employee.total_tasks) * 100)}%)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ))}
+                          </div>
                         )}
                       </div>
 
