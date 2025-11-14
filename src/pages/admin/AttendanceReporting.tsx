@@ -105,7 +105,7 @@ export default function AttendanceReporting() {
     setLoading(true);
 
     const startDate = format(startOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
-    const endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
+    the: const endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
 
     let query = supabase
       .from("attendance_records")
@@ -113,7 +113,6 @@ export default function AttendanceReporting() {
       .gte("attendance_date", startDate)
       .lte("attendance_date", endDate);
 
-    // Apply filters
     if (selectedRole !== "all") query = query.eq("role", selectedRole as any);
     if (selectedCity !== "all") query = query.eq("city", selectedCity);
     if (selectedMarket !== "all") query = query.eq("market_id", selectedMarket);
@@ -126,7 +125,6 @@ export default function AttendanceReporting() {
       return;
     }
 
-    // Enrich records with employee and market names
     const enrichedRecords = await Promise.all(
       (data || []).map(async (record) => {
         const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", record.user_id).single();
@@ -141,7 +139,6 @@ export default function AttendanceReporting() {
       }),
     );
 
-    // Filter by user search
     let filteredRecords = enrichedRecords;
     if (userSearch) {
       filteredRecords = enrichedRecords.filter((r) =>
@@ -151,7 +148,6 @@ export default function AttendanceReporting() {
 
     setRecords(filteredRecords);
 
-    // Build day map
     const newDayMap = new Map<string, DayData>();
     filteredRecords.forEach((record) => {
       const dateStr = record.attendance_date;
@@ -170,18 +166,10 @@ export default function AttendanceReporting() {
 
     setDayMap(newDayMap);
 
-    // Calculate year summary
-    const summary = {
-      full_day: 0,
-      half_day: 0,
-      absent: 0,
-      weekly_off: 0,
-    };
-
+    const summary = { full_day: 0, half_day: 0, absent: 0, weekly_off: 0 };
     filteredRecords.forEach((record) => {
       summary[record.status]++;
     });
-
     setYearSummary(summary);
     setLoading(false);
   };
@@ -205,7 +193,6 @@ export default function AttendanceReporting() {
     ]);
 
     const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -213,7 +200,6 @@ export default function AttendanceReporting() {
     a.download = `attendance_${selectedYear}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-
     toast.success("Attendance data exported successfully");
   };
 
@@ -224,9 +210,9 @@ export default function AttendanceReporting() {
 
   return (
     <AdminLayout>
-      {/* CONTAINER: 12-col grid, centered width */}
+      {/* 12-col container */}
       <div className="max-w-7xl mx-auto w-full px-4 py-6 grid grid-cols-12 gap-6">
-        {/* SIDEBAR (Filters) — sticky, 3 cols */}
+        {/* Sidebar */}
         <aside className="col-span-12 md:col-span-4 lg:col-span-3">
           <div className="sticky top-20">
             <Card>
@@ -237,7 +223,7 @@ export default function AttendanceReporting() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Role Filter */}
+                  {/* Role */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium">Role</label>
                     <Select value={selectedRole} onValueChange={setSelectedRole}>
@@ -253,7 +239,7 @@ export default function AttendanceReporting() {
                     </Select>
                   </div>
 
-                  {/* City Filter */}
+                  {/* City */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium">City</label>
                     <Select value={selectedCity} onValueChange={setSelectedCity}>
@@ -271,7 +257,7 @@ export default function AttendanceReporting() {
                     </Select>
                   </div>
 
-                  {/* Market Filter */}
+                  {/* Market */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium">Market</label>
                     <Select value={selectedMarket} onValueChange={setSelectedMarket}>
@@ -300,7 +286,7 @@ export default function AttendanceReporting() {
                     />
                   </div>
 
-                  {/* Status Legend */}
+                  {/* Legend */}
                   <div className="pt-3 border-t space-y-2">
                     <h3 className="text-xs font-semibold">Status Legend</h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -317,9 +303,9 @@ export default function AttendanceReporting() {
           </div>
         </aside>
 
-        {/* MAIN — 9 cols */}
+        {/* Main */}
         <main className="col-span-12 md:col-span-8 lg:col-span-9">
-          {/* Top bar: summary + year controls */}
+          {/* Summary + Year controls */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <SummaryCard
@@ -360,12 +346,11 @@ export default function AttendanceReporting() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y - 1)}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
                   <SelectTrigger className="w-28">
                     <SelectValue />
@@ -378,7 +363,6 @@ export default function AttendanceReporting() {
                     ))}
                   </SelectContent>
                 </Select>
-
                 <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y + 1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -391,7 +375,7 @@ export default function AttendanceReporting() {
             </div>
           </div>
 
-          {/* Calendar Grid — responsive 1/2/3 cols */}
+          {/* Calendars */}
           <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {months.map((monthDate) => (
               <MiniMonthCalendar
@@ -405,7 +389,7 @@ export default function AttendanceReporting() {
         </main>
       </div>
 
-      {/* Day Details Drawer */}
+      {/* Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader>
@@ -472,7 +456,7 @@ export default function AttendanceReporting() {
   );
 }
 
-/* ===== Small helpers ===== */
+/* Helpers */
 
 function SummaryCard({
   bg,
@@ -515,7 +499,8 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-/* ============= Mini Month Calendar ============= */
+/* Mini month calendar */
+
 interface MiniMonthCalendarProps {
   monthDate: Date;
   dayMap: Map<string, DayData>;
@@ -528,30 +513,27 @@ function MiniMonthCalendar({ monthDate, dayMap, onDayClick }: MiniMonthCalendarP
   const monthName = format(monthDate, "MMMM");
 
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const emptyDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+  const emptyDays = Array.from({ length: firstDayOfMonth }, () => 0);
 
   return (
     <div className="border border-border rounded-lg p-3 bg-card min-h-[260px]">
       <h3 className="text-sm font-semibold mb-3 text-center">{monthName}</h3>
 
-      {/* Day headers */}
       <div className="grid grid-cols-7 gap-px mb-1">
-        {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
           <div key={i} className="text-[10px] text-muted-foreground text-center font-semibold py-1">
-            {day}
+            {d}
           </div>
         ))}
       </div>
 
-      {/* Calendar days */}
       <div className="grid grid-cols-7 gap-px">
         {emptyDays.map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-square" />
+          <div key={`e-${i}`} className="aspect-square" />
         ))}
         {days.map((day) => {
           const dateStr = format(new Date(monthDate.getFullYear(), monthDate.getMonth(), day), "yyyy-MM-dd");
           const dayData = dayMap.get(dateStr);
-
           return <DayCell key={day} day={day} dayData={dayData} onDayClick={onDayClick} />;
         })}
       </div>
@@ -559,7 +541,6 @@ function MiniMonthCalendar({ monthDate, dayMap, onDayClick }: MiniMonthCalendarP
   );
 }
 
-/* ============= Day Cell ============= */
 interface DayCellProps {
   day: number;
   dayData?: DayData;
@@ -575,31 +556,29 @@ function DayCell({ day, dayData, onDayClick }: DayCellProps) {
     );
   }
 
-  // Determine majority status
   const { full_day, half_day, absent, weekly_off } = dayData.summary;
-  let majorityStatus: keyof typeof STATUS_CONFIG = "no_data";
-  let maxCount = 0;
+  let majority: keyof typeof STATUS_CONFIG = "no_data";
+  let max = 0;
+  if (full_day > max) {
+    majority = "full_day";
+    max = full_day;
+  }
+  if (half_day > max) {
+    majority = "half_day";
+    max = half_day;
+  }
+  if (absent > max) {
+    majority = "absent";
+    max = absent;
+  }
+  if (weekly_off > max) {
+    majority = "weekly_off";
+    max = weekly_off;
+  }
 
-  if (full_day > maxCount) {
-    majorityStatus = "full_day";
-    maxCount = full_day;
-  }
-  if (half_day > maxCount) {
-    majorityStatus = "half_day";
-    maxCount = half_day;
-  }
-  if (absent > maxCount) {
-    majorityStatus = "absent";
-    maxCount = absent;
-  }
-  if (weekly_off > maxCount) {
-    majorityStatus = "weekly_off";
-    maxCount = weekly_off;
-  }
-
-  const config = STATUS_CONFIG[majorityStatus];
-  const totalTasks = dayData.records.reduce((sum, r) => sum + r.total_tasks, 0);
-  const completedTasks = dayData.records.reduce((sum, r) => sum + r.completed_tasks, 0);
+  const cfg = STATUS_CONFIG[majority];
+  const totalTasks = dayData.records.reduce((s, r) => s + r.total_tasks, 0);
+  const completedTasks = dayData.records.reduce((s, r) => s + r.completed_tasks, 0);
 
   return (
     <HoverCard openDelay={150}>
@@ -608,7 +587,7 @@ function DayCell({ day, dayData, onDayClick }: DayCellProps) {
           onClick={() => onDayClick(dayData)}
           className={cn(
             "aspect-square flex items-center justify-center text-[11px] font-semibold rounded cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-primary",
-            config.color,
+            cfg.color,
             "text-white",
           )}
           aria-label={`Open details for day ${day}`}
@@ -621,7 +600,7 @@ function DayCell({ day, dayData, onDayClick }: DayCellProps) {
           <div className="flex items-center justify-between">
             <span className="font-semibold">{dayData.records.length} User(s)</span>
             <Badge variant="outline" className="text-xs">
-              {config.label}
+              {cfg.label}
             </Badge>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
