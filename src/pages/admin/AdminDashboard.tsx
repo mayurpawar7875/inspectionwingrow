@@ -232,16 +232,22 @@ export default function AdminDashboard() {
             // Get all sessions for this market today
             const { data: sessionsData } = await supabase
               .from('sessions')
-              .select(`
-                id,
-                user_id,
-                punch_in_time,
-                punch_out_time,
-                status,
-                profiles:user_id (full_name)
-              `)
+              .select('id, user_id, punch_in_time, punch_out_time, status')
               .eq('market_id', market.id)
               .eq('session_date', todayDate);
+
+            // Fetch employee details
+            const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
+            let employeeDetailsMap = new Map();
+            
+            if (userIds.length > 0) {
+              const { data: employeesData } = await supabase
+                .from('employees')
+                .select('id, full_name')
+                .in('id', userIds);
+              
+              employeeDetailsMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            }
 
             // Fetch attendance records to determine status
             const { data: attendanceData } = await supabase
@@ -252,7 +258,7 @@ export default function AdminDashboard() {
 
             const employees: EmployeeStatus[] = (sessionsData || []).map((session: any) => {
               const attendance = attendanceData?.find((a: any) => a.user_id === session.user_id);
-              const fullName = session.profiles?.full_name || 'Unknown';
+              const fullName = employeeDetailsMap.get(session.user_id) || 'Unknown';
               const nameParts = fullName.split(' ');
               const initials = nameParts.map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
@@ -280,7 +286,6 @@ export default function AdminDashboard() {
               };
             });
 
-            const userIds = sessionsData?.map((s: any) => s.user_id).filter(Boolean) || [];
             const employeeNames = employees.map(e => e.name);
 
             // Get counts
