@@ -315,21 +315,47 @@ export default function Punch() {
                     <h3 className="font-semibold">Selfie with GPS (Required)</h3>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="selfie">Take/Upload Selfie</Label>
-                    <Input
-                      id="selfie"
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      onChange={(e) => setSelfieFile(e.target.files?.[0] || null)}
-                      disabled={uploadingSelfie || actionLoading}
-                    />
+                    {!showCamera && !selfieFile && (
+                      <Button onClick={startCamera} variant="outline" className="w-full">
+                        <Camera className="h-4 w-4 mr-2" />
+                        Open Camera
+                      </Button>
+                    )}
+                    {showCamera && (
+                      <div className="space-y-2">
+                        <video
+                          ref={(el) => {
+                            if (el) {
+                              (videoRef as any) = el;
+                              if (cameraStream) el.srcObject = cameraStream;
+                            }
+                          }}
+                          autoPlay
+                          playsInline
+                          className="w-full rounded-lg"
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={capturePhoto} className="flex-1">
+                            <Camera className="h-4 w-4 mr-2" />
+                            Capture
+                          </Button>
+                          <Button onClick={stopCamera} variant="outline">
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {selfieFile && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">✓ Selfie captured</p>
+                        <Button onClick={() => { setSelfieFile(null); startCamera(); }} variant="outline" size="sm">
+                          Retake
+                        </Button>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       <MapPin className="inline h-3 w-3 mr-1" /> GPS will be captured automatically on Punch In
                     </p>
-                    {selfieFile && (
-                      <p className="text-xs text-muted-foreground">Selected: {selfieFile.name}</p>
-                    )}
                   </div>
                 </div>
               )}
