@@ -307,7 +307,7 @@ export default function AttendanceReporting() {
         <main className="col-span-12 md:col-span-8 lg:col-span-9">
           {/* Summary + Year controls */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 justify-items-start">
               <SummaryCard
                 bg="bg-green-50 border-green-200"
                 iconBg="bg-green-500"
@@ -346,7 +346,7 @@ export default function AttendanceReporting() {
               />
             </div>
 
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center justify-start gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y - 1)}>
                   <ChevronLeft className="h-4 w-4" />
