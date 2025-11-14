@@ -224,6 +224,40 @@ export default function AdminDashboard() {
       if (marketsError) throw marketsError;
 
       if (todaysMarkets && todaysMarkets.length > 0) {
+        // Fetch all recent activity times for markets today
+        const marketIds = todaysMarkets.map(m => m.id);
+        
+        // Get latest media uploads per market
+        const { data: mediaActivity } = await supabase
+          .from('media')
+          .select('market_id, captured_at')
+          .in('market_id', marketIds)
+          .gte('market_date', todayDate)
+          .order('captured_at', { ascending: false });
+        
+        // Get latest stall confirmations per market
+        const { data: stallActivity } = await supabase
+          .from('stall_confirmations')
+          .select('market_id, created_at')
+          .in('market_id', marketIds)
+          .gte('market_date', todayDate)
+          .order('created_at', { ascending: false });
+        
+        // Find the latest activity time for each market
+        const lastTaskByMarket: Record<string, string> = {};
+        
+        mediaActivity?.forEach(item => {
+          if (!lastTaskByMarket[item.market_id] || item.captured_at > lastTaskByMarket[item.market_id]) {
+            lastTaskByMarket[item.market_id] = item.captured_at;
+          }
+        });
+        
+        stallActivity?.forEach(item => {
+          if (!lastTaskByMarket[item.market_id] || item.created_at > lastTaskByMarket[item.market_id]) {
+            lastTaskByMarket[item.market_id] = item.created_at;
+          }
+        });
+        
         const marketsWithStats = await Promise.all(
           todaysMarkets.map(async (market: any) => {
 
@@ -305,25 +339,6 @@ export default function AdminDashboard() {
               .eq('market_id', market.id)
               .eq('market_date', todayDate);
             
-            // Get last task update time - using ts-ignore to bypass complex type inference issue
-            let lastTaskTime = null;
-            try {
-              // @ts-ignore - Complex Supabase types cause TS depth issues
-              const { data: taskData } = await supabase
-                .from('task_events')
-                .select('created_at')
-                .eq('market_id', market.id)
-                .gte('created_at', todayDate)
-                .order('created_at', { ascending: false })
-                .limit(1);
-              
-              if (taskData && taskData.length > 0) {
-                lastTaskTime = taskData[0].created_at;
-              }
-            } catch (e) {
-              // Ignore error, keep lastTaskTime as null
-            }
-            
             return {
               market_id: market.id,
               market_name: market.name,
@@ -332,7 +347,7 @@ export default function AdminDashboard() {
               active_employees: employees.filter(e => e.status === 'active').length,
               stall_confirmations_count: stallsCount || 0,
               media_uploads_count: mediaCount || 0,
-              last_upload_time: lastTaskTime,
+              last_upload_time: lastTaskByMarket[market.id] || null,
               last_punch_in: null,
               task_stats: taskStats,
               employee_names: employeeNames,
