@@ -36,6 +36,7 @@ export default function Collections() {
   const [addingManual, setAddingManual] = useState(false);
   const [depositFile, setDepositFile] = useState<File | null>(null);
   const [uploadingDeposit, setUploadingDeposit] = useState(false);
+  const [submittedCollections, setSubmittedCollections] = useState<any[]>([]);
 
   // Get IST date string for today
   const getISTDateString = (date: Date) => {
@@ -91,6 +92,18 @@ export default function Collections() {
             mode: 'cash',
           }))
         );
+
+        // Fetch already submitted collections for today
+        const { data: collections, error: collErr } = await supabase
+          .from('collections')
+          .select('*')
+          .eq('market_id', marketId)
+          .eq('market_date', dateStr)
+          .eq('collected_by', user.id)
+          .order('created_at', { ascending: false });
+
+        if (collErr) throw collErr;
+        setSubmittedCollections(collections || []);
       } catch (e) {
         console.error(e);
         toast.error('Failed to load collections data');
@@ -153,8 +166,20 @@ export default function Collections() {
       const { error } = await supabase.from('collections').insert(payload);
       if (error) throw error;
 
-      toast.success(`Saved. Cash ₹${totals.cash.toLocaleString('en-IN')}, Online ₹${totals.online.toLocaleString('en-IN')}`);
-      navigate('/dashboard');
+      toast.success('Collections saved successfully!');
+      
+      // Clear filled amounts after save
+      setRows((prev) => prev.map((r) => ({ ...r, amount: '', mode: 'cash' })));
+      
+      // Reload submitted collections
+      const { data: collections } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('market_id', sessionMarketId)
+        .eq('market_date', sessionDate)
+        .eq('collected_by', user.id)
+        .order('created_at', { ascending: false });
+      setSubmittedCollections(collections || []);
     } catch (e) {
       console.error(e);
       toast.error('Failed to save collections');
@@ -398,6 +423,41 @@ export default function Collections() {
             </div>
           </CardContent>
         </Card>
+
+        {submittedCollections.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Submitted Collections Today</CardTitle>
+            </CardHeader>
+            <CardContent className="card-padding-responsive pt-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs py-2">Time</TableHead>
+                      <TableHead className="text-xs py-2">Amount (₹)</TableHead>
+                      <TableHead className="text-xs py-2">Mode</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {submittedCollections.map((collection) => (
+                      <TableRow key={collection.id}>
+                        <TableCell className="text-xs py-2">
+                          {new Date(collection.created_at).toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </TableCell>
+                        <TableCell className="text-xs py-2">₹{collection.amount}</TableCell>
+                        <TableCell className="text-xs py-2 capitalize">{collection.mode}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="pb-3">
