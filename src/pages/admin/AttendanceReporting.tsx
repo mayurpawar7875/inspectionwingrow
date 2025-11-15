@@ -621,7 +621,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -827,7 +826,7 @@ export default function AttendanceReporting() {
   });
 
   return (
-    <AdminLayout>
+    <>
       {/* LEFT ALIGNED PAGE — NO CENTER SPACE */}
       <div className="w-full px-4 py-6 grid grid-cols-12 gap-6">
         {/* FILTER SIDEBAR */}
@@ -1045,7 +1044,7 @@ export default function AttendanceReporting() {
           </ScrollArea>
         </DrawerContent>
       </Drawer>
-    </AdminLayout>
+    </>
   );
 }
 
