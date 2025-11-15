@@ -673,15 +673,6 @@ export default function Dashboard() {
                   </CardHeader>
                 </Card>
 
-                {/* My Attendance */}
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/my-attendance')}>
-                  <CardHeader className="p-3 sm:p-4">
-                    <CalendarCheck className="h-6 w-6 sm:h-7 sm:w-7 text-accent mb-1" />
-                    <CardTitle className="text-sm sm:text-base">Attendance</CardTitle>
-                    <CardDescription className="text-xs">View records</CardDescription>
-                  </CardHeader>
-                </Card>
-
                 {/* Punch Out - Show at bottom after punch in */}
                 {todaySession.punch_in_time && !todaySession.punch_out_time && (
                   <Card 
