@@ -683,8 +683,9 @@ const STATUS_CONFIG = {
 };
 
 export default function AttendanceReporting() {
+  const currentMonth = new Date().getMonth();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<string>("all"); // "all" or "0"-"11"
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth.toString()); // Default to current month
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [markets, setMarkets] = useState<any[]>([]);
