@@ -461,6 +461,8 @@ export type Database = {
           contact_person_name: string
           contact_phone: string
           created_at: string
+          documents_status: string | null
+          documents_uploaded_at: string | null
           id: string
           location: string
           name: string
@@ -469,6 +471,8 @@ export type Database = {
           review_notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          service_agreement_url: string | null
+          stalls_accommodation_url: string | null
           status: string
           submitted_at: string
           submitted_by: string
@@ -481,6 +485,8 @@ export type Database = {
           contact_person_name: string
           contact_phone: string
           created_at?: string
+          documents_status?: string | null
+          documents_uploaded_at?: string | null
           id?: string
           location: string
           name: string
@@ -489,6 +495,8 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          service_agreement_url?: string | null
+          stalls_accommodation_url?: string | null
           status?: string
           submitted_at?: string
           submitted_by: string
@@ -501,6 +509,8 @@ export type Database = {
           contact_person_name?: string
           contact_phone?: string
           created_at?: string
+          documents_status?: string | null
+          documents_uploaded_at?: string | null
           id?: string
           location?: string
           name?: string
@@ -509,6 +519,8 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          service_agreement_url?: string | null
+          stalls_accommodation_url?: string | null
           status?: string
           submitted_at?: string
           submitted_by?: string

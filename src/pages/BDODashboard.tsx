@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import LiveMarketsWidget from '@/components/admin/LiveMarketsWidget';
 import TaskProgressWidget from '@/components/admin/TaskProgressWidget';
 import CollectionsWidget from '@/components/admin/CollectionsWidget';
+import ApprovedMarketsDocuments from '@/components/bdo/ApprovedMarketsDocuments';
 import { toast } from 'sonner';
 import {
   LogOut,
@@ -754,6 +755,11 @@ export default function BDODashboard() {
               <p className="text-xs text-muted-foreground">View records</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Approved Markets Document Upload */}
+        <div className="mb-6">
+          <ApprovedMarketsDocuments />
         </div>
 
       </main>
