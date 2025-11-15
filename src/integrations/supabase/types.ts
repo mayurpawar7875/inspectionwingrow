@@ -472,7 +472,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           service_agreement_url: string | null
-          stalls_accommodation_url: string | null
+          stalls_accommodation_count: number | null
           status: string
           submitted_at: string
           submitted_by: string
@@ -496,7 +496,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           service_agreement_url?: string | null
-          stalls_accommodation_url?: string | null
+          stalls_accommodation_count?: number | null
           status?: string
           submitted_at?: string
           submitted_by: string
@@ -520,7 +520,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           service_agreement_url?: string | null
-          stalls_accommodation_url?: string | null
+          stalls_accommodation_count?: number | null
           status?: string
           submitted_at?: string
           submitted_by?: string

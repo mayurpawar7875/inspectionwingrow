@@ -28,7 +28,7 @@ interface ApprovedMarket {
   reviewed_at: string | null;
   documents_status: string;
   service_agreement_url: string | null;
-  stalls_accommodation_url: string | null;
+  stalls_accommodation_count: number | null;
 }
 
 export default function ApprovedMarketsDocuments() {
@@ -37,7 +37,7 @@ export default function ApprovedMarketsDocuments() {
   const [selectedMarket, setSelectedMarket] = useState<ApprovedMarket | null>(null);
   const [uploading, setUploading] = useState(false);
   const [serviceAgreementFile, setServiceAgreementFile] = useState<File | null>(null);
-  const [stallsAccommodationFile, setStallsAccommodationFile] = useState<File | null>(null);
+  const [stallsCount, setStallsCount] = useState<number>(0);
 
   useEffect(() => {
     fetchApprovedMarkets();
@@ -61,7 +61,7 @@ export default function ApprovedMarketsDocuments() {
 
       const { data, error } = await supabase
         .from('bdo_market_submissions')
-        .select('id, name, location, address, city, opening_date, reviewed_at, documents_status, service_agreement_url, stalls_accommodation_url')
+        .select('id, name, location, address, city, opening_date, reviewed_at, documents_status, service_agreement_url, stalls_accommodation_count')
         .eq('submitted_by', user.id)
         .eq('status', 'approved')
         .order('reviewed_at', { ascending: false });
@@ -77,15 +77,15 @@ export default function ApprovedMarketsDocuments() {
   };
 
   const handleUploadDocuments = async () => {
-    if (!selectedMarket || (!serviceAgreementFile && !stallsAccommodationFile)) {
-      toast.error('Please select at least one document to upload');
+    if (!selectedMarket || (!serviceAgreementFile && !stallsCount)) {
+      toast.error('Please provide service agreement or stalls count');
       return;
     }
 
     setUploading(true);
     try {
       let serviceAgreementUrl = selectedMarket.service_agreement_url;
-      let stallsAccommodationUrl = selectedMarket.stalls_accommodation_url;
+      let stallsAccommodationCount = selectedMarket.stalls_accommodation_count;
 
       // Upload service agreement if provided
       if (serviceAgreementFile) {
@@ -103,31 +103,20 @@ export default function ApprovedMarketsDocuments() {
         serviceAgreementUrl = publicUrl;
       }
 
-      // Upload stalls accommodation if provided
-      if (stallsAccommodationFile) {
-        const fileName = `stalls-accommodation-${selectedMarket.id}-${Date.now()}.${stallsAccommodationFile.name.split('.').pop()}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('employee-media')
-          .upload(`bdo-documents/${fileName}`, stallsAccommodationFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('employee-media')
-          .getPublicUrl(`bdo-documents/${fileName}`);
-
-        stallsAccommodationUrl = publicUrl;
+      // Update stalls count if provided
+      if (stallsCount > 0) {
+        stallsAccommodationCount = stallsCount;
       }
 
-      // Check if both documents are now uploaded
-      const documentsComplete = serviceAgreementUrl && stallsAccommodationUrl;
+      // Check if both are now provided
+      const documentsComplete = serviceAgreementUrl && stallsAccommodationCount;
 
-      // Update the submission with document URLs
+      // Update the submission
       const { error: updateError } = await supabase
         .from('bdo_market_submissions')
         .update({
           service_agreement_url: serviceAgreementUrl,
-          stalls_accommodation_url: stallsAccommodationUrl,
+          stalls_accommodation_count: stallsAccommodationCount,
           documents_uploaded_at: documentsComplete ? new Date().toISOString() : null,
           documents_status: documentsComplete ? 'uploaded' : 'pending',
         })
@@ -135,10 +124,10 @@ export default function ApprovedMarketsDocuments() {
 
       if (updateError) throw updateError;
 
-      toast.success(documentsComplete ? 'All documents uploaded successfully!' : 'Document uploaded successfully!');
+      toast.success(documentsComplete ? 'All information submitted successfully!' : 'Information updated successfully!');
       setSelectedMarket(null);
       setServiceAgreementFile(null);
-      setStallsAccommodationFile(null);
+      setStallsCount(0);
       fetchApprovedMarkets();
     } catch (error) {
       console.error('Error uploading documents:', error);
@@ -152,7 +141,7 @@ export default function ApprovedMarketsDocuments() {
     if (market.documents_status === 'uploaded') {
       return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Complete</Badge>;
     }
-    if (market.service_agreement_url || market.stalls_accommodation_url) {
+    if (market.service_agreement_url || market.stalls_accommodation_count) {
       return <Badge className="bg-amber-500"><AlertCircle className="h-3 w-3 mr-1" />Partial</Badge>;
     }
     return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Pending</Badge>;
@@ -190,7 +179,7 @@ export default function ApprovedMarketsDocuments() {
             Approved Markets - Document Upload
           </CardTitle>
           <CardDescription>
-            Upload service agreement and stalls accommodation documents for approved markets
+            Upload service agreement and provide stalls count for approved markets
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -243,9 +232,9 @@ export default function ApprovedMarketsDocuments() {
       <Dialog open={!!selectedMarket} onOpenChange={(open) => !open && setSelectedMarket(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Upload Documents - {selectedMarket?.name}</DialogTitle>
+            <DialogTitle>Submit Information - {selectedMarket?.name}</DialogTitle>
             <DialogDescription>
-              Please upload the service agreement with landowner and stalls accommodation details
+              Please upload the service agreement with landowner and provide the number of stalls
             </DialogDescription>
           </DialogHeader>
 
@@ -274,27 +263,27 @@ export default function ApprovedMarketsDocuments() {
               </p>
             </div>
 
-            {/* Stalls Accommodation */}
+            {/* Stalls Count */}
             <div className="space-y-2">
-              <Label htmlFor="stalls-accommodation">
-                Stalls Accommodation Details {selectedMarket?.stalls_accommodation_url && '✓'}
+              <Label htmlFor="stalls-count">
+                Number of Stalls {selectedMarket?.stalls_accommodation_count && '✓'}
               </Label>
-              {selectedMarket?.stalls_accommodation_url && (
+              {selectedMarket?.stalls_accommodation_count && (
                 <div className="text-sm text-muted-foreground mb-2">
-                  <a href={selectedMarket.stalls_accommodation_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    View current document
-                  </a>
+                  Current count: {selectedMarket.stalls_accommodation_count} stalls
                 </div>
               )}
               <Input
-                id="stalls-accommodation"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                onChange={(e) => setStallsAccommodationFile(e.target.files?.[0] || null)}
+                id="stalls-count"
+                type="number"
+                min="1"
+                placeholder="Enter number of stalls"
+                value={stallsCount || ''}
+                onChange={(e) => setStallsCount(parseInt(e.target.value) || 0)}
                 disabled={uploading}
               />
               <p className="text-xs text-muted-foreground">
-                Accepted formats: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX (Max 10MB)
+                Enter the total number of stalls for this market
               </p>
             </div>
           </div>
@@ -303,8 +292,8 @@ export default function ApprovedMarketsDocuments() {
             <Button variant="outline" onClick={() => setSelectedMarket(null)} disabled={uploading}>
               Cancel
             </Button>
-            <Button onClick={handleUploadDocuments} disabled={uploading || (!serviceAgreementFile && !stallsAccommodationFile)}>
-              {uploading ? 'Uploading...' : 'Upload Documents'}
+            <Button onClick={handleUploadDocuments} disabled={uploading || (!serviceAgreementFile && !stallsCount)}>
+              {uploading ? 'Submitting...' : 'Submit Information'}
             </Button>
           </DialogFooter>
         </DialogContent>
