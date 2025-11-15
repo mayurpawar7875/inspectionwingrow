@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ArrowLeft } from 'lucide-react';
+import { Calendar, ArrowLeft, CheckCircle, AlertCircle, XCircle, CalendarCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -147,40 +147,54 @@ export default function MyAttendance() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Full Days</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{summary.fullDays}</div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card className="bg-green-50/50 border-green-100">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <CheckCircle className="w-10 h-10 mx-auto text-green-600" />
+                <div className="text-3xl font-bold text-green-600">{summary.fullDays}</div>
+                <div className="text-sm text-green-700/70">Full Days</div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Half Days</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{summary.halfDays}</div>
+          <Card className="bg-amber-50/50 border-amber-100">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <AlertCircle className="w-10 h-10 mx-auto text-amber-600" />
+                <div className="text-3xl font-bold text-amber-600">{summary.halfDays}</div>
+                <div className="text-sm text-amber-700/70">Half Days</div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Absent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{summary.absent}</div>
+          <Card className="bg-red-50/50 border-red-100">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <XCircle className="w-10 h-10 mx-auto text-red-600" />
+                <div className="text-3xl font-bold text-red-600">{summary.absent}</div>
+                <div className="text-sm text-red-700/70">Absences</div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Weekly Offs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{summary.weeklyOffs}</div>
+          <Card className="bg-slate-50/50 border-slate-100">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <Calendar className="w-10 h-10 mx-auto text-slate-600" />
+                <div className="text-3xl font-bold text-slate-600">{summary.weeklyOffs}</div>
+                <div className="text-sm text-slate-700/70">Weekly Offs</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-50/50 border-slate-100">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <CalendarCheck className="w-10 h-10 mx-auto text-slate-600" />
+                <div className="text-3xl font-bold text-slate-600">{summary.fullDays + summary.halfDays + summary.weeklyOffs}</div>
+                <div className="text-sm text-slate-700/70">Total Days</div>
+              </div>
             </CardContent>
           </Card>
         </div>
