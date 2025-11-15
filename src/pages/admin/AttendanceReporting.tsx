@@ -1140,7 +1140,7 @@ export default function AttendanceReporting() {
           </div>
 
           {/* CALENDAR GRID */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
             {months.map((month) => (
               <MiniMonthCalendar
                 key={format(month, "yyyy-MM")}
