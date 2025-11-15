@@ -306,8 +306,8 @@ export default function AttendanceReporting() {
         {/* Main */}
         <main className="col-span-12 md:col-span-8 lg:col-span-9">
           {/* Summary + Year controls */}
-          <div className="flex flex-col gap-4 mb-6 w-full">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+          <div className="flex flex-col gap-4 mb-6 w-full items-start">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full items-start justify-items-start">
               <SummaryCard
                 bg="bg-green-50 border-green-200"
                 iconBg="bg-green-500"
