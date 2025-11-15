@@ -687,10 +687,11 @@ export default function AttendanceReporting() {
   const [loading, setLoading] = useState(true);
   const [markets, setMarkets] = useState<any[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [selectedCity, setSelectedCity] = useState<string>("all");
   const [selectedMarket, setSelectedMarket] = useState<string>("all");
-  const [userSearch, setUserSearch] = useState<string>("");
+  const [selectedUser, setSelectedUser] = useState<string>("all");
 
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -703,15 +704,16 @@ export default function AttendanceReporting() {
     weekly_off: 0,
   });
 
-  /* --- FETCH MARKETS ---- */
+  /* --- FETCH MARKETS AND USERS ---- */
   useEffect(() => {
     fetchMarkets();
+    fetchUsers();
   }, []);
 
   /* --- FETCH RECORDS WHEN FILTERS CHANGE ---- */
   useEffect(() => {
     fetchRecords();
-  }, [selectedYear, selectedRole, selectedCity, selectedMarket, userSearch, markets]);
+  }, [selectedYear, selectedRole, selectedCity, selectedMarket, selectedUser, markets]);
 
   const fetchMarkets = async () => {
     const { data } = await supabase.from("markets").select("id, name, city").eq("is_active", true).order("name");
@@ -720,6 +722,18 @@ export default function AttendanceReporting() {
       setMarkets(data);
       const uniqueCities = [...new Set(data.map((m) => m.city).filter(Boolean))];
       setCities(uniqueCities as string[]);
+    }
+  };
+
+  const fetchUsers = async () => {
+    const { data } = await supabase
+      .from("employees")
+      .select("id, full_name, email")
+      .eq("status", "active")
+      .order("full_name");
+
+    if (data) {
+      setUsers(data);
     }
   };
 
@@ -763,8 +777,8 @@ export default function AttendanceReporting() {
     );
 
     let filtered = enriched;
-    if (userSearch) {
-      filtered = enriched.filter((r) => r.employee_name?.toLowerCase().includes(userSearch.toLowerCase()));
+    if (selectedUser !== "all") {
+      filtered = enriched.filter((r) => r.user_id === selectedUser);
     }
 
     setRecords(filtered);
@@ -892,13 +906,20 @@ export default function AttendanceReporting() {
 
               {/* User Search */}
               <div className="space-y-1.5 mt-3">
-                <label className="text-xs font-medium">User Search</label>
-                <Input
-                  className="h-9"
-                  placeholder="Search by name..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                />
+                <label className="text-xs font-medium">User</label>
+                <Select value={selectedUser} onValueChange={setSelectedUser}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.full_name || user.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
