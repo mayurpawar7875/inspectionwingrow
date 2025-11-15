@@ -51,13 +51,13 @@ export default function Collections() {
       if (!user) return;
       setLoading(true);
       try {
-        // Find today's session (by session_date)
-        const today = new Date().toISOString().split('T')[0];
+        // Find today's session using IST date
+        const todayIST = getISTDateString(new Date());
         const { data: session, error: sErr } = await supabase
           .from('sessions')
           .select('id, market_id, session_date, market_date, status')
           .eq('user_id', user.id)
-          .eq('session_date', today)
+          .eq('session_date', todayIST)
           .maybeSingle();
 
         if (sErr) throw sErr;
