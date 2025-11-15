@@ -34,6 +34,10 @@ interface BDOMarketSubmission {
   reviewed_by: string | null;
   reviewed_at: string | null;
   review_notes: string | null;
+  service_agreement_url: string | null;
+  stalls_accommodation_count: number | null;
+  documents_status: string | null;
+  documents_uploaded_at: string | null;
 }
 
 interface BDOStallSubmission {
@@ -456,6 +460,59 @@ export default function BDOSubmissionsWidget({ filter = 'all' }: BDOSubmissionsW
                   />
                 </div>
               )}
+              
+              {/* Documents Section */}
+              <div className="border-t pt-4 space-y-4">
+                <h4 className="text-sm font-semibold">BDO Documents</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Service Agreement</p>
+                    {selectedMarket.service_agreement_url ? (
+                      <a
+                        href={selectedMarket.service_agreement_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        View Document
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Not uploaded yet</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Stalls Accommodation</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedMarket.stalls_accommodation_count 
+                        ? `${selectedMarket.stalls_accommodation_count} stalls` 
+                        : 'Not specified yet'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Documents Status</p>
+                    {selectedMarket.documents_status ? (
+                      <Badge variant={
+                        selectedMarket.documents_status === 'complete' ? 'default' : 
+                        selectedMarket.documents_status === 'partial' ? 'secondary' : 
+                        'outline'
+                      }>
+                        {selectedMarket.documents_status}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Pending</Badge>
+                    )}
+                  </div>
+                  {selectedMarket.documents_uploaded_at && (
+                    <div>
+                      <p className="text-sm font-medium">Uploaded At</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(selectedMarket.documents_uploaded_at), 'MMM dd, yyyy HH:mm')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="text-sm font-medium">Review Notes</label>
                 <Textarea
