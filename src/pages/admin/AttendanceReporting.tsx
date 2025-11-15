@@ -1237,12 +1237,12 @@ function MiniMonthCalendar({ monthDate, dayMap, onDayClick }: any) {
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
 
   return (
-    <div className="border border-border rounded-lg p-3 bg-card min-h-[260px]">
-      <h3 className="text-sm font-semibold mb-3 text-center">{monthName}</h3>
+    <div className="border border-border rounded-lg p-2 bg-card">
+      <h3 className="text-xs font-semibold mb-1.5 text-center">{monthName}</h3>
 
-      <div className="grid grid-cols-7 gap-px mb-1">
+      <div className="grid grid-cols-7 gap-px mb-0.5">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-          <div key={i} className="text-[10px] text-muted-foreground text-center font-semibold py-1">
+          <div key={i} className="text-[9px] text-muted-foreground text-center font-semibold py-0.5">
             {d}
           </div>
         ))}
