@@ -683,6 +683,7 @@ const STATUS_CONFIG = {
 
 export default function AttendanceReporting() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<string>("all"); // "all" or "0"-"11"
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [markets, setMarkets] = useState<any[]>([]);
@@ -713,7 +714,7 @@ export default function AttendanceReporting() {
   /* --- FETCH RECORDS WHEN FILTERS CHANGE ---- */
   useEffect(() => {
     fetchRecords();
-  }, [selectedYear, selectedRole, selectedCity, selectedMarket, selectedUser, markets]);
+  }, [selectedYear, selectedMonth, selectedRole, selectedCity, selectedMarket, selectedUser, markets]);
 
   const fetchMarkets = async () => {
     const { data } = await supabase.from("markets").select("id, name, city").eq("is_active", true).order("name");
@@ -741,8 +742,21 @@ export default function AttendanceReporting() {
   const fetchRecords = async () => {
     setLoading(true);
 
-    const startDate = format(startOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
-    const endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
+    let startDate: string;
+    let endDate: string;
+
+    if (selectedMonth === "all") {
+      // Show entire year
+      startDate = format(startOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
+      endDate = format(endOfYear(new Date(selectedYear, 0)), "yyyy-MM-dd");
+    } else {
+      // Show specific month
+      const monthIndex = parseInt(selectedMonth);
+      const monthStart = new Date(selectedYear, monthIndex, 1);
+      const monthEnd = new Date(selectedYear, monthIndex + 1, 0); // Last day of month
+      startDate = format(monthStart, "yyyy-MM-dd");
+      endDate = format(monthEnd, "yyyy-MM-dd");
+    }
 
     let query = supabase
       .from("attendance_records")
@@ -834,10 +848,12 @@ export default function AttendanceReporting() {
     URL.revokeObjectURL(url);
   };
 
-  const months = eachMonthOfInterval({
-    start: startOfYear(new Date(selectedYear, 0)),
-    end: endOfYear(new Date(selectedYear, 0)),
-  });
+  const months = selectedMonth === "all" 
+    ? eachMonthOfInterval({
+        start: startOfYear(new Date(selectedYear, 0)),
+        end: endOfYear(new Date(selectedYear, 0)),
+      })
+    : [new Date(selectedYear, parseInt(selectedMonth), 1)];
 
   return (
     <>
@@ -967,9 +983,10 @@ export default function AttendanceReporting() {
             />
           </div>
 
-          {/* YEAR SELECTOR & EXPORT */}
-          <div className="flex items-center justify-between mb-4">
+          {/* YEAR & MONTH SELECTOR & EXPORT */}
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
+              {/* Year Selector */}
               <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y - 1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -990,6 +1007,24 @@ export default function AttendanceReporting() {
               <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y + 1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
+
+              {/* Month Selector */}
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Months</SelectItem>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const monthDate = new Date(selectedYear, i, 1);
+                    return (
+                      <SelectItem key={i} value={i.toString()}>
+                        {format(monthDate, "MMMM")}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button variant="outline" size="sm" onClick={exportCSV}>
