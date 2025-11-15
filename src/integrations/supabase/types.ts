@@ -630,28 +630,34 @@ export type Database = {
           amount: number
           collected_by: string
           created_at: string
+          farmer_name: string | null
           id: string
           market_date: string
           market_id: string
           mode: string
+          stall_name: string | null
         }
         Insert: {
           amount: number
           collected_by: string
           created_at?: string
+          farmer_name?: string | null
           id?: string
           market_date: string
           market_id: string
           mode: string
+          stall_name?: string | null
         }
         Update: {
           amount?: number
           collected_by?: string
           created_at?: string
+          farmer_name?: string | null
           id?: string
           market_date?: string
           market_id?: string
           mode?: string
+          stall_name?: string | null
         }
         Relationships: [
           {
