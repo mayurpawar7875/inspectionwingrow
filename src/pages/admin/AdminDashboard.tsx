@@ -914,9 +914,7 @@ export default function AdminDashboard() {
           </div>
         );
 
-      case 'market_video':
-      case 'cleaning_video':
-      case 'all_media':
+      case 'selfie_gps':
         return (
           <div className="space-y-4">
             {data.map((item) => (
@@ -924,7 +922,31 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle className="text-sm">{item.employees?.full_name || 'Unknown'}</CardTitle>
                   <CardDescription>
-                    {item.media_type && <Badge className="mr-2">{item.media_type.replace('_', ' ')}</Badge>}
+                    {format(new Date(item.created_at), 'HH:mm')}
+                    {item.gps_lat && item.gps_lng && (
+                      <span className="ml-2 text-xs">
+                        ({item.gps_lat.toFixed(6)}, {item.gps_lng.toFixed(6)})
+                      </span>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <img src={item.file_url} alt="Selfie" className="w-full rounded-md" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+
+      case 'market_video':
+      case 'cleaning_video':
+        return (
+          <div className="space-y-4">
+            {data.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <CardTitle className="text-sm">{item.employees?.full_name || 'Unknown'}</CardTitle>
+                  <CardDescription>
                     {format(new Date(item.created_at), 'HH:mm')}
                   </CardDescription>
                 </CardHeader>
