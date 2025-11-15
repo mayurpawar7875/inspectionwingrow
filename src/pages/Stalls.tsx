@@ -18,8 +18,7 @@ const stallSchema = z.object({
   farmer_name: z.string().trim().min(1, 'Farmer name is required').max(200, 'Farmer name must be less than 200 characters'),
   stall_name: z.string().trim().min(1, 'Stall name is required').max(200, 'Stall name must be less than 200 characters'),
   stall_no: z.string().trim().min(1, 'Stall number is required').max(50, 'Stall number must be less than 50 characters'),
-  collection_amount: z.string().optional(),
-  collection_mode: z.enum(['cash', 'online']).optional(),
+  rent_amount: z.string().min(1, 'Rent amount is required'),
 });
 
 interface Stall {
@@ -37,9 +36,6 @@ export default function Stalls() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStall, setEditingStall] = useState<Stall | null>(null);
-  const [savingCollection, setSavingCollection] = useState<Record<string, boolean>>({});
-  const [quickAmounts, setQuickAmounts] = useState<Record<string, string>>({});
-  const [quickModes, setQuickModes] = useState<Record<string, 'cash' | 'online'>>({});
   
   const form = useForm<z.infer<typeof stallSchema>>({
     resolver: zodResolver(stallSchema),
@@ -47,8 +43,7 @@ export default function Stalls() {
       farmer_name: '',
       stall_name: '',
       stall_no: '',
-      collection_amount: '',
-      collection_mode: 'cash',
+      rent_amount: '',
     },
   });
 
@@ -162,24 +157,6 @@ export default function Stalls() {
           minute: '2-digit'
         });
         toast.success(`Saved at ${istTime} IST`);
-
-        // If amount provided, create a collection entry immediately
-        const amountNum = Number(data.collection_amount || 0);
-        if (!isNaN(amountNum) && amountNum > 0 && inserted?.id) {
-          const { error: collErr } = await supabase.from('collections').insert({
-            market_id: marketId,
-            market_date: getISTDateString(new Date()),
-            amount: amountNum,
-            mode: data.collection_mode === 'cash' ? 'cash' : 'upi',
-            collected_by: user.id,
-          } as any);
-          if (collErr) {
-            console.error(collErr);
-            toast.error('Stall added, but failed to save collection');
-          } else {
-            toast.success('Collection saved');
-          }
-        }
       }
 
       setDialogOpen(false);
@@ -198,8 +175,7 @@ export default function Stalls() {
       farmer_name: stall.farmer_name,
       stall_name: stall.stall_name,
       stall_no: stall.stall_no,
-      collection_amount: '',
-      collection_mode: 'cash',
+      rent_amount: (stall as any).rent_amount?.toString() || '',
     });
     setDialogOpen(true);
   };
@@ -223,58 +199,6 @@ export default function Stalls() {
     setDialogOpen(false);
     setEditingStall(null);
     form.reset();
-  };
-
-  const saveQuickCollection = async (stallId: string) => {
-    if (!user) return;
-    const amountStr = quickAmounts[stallId] || '';
-    const amountNum = Number(amountStr || 0);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Enter a valid amount');
-      return;
-    }
-
-    try {
-      // Resolve market id from local storage OR fallback to today's active session
-      const dashboardState = JSON.parse(localStorage.getItem('dashboardState') || '{}');
-      let marketId: string | undefined = dashboardState.selectedMarketId;
-      if (!marketId) {
-        const today = getISTDateString(new Date());
-        const { data: todaySession, error: sessionErr } = await supabase
-          .from('sessions')
-          .select('id, market_id, status')
-          .eq('user_id', user.id)
-          .eq('session_date', today)
-          .maybeSingle();
-        if (sessionErr) throw sessionErr;
-        marketId = todaySession?.market_id;
-        if (marketId) {
-          localStorage.setItem('dashboardState', JSON.stringify({ selectedMarketId: marketId }));
-        }
-      }
-      if (!marketId) {
-        toast.error('Please select a market from the dashboard first');
-        navigate('/dashboard');
-        return;
-      }
-
-      setSavingCollection((prev) => ({ ...prev, [stallId]: true }));
-      const { error } = await supabase.from('collections').insert({
-        market_id: marketId,
-        market_date: getISTDateString(new Date()),
-        amount: amountNum,
-        mode: (quickModes[stallId] || 'cash') === 'cash' ? 'cash' : 'upi',
-        collected_by: user.id,
-      } as any);
-      if (error) throw error;
-      toast.success('Collection saved');
-      setQuickAmounts((prev) => ({ ...prev, [stallId]: '' }));
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to save collection');
-    } finally {
-      setSavingCollection((prev) => ({ ...prev, [stallId]: false }));
-    }
   };
 
   if (loading) {
@@ -363,47 +287,25 @@ export default function Stalls() {
                           </FormItem>
                         )}
                       />
-                      <div className="space-y-2">
-                        <FormLabel>Collection Amount (optional)</FormLabel>
-                        <div className="flex gap-2">
-                          <FormField
-                            control={form.control}
-                            name="collection_amount"
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    inputMode="decimal"
-                                    placeholder="0"
-                                    {...field}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="collection_mode"
-                            render={({ field }) => (
-                              <FormItem>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="w-[140px]">
-                                      <SelectValue placeholder="Mode" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="cash">Cash</SelectItem>
-                                    <SelectItem value="online">Online</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="rent_amount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stall Rent Amount</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                inputMode="decimal"
+                                placeholder="Enter rent amount"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <div className="flex gap-2">
                         <Button type="submit" className="flex-1">
                           {editingStall ? 'Update' : 'Add'} Stall
@@ -433,36 +335,7 @@ export default function Stalls() {
                           <h3 className="font-semibold">{stall.stall_name}</h3>
                           <p className="text-sm text-muted-foreground">Farmer: {stall.farmer_name}</p>
                           <p className="text-sm text-muted-foreground">Stall No: {stall.stall_no}</p>
-                          <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
-                            <Input
-                              type="number"
-                              min="0"
-                              inputMode="decimal"
-                              className="w-full sm:w-40"
-                              placeholder="Amount"
-                              value={quickAmounts[stall.id] || ''}
-                              onChange={(e) => setQuickAmounts((prev) => ({ ...prev, [stall.id]: e.target.value }))}
-                            />
-                            <Select
-                              value={quickModes[stall.id] || 'cash'}
-                              onValueChange={(v) => setQuickModes((prev) => ({ ...prev, [stall.id]: v as 'cash' | 'online' }))}
-                            >
-                              <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Mode" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="cash">Cash</SelectItem>
-                                <SelectItem value="online">Online</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              size="sm"
-                              onClick={() => saveQuickCollection(stall.id)}
-                              disabled={!!savingCollection[stall.id]}
-                            >
-                              {savingCollection[stall.id] ? 'Saving…' : 'Save Collection'}
-                            </Button>
-                          </div>
+                          <p className="text-sm font-medium mt-1">Rent: ₹{(stall as any).rent_amount || 0}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(stall)}>
