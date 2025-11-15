@@ -931,9 +931,22 @@ export default function AdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="block cursor-pointer hover:opacity-80 transition-opacity">
-                    <img src={item.file_url} alt="Selfie" className="w-full rounded-md" />
-                  </a>
+                  {item.file_url ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={item.file_url} 
+                        alt="Employee Selfie" 
+                        className="w-full rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(item.file_url, '_blank')}
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pjwvc3ZnPg==';
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">Click image to view full size</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No selfie available</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
