@@ -121,6 +121,7 @@ export default function Stalls() {
             farmer_name: data.farmer_name,
             stall_name: data.stall_name,
             stall_no: data.stall_no,
+            rent_amount: parseFloat(data.rent_amount),
           })
           .eq('id', editingStall.id);
 
@@ -138,6 +139,7 @@ export default function Stalls() {
           farmer_name: data.farmer_name,
           stall_name: data.stall_name,
           stall_no: data.stall_no,
+          rent_amount: parseFloat(data.rent_amount),
           created_by: user.id,
           market_id: marketId,
           market_date: getISTDateString(new Date()),
