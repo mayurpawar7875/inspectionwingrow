@@ -626,6 +626,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Drawer,
   DrawerContent,
@@ -638,7 +639,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
-import { Download, ChevronLeft, ChevronRight, X, Calendar as CalendarIcon } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Filter } from "lucide-react";
 
 import { format, startOfYear, endOfYear, eachMonthOfInterval, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import { toast } from "sonner";
@@ -862,9 +863,9 @@ export default function AttendanceReporting() {
   return (
     <>
       {/* LEFT ALIGNED PAGE — NO CENTER SPACE */}
-      <div className="w-full px-4 py-6 grid grid-cols-12 gap-6">
-        {/* FILTER SIDEBAR */}
-        <aside className="col-span-12 md:col-span-4 lg:col-span-3 order-1">
+      <div className="w-full px-2 md:px-4 py-3 md:py-6 grid grid-cols-12 gap-3 md:gap-6">
+        {/* FILTER SIDEBAR - Desktop only */}
+        <aside className="hidden md:block md:col-span-4 lg:col-span-3 order-1">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-4">
@@ -947,8 +948,89 @@ export default function AttendanceReporting() {
 
         {/* MAIN CONTENT */}
         <main className="col-span-12 md:col-span-8 lg:col-span-9 order-2">
+          {/* Mobile Filters Button */}
+          <div className="md:hidden mb-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] overflow-y-auto">
+                <div className="space-y-4 mt-6">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">Role</label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="bdo">BDO</SelectItem>
+                        <SelectItem value="market_manager">Market Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">City</label>
+                    <Select value={selectedCity} onValueChange={setSelectedCity}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Cities</SelectItem>
+                        {cities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">Market</label>
+                    <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Markets</SelectItem>
+                        {markets.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">User</label>
+                    <Select value={selectedUser} onValueChange={setSelectedUser}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.full_name || user.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3 mb-3 md:mb-6">
             <div 
               onClick={() => setSelectedStatus(selectedStatus === "full_day" ? "all" : "full_day")}
               className="cursor-pointer transition-all hover:scale-105"
@@ -1008,7 +1090,7 @@ export default function AttendanceReporting() {
           </div>
 
           {/* YEAR & MONTH SELECTOR & EXPORT */}
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center justify-between mb-3 md:mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {/* Year Selector */}
               <Button variant="outline" size="icon" onClick={() => setSelectedYear((y) => y - 1)}>
@@ -1133,12 +1215,12 @@ export default function AttendanceReporting() {
 function SummaryCard({ bg, iconBg, icon, value, label, valueColor, labelColor }: any) {
   return (
     <Card className={cn("border", bg)}>
-      <CardContent className="p-3">
-        <div className="flex items-center gap-3">
-          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center", iconBg)}>{icon}</div>
-          <div>
-            <div className={cn("text-2xl font-bold", valueColor)}>{value}</div>
-            <div className={cn("text-sm", labelColor)}>{label}</div>
+      <CardContent className="p-2 md:p-3">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className={cn("h-8 w-8 md:h-10 md:w-10 rounded-full flex items-center justify-center", iconBg)}>{icon}</div>
+          <div className="flex-1 min-w-0">
+            <div className={cn("text-xl md:text-2xl font-bold", valueColor)}>{value}</div>
+            <div className={cn("text-[10px] md:text-sm", labelColor, "truncate")}>{label}</div>
           </div>
         </div>
       </CardContent>
