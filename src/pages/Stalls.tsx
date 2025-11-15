@@ -26,6 +26,7 @@ interface Stall {
   farmer_name: string;
   stall_name: string;
   stall_no: string;
+  rent_amount: number | null;
 }
 
 export default function Stalls() {
@@ -177,7 +178,7 @@ export default function Stalls() {
       farmer_name: stall.farmer_name,
       stall_name: stall.stall_name,
       stall_no: stall.stall_no,
-      rent_amount: (stall as any).rent_amount?.toString() || '',
+      rent_amount: stall.rent_amount?.toString() || '0',
     });
     setDialogOpen(true);
   };
@@ -337,7 +338,7 @@ export default function Stalls() {
                           <h3 className="font-semibold">{stall.stall_name}</h3>
                           <p className="text-sm text-muted-foreground">Farmer: {stall.farmer_name}</p>
                           <p className="text-sm text-muted-foreground">Stall No: {stall.stall_no}</p>
-                          <p className="text-sm font-medium mt-1">Rent: ₹{(stall as any).rent_amount || 0}</p>
+                          <p className="text-sm font-medium mt-1">Rent: ₹{stall.rent_amount ?? 0}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(stall)}>
