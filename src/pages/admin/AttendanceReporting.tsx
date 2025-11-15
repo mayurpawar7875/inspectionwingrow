@@ -693,6 +693,7 @@ export default function AttendanceReporting() {
   const [selectedCity, setSelectedCity] = useState<string>("all");
   const [selectedMarket, setSelectedMarket] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -714,7 +715,7 @@ export default function AttendanceReporting() {
   /* --- FETCH RECORDS WHEN FILTERS CHANGE ---- */
   useEffect(() => {
     fetchRecords();
-  }, [selectedYear, selectedMonth, selectedRole, selectedCity, selectedMarket, selectedUser, markets]);
+  }, [selectedYear, selectedMonth, selectedRole, selectedCity, selectedMarket, selectedUser, selectedStatus, markets]);
 
   const fetchMarkets = async () => {
     const { data } = await supabase.from("markets").select("id, name, city").eq("is_active", true).order("name");
@@ -793,6 +794,9 @@ export default function AttendanceReporting() {
     let filtered = enriched;
     if (selectedUser !== "all") {
       filtered = enriched.filter((r) => r.user_id === selectedUser);
+    }
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter((r) => r.status === selectedStatus);
     }
 
     setRecords(filtered);
@@ -945,42 +949,62 @@ export default function AttendanceReporting() {
         <main className="col-span-12 md:col-span-8 lg:col-span-9 order-2">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <SummaryCard
-              bg="bg-green-50 border-green-200"
-              iconBg="bg-green-500"
-              icon={<CheckCircle2 className="h-5 w-5 text-white" />}
-              value={yearSummary.full_day}
-              label="Present"
-              labelColor="text-green-600"
-              valueColor="text-green-700"
-            />
-            <SummaryCard
-              bg="bg-orange-50 border-orange-200"
-              iconBg="bg-orange-500"
-              icon={<AlertCircle className="h-5 w-5 text-white" />}
-              value={yearSummary.half_day}
-              label="Half Day"
-              labelColor="text-orange-600"
-              valueColor="text-orange-700"
-            />
-            <SummaryCard
-              bg="bg-red-50 border-red-200"
-              iconBg="bg-red-500"
-              icon={<XCircle className="h-5 w-5 text-white" />}
-              value={yearSummary.absent}
-              label="Absent"
-              labelColor="text-red-600"
-              valueColor="text-red-700"
-            />
-            <SummaryCard
-              bg="bg-blue-50 border-blue-200"
-              iconBg="bg-blue-500"
-              icon={<MinusCircle className="h-5 w-5 text-white" />}
-              value={yearSummary.weekly_off}
-              label="Weekly Off"
-              labelColor="text-blue-600"
-              valueColor="text-blue-700"
-            />
+            <div 
+              onClick={() => setSelectedStatus(selectedStatus === "full_day" ? "all" : "full_day")}
+              className="cursor-pointer transition-all hover:scale-105"
+            >
+              <SummaryCard
+                bg={selectedStatus === "full_day" ? "bg-green-100 border-green-400 ring-2 ring-green-600" : "bg-green-50 border-green-200"}
+                iconBg="bg-green-500"
+                icon={<CheckCircle2 className="h-5 w-5 text-white" />}
+                value={yearSummary.full_day}
+                label="Present"
+                labelColor="text-green-600"
+                valueColor="text-green-700"
+              />
+            </div>
+            <div 
+              onClick={() => setSelectedStatus(selectedStatus === "half_day" ? "all" : "half_day")}
+              className="cursor-pointer transition-all hover:scale-105"
+            >
+              <SummaryCard
+                bg={selectedStatus === "half_day" ? "bg-orange-100 border-orange-400 ring-2 ring-orange-600" : "bg-orange-50 border-orange-200"}
+                iconBg="bg-orange-500"
+                icon={<AlertCircle className="h-5 w-5 text-white" />}
+                value={yearSummary.half_day}
+                label="Half Day"
+                labelColor="text-orange-600"
+                valueColor="text-orange-700"
+              />
+            </div>
+            <div 
+              onClick={() => setSelectedStatus(selectedStatus === "absent" ? "all" : "absent")}
+              className="cursor-pointer transition-all hover:scale-105"
+            >
+              <SummaryCard
+                bg={selectedStatus === "absent" ? "bg-red-100 border-red-400 ring-2 ring-red-600" : "bg-red-50 border-red-200"}
+                iconBg="bg-red-500"
+                icon={<XCircle className="h-5 w-5 text-white" />}
+                value={yearSummary.absent}
+                label="Absent"
+                labelColor="text-red-600"
+                valueColor="text-red-700"
+              />
+            </div>
+            <div 
+              onClick={() => setSelectedStatus(selectedStatus === "weekly_off" ? "all" : "weekly_off")}
+              className="cursor-pointer transition-all hover:scale-105"
+            >
+              <SummaryCard
+                bg={selectedStatus === "weekly_off" ? "bg-blue-100 border-blue-400 ring-2 ring-blue-600" : "bg-blue-50 border-blue-200"}
+                iconBg="bg-blue-500"
+                icon={<MinusCircle className="h-5 w-5 text-white" />}
+                value={yearSummary.weekly_off}
+                label="Weekly Off"
+                labelColor="text-blue-600"
+                valueColor="text-blue-700"
+              />
+            </div>
           </div>
 
           {/* YEAR & MONTH SELECTOR & EXPORT */}
