@@ -687,6 +687,30 @@ export default function AdminDashboard() {
           }
           console.log(`[${taskType}] Found ${data.length} records`);
           break;
+
+        case 'all_media':
+          const { data: allMediaData } = await supabase
+            .from('media')
+            .select('*')
+            .eq('market_id', marketId)
+            .eq('market_date', todayDate)
+            .order('created_at', { ascending: false });
+          
+          if (allMediaData && allMediaData.length > 0) {
+            const userIds = [...new Set(allMediaData.map(m => m.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
+            
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = allMediaData.map(m => ({
+              ...m,
+              employees: { full_name: employeeMap.get(m.user_id) }
+            }));
+          }
+          console.log(`[${taskType}] Found ${data.length} records`);
+          break;
       }
 
       console.log(`[${taskType}] Setting dialog with ${data.length} records`);
@@ -708,6 +732,7 @@ export default function AdminDashboard() {
       cleaning_video: 'Cleaning Videos',
       attendance: 'Attendance Records',
       collections: 'Collections',
+      all_media: 'All Media Uploads',
     };
     return titles[taskType] || taskType;
   };
@@ -880,13 +905,17 @@ export default function AdminDashboard() {
 
       case 'market_video':
       case 'cleaning_video':
+      case 'all_media':
         return (
           <div className="space-y-4">
             {data.map((item) => (
               <Card key={item.id}>
                 <CardHeader>
                   <CardTitle className="text-sm">{item.employees?.full_name || 'Unknown'}</CardTitle>
-                  <CardDescription>{format(new Date(item.created_at), 'HH:mm')}</CardDescription>
+                  <CardDescription>
+                    {item.media_type && <Badge className="mr-2">{item.media_type.replace('_', ' ')}</Badge>}
+                    {format(new Date(item.created_at), 'HH:mm')}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <video controls className="w-full rounded-md">
@@ -966,22 +995,22 @@ export default function AdminDashboard() {
         label: 'Employees Checked In', 
         completed: market.task_stats ? market.task_stats.attendance > 0 : false,
         value: market.task_stats && market.task_stats.attendance > 0 ? `${market.task_stats.attendance} checked in` : null,
-        taskType: 'punch',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'punch')
+        taskType: 'attendance',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'attendance')
       },
       { 
         label: 'Stall Confirmation', 
         completed: market.task_stats ? market.task_stats.stall_confirmations > 0 : false,
         value: market.task_stats && market.task_stats.stall_confirmations > 0 ? `${market.task_stats.stall_confirmations} confirmed` : null,
-        taskType: 'stalls',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'stalls')
+        taskType: 'stall_confirmations',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'stall_confirmations')
       },
       { 
         label: 'Media Upload', 
         completed: market.media_uploads_count > 0,
         value: market.media_uploads_count > 0 ? `${market.media_uploads_count} uploads` : null,
-        taskType: 'media',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'media')
+        taskType: 'all_media',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'all_media')
       },
       { 
         label: 'Today\'s Offer', 
