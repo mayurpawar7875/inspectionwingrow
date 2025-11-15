@@ -154,13 +154,15 @@ export default function Collections() {
     setSaving(true);
     try {
       // Insert into collections table
-      // Schema: id, market_id, market_date, amount, mode, collected_by, created_at
+      // Schema: id, market_id, market_date, amount, mode, collected_by, farmer_name, stall_name, created_at
       const payload = entries.map((e) => ({
         market_id: sessionMarketId,
         market_date: sessionDate,
         amount: e.amount,
         mode: e.mode, // 'cash' | 'upi'
         collected_by: user.id,
+        farmer_name: e.farmer_name,
+        stall_name: e.stall_name,
       }));
 
       const { error } = await supabase.from('collections').insert(payload);
@@ -435,6 +437,8 @@ export default function Collections() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs py-2">Time</TableHead>
+                      <TableHead className="text-xs py-2">Farmer</TableHead>
+                      <TableHead className="text-xs py-2">Stall</TableHead>
                       <TableHead className="text-xs py-2">Amount (₹)</TableHead>
                       <TableHead className="text-xs py-2">Mode</TableHead>
                     </TableRow>
@@ -448,6 +452,8 @@ export default function Collections() {
                             minute: '2-digit',
                           })}
                         </TableCell>
+                        <TableCell className="text-xs py-2">{collection.farmer_name || '-'}</TableCell>
+                        <TableCell className="text-xs py-2">{collection.stall_name || '-'}</TableCell>
                         <TableCell className="text-xs py-2">₹{collection.amount}</TableCell>
                         <TableCell className="text-xs py-2 capitalize">{collection.mode}</TableCell>
                       </TableRow>
