@@ -128,6 +128,19 @@ export default function Collections() {
     return { cash, online, grand: cash + online };
   }, [rows]);
 
+  const submittedTotals = useMemo(() => {
+    let cash = 0;
+    let online = 0;
+    submittedCollections.forEach((c) => {
+      const val = Number(c.amount || 0);
+      if (!isNaN(val) && val > 0) {
+        if (c.mode === 'cash') cash += val;
+        else online += val;
+      }
+    });
+    return { cash, online, grand: cash + online };
+  }, [submittedCollections]);
+
   const setRowValue = (id: string, key: keyof StallRow, value: string | PaymentMode) => {
     setRows((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [key]: value } : r))
@@ -461,6 +474,22 @@ export default function Collections() {
                   </TableBody>
                 </Table>
               </div>
+              {submittedCollections.length > 0 && (
+                <div className="mt-4 pt-4 border-t space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Cash Total:</span>
+                    <span className="font-semibold">₹{submittedTotals.cash.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Online Total:</span>
+                    <span className="font-semibold">₹{submittedTotals.online.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-base border-t pt-2">
+                    <span className="font-bold">Grand Total:</span>
+                    <span className="font-bold text-primary">₹{submittedTotals.grand.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
