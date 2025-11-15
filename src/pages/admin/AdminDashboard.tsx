@@ -715,10 +715,18 @@ export default function AdminDashboard() {
               .in('id', userIds);
             
             const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
-            data = selfieData.map(m => ({
-              ...m,
-              employees: { full_name: employeeMap.get(m.user_id) }
-            }));
+            data = selfieData.map(m => {
+              // Convert storage path to full URL
+              const { data: { publicUrl } } = supabase.storage
+                .from('employee-media')
+                .getPublicUrl(m.file_url);
+              
+              return {
+                ...m,
+                file_url: publicUrl,
+                employees: { full_name: employeeMap.get(m.user_id) }
+              };
+            });
           }
           console.log(`[${taskType}] Found ${data.length} records`);
           break;
