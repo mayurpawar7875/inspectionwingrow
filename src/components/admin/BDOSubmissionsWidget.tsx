@@ -454,7 +454,11 @@ export default function BDOSubmissionsWidget({ filter = 'all' }: BDOSubmissionsW
                 <div>
                   <p className="text-sm font-medium mb-2">Photo</p>
                   <img
-                    src={selectedMarket.photo_url}
+                    src={
+                      selectedMarket.photo_url.startsWith('http') 
+                        ? selectedMarket.photo_url 
+                        : supabase.storage.from('employee-media').getPublicUrl(selectedMarket.photo_url).data.publicUrl
+                    }
                     alt="Market location"
                     className="max-h-64 rounded-lg"
                   />
@@ -464,53 +468,61 @@ export default function BDOSubmissionsWidget({ filter = 'all' }: BDOSubmissionsW
               {/* Documents Section */}
               <div className="border-t pt-4 space-y-4">
                 <h4 className="text-sm font-semibold">BDO Documents</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Service Agreement</p>
-                    {selectedMarket.service_agreement_url ? (
-                      <a
-                        href={selectedMarket.service_agreement_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        View Document
-                      </a>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Not uploaded yet</p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Stalls Accommodation</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedMarket.stalls_accommodation_count 
-                        ? `${selectedMarket.stalls_accommodation_count} stalls` 
-                        : 'Not specified yet'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Documents Status</p>
-                    {selectedMarket.documents_status ? (
-                      <Badge variant={
-                        selectedMarket.documents_status === 'complete' ? 'default' : 
-                        selectedMarket.documents_status === 'partial' ? 'secondary' : 
-                        'outline'
-                      }>
-                        {selectedMarket.documents_status}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Pending</Badge>
-                    )}
-                  </div>
-                  {selectedMarket.documents_uploaded_at && (
-                    <div>
-                      <p className="text-sm font-medium">Uploaded At</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(selectedMarket.documents_uploaded_at), 'MMM dd, yyyy HH:mm')}
-                      </p>
+                {selectedMarket.status === 'approved' ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Service Agreement</p>
+                        {selectedMarket.service_agreement_url ? (
+                          <a
+                            href={selectedMarket.service_agreement_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            View Document
+                          </a>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not uploaded yet</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Stalls Accommodation</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedMarket.stalls_accommodation_count 
+                            ? `${selectedMarket.stalls_accommodation_count} stalls` 
+                            : 'Not specified yet'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Documents Status</p>
+                        {selectedMarket.documents_status ? (
+                          <Badge variant={
+                            selectedMarket.documents_status === 'uploaded' ? 'default' : 
+                            selectedMarket.documents_status === 'partial' ? 'secondary' : 
+                            'outline'
+                          }>
+                            {selectedMarket.documents_status}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Pending</Badge>
+                        )}
+                      </div>
+                      {selectedMarket.documents_uploaded_at && (
+                        <div>
+                          <p className="text-sm font-medium">Uploaded At</p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(selectedMarket.documents_uploaded_at), 'MMM dd, yyyy HH:mm')}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    Service agreement and stalls accommodation will be available after market approval
+                  </p>
+                )}
               </div>
 
               <div>
