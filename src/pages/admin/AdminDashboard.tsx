@@ -289,28 +289,41 @@ export default function AdminDashboard() {
               employeeDetailsMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
             }
 
-            // Fetch attendance records to determine status
-            const { data: attendanceData } = await supabase
-              .from('attendance_records')
-              .select('user_id, status, completed_tasks, total_tasks')
-              .eq('market_id', market.id)
-              .eq('attendance_date', todayDate);
+            // Fetch task status to accurately determine completion
+            const sessionIds = sessionsData?.map((s: any) => s.id) || [];
+            const { data: taskStatusData } = await supabase
+              .from('task_status')
+              .select('session_id, task_type, status')
+              .in('session_id', sessionIds);
+
+            // All tasks that need to be completed
+            const allTaskTypes = [
+              'punch',
+              'stall_confirm',
+              'outside_rates',
+              'selfie_gps',
+              'rate_board',
+              'market_video',
+              'cleaning_video',
+              'collection',
+            ];
+            const totalTasksCount = allTaskTypes.length;
 
             const employees: EmployeeStatus[] = (sessionsData || []).map((session: any) => {
-              const attendance = attendanceData?.find((a: any) => a.user_id === session.user_id);
               const fullName = employeeDetailsMap.get(session.user_id) || 'Unknown';
               const nameParts = fullName.split(' ');
               const initials = nameParts.map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
-              const completedTasks = attendance?.completed_tasks || 0;
-              const totalTasks = attendance?.total_tasks || 0;
+              // Count completed tasks for this session
+              const sessionTasks = taskStatusData?.filter((t: any) => t.session_id === session.id) || [];
+              const completedTasks = sessionTasks.filter((t: any) => t.status === 'submitted').length;
 
               // Determine status based on task completion
               let status: 'active' | 'half_day' | 'completed' = 'active';
-              if (totalTasks > 0 && completedTasks === totalTasks) {
+              if (completedTasks === totalTasksCount) {
                 status = 'completed';
-              } else if (completedTasks > 0 && completedTasks < totalTasks) {
-                status = 'half_day'; // This represents 'incomplete'
+              } else if (completedTasks > 0) {
+                status = 'half_day';
               }
 
               const duration = session.punch_in_time && session.punch_out_time
@@ -325,8 +338,8 @@ export default function AdminDashboard() {
                 punch_in_time: session.punch_in_time,
                 punch_out_time: session.punch_out_time,
                 duration,
-                completed_tasks: attendance?.completed_tasks || 0,
-                total_tasks: attendance?.total_tasks || 0,
+                completed_tasks: completedTasks,
+                total_tasks: totalTasksCount,
               };
             });
 
