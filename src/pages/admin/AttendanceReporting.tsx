@@ -620,6 +620,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -736,7 +737,7 @@ export default function AttendanceReporting() {
       .gte("attendance_date", startDate)
       .lte("attendance_date", endDate);
 
-    if (selectedRole !== "all") query = query.eq("role", selectedRole);
+    if (selectedRole !== "all") query = query.eq("role", selectedRole as Database["public"]["Enums"]["user_role"]);
     if (selectedCity !== "all") query = query.eq("city", selectedCity);
     if (selectedMarket !== "all") query = query.eq("market_id", selectedMarket);
 
