@@ -1629,6 +1629,7 @@ export type Database = {
           id: string
           market_date: string
           market_id: string
+          rent_amount: number | null
           stall_name: string
           stall_no: string
         }
@@ -1639,6 +1640,7 @@ export type Database = {
           id?: string
           market_date: string
           market_id: string
+          rent_amount?: number | null
           stall_name: string
           stall_no: string
         }
@@ -1649,6 +1651,7 @@ export type Database = {
           id?: string
           market_date?: string
           market_id?: string
+          rent_amount?: number | null
           stall_name?: string
           stall_no?: string
         }
