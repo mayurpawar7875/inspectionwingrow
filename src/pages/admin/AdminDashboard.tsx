@@ -699,48 +699,26 @@ export default function AdminDashboard() {
           break;
 
         case 'selfie_gps':
-          // Fetch punch-in records with selfies from sessions
-          const { data: selfieSessions } = await supabase
-            .from('sessions')
-            .select('id, user_id, punch_in_time')
+          const { data: selfieData } = await supabase
+            .from('media')
+            .select('*')
             .eq('market_id', marketId)
-            .eq('session_date', todayDate)
-            .not('punch_in_time', 'is', null)
-            .order('punch_in_time', { ascending: false });
+            .eq('market_date', todayDate)
+            .eq('media_type', 'selfie_gps')
+            .order('created_at', { ascending: false });
           
-          if (selfieSessions && selfieSessions.length > 0) {
-            const sessionIds = selfieSessions.map(s => s.id);
+          if (selfieData && selfieData.length > 0) {
+            const userIds = [...new Set(selfieData.map(m => m.user_id).filter(Boolean))];
+            const { data: employeesData } = await supabase
+              .from('employees')
+              .select('id, full_name')
+              .in('id', userIds);
             
-            // Fetch punch-in records with selfies
-            const { data: punchInData } = await supabase
-              .from('market_manager_punchin')
-              .select('*')
-              .in('session_id', sessionIds)
-              .order('punched_at', { ascending: false });
-            
-            if (punchInData && punchInData.length > 0) {
-              // Get unique user IDs from sessions
-              const userIds = [...new Set(selfieSessions.map(s => s.user_id).filter(Boolean))];
-              const { data: employeesData } = await supabase
-                .from('employees')
-                .select('id, full_name')
-                .in('id', userIds);
-              
-              const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
-              const sessionMap = new Map(selfieSessions.map(s => [s.id, s.user_id]));
-              
-              // Map punch-in data with employee info
-              data = punchInData.map(p => ({
-                id: p.id,
-                file_url: p.selfie_url,
-                created_at: p.punched_at,
-                gps_lat: p.gps_lat,
-                gps_lng: p.gps_lng,
-                session_id: p.session_id,
-                user_id: sessionMap.get(p.session_id),
-                employees: { full_name: employeeMap.get(sessionMap.get(p.session_id) || '') }
-              }));
-            }
+            const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
+            data = selfieData.map(m => ({
+              ...m,
+              employees: { full_name: employeeMap.get(m.user_id) }
+            }));
           }
           console.log(`[${taskType}] Found ${data.length} records`);
           break;
