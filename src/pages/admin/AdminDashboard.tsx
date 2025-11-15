@@ -46,6 +46,7 @@ interface LiveMarket {
     inspections: number;
     planning: number;
     collections: number;
+    selfie_gps: number;
   };
 }
 
@@ -138,6 +139,13 @@ export default function AdminDashboard() {
         .eq('market_date', todayDate)
         .eq('media_type', 'cleaning_video');
 
+      const { count: selfieGpsCount } = await supabase
+        .from('media')
+        .select('*', { count: 'exact', head: true })
+        .eq('market_id', marketId)
+        .eq('market_date', todayDate)
+        .eq('media_type', 'selfie_gps');
+
       const { count: offersCount } = await supabase
         .from('offers')
         .select('*', { count: 'exact', head: true })
@@ -178,6 +186,7 @@ export default function AdminDashboard() {
       stall_confirmations: stallsCount || 0,
       market_video: marketVideoCount || 0,
       cleaning_video: cleaningVideoCount || 0,
+      selfie_gps: selfieGpsCount || 0,
       offers: offersCount || 0,
       commodities: commoditiesCount || 0,
       feedback: feedbackCount || 0,
@@ -192,6 +201,7 @@ export default function AdminDashboard() {
         stall_confirmations: 0,
         market_video: 0,
         cleaning_video: 0,
+        selfie_gps: 0,
         offers: 0,
         commodities: 0,
         feedback: 0,
@@ -688,23 +698,24 @@ export default function AdminDashboard() {
           console.log(`[${taskType}] Found ${data.length} records`);
           break;
 
-        case 'all_media':
-          const { data: allMediaData } = await supabase
+        case 'selfie_gps':
+          const { data: selfieData } = await supabase
             .from('media')
             .select('*')
             .eq('market_id', marketId)
             .eq('market_date', todayDate)
+            .eq('media_type', 'selfie_gps')
             .order('created_at', { ascending: false });
           
-          if (allMediaData && allMediaData.length > 0) {
-            const userIds = [...new Set(allMediaData.map(m => m.user_id).filter(Boolean))];
+          if (selfieData && selfieData.length > 0) {
+            const userIds = [...new Set(selfieData.map(m => m.user_id).filter(Boolean))];
             const { data: employeesData } = await supabase
               .from('employees')
               .select('id, full_name')
               .in('id', userIds);
             
             const employeeMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
-            data = allMediaData.map(m => ({
+            data = selfieData.map(m => ({
               ...m,
               employees: { full_name: employeeMap.get(m.user_id) }
             }));
@@ -732,7 +743,7 @@ export default function AdminDashboard() {
       cleaning_video: 'Cleaning Videos',
       attendance: 'Attendance Records',
       collections: 'Collections',
-      all_media: 'All Media Uploads',
+      selfie_gps: 'Selfie GPS Uploads',
     };
     return titles[taskType] || taskType;
   };
@@ -1006,11 +1017,11 @@ export default function AdminDashboard() {
         onClick: () => fetchTaskData(market.market_id, market.market_name, 'stall_confirmations')
       },
       { 
-        label: 'Media Upload', 
-        completed: market.media_uploads_count > 0,
-        value: market.media_uploads_count > 0 ? `${market.media_uploads_count} uploads` : null,
-        taskType: 'all_media',
-        onClick: () => fetchTaskData(market.market_id, market.market_name, 'all_media')
+        label: 'Selfie GPS', 
+        completed: market.task_stats ? market.task_stats.selfie_gps > 0 : false,
+        value: market.task_stats && market.task_stats.selfie_gps > 0 ? `${market.task_stats.selfie_gps} uploaded` : null,
+        taskType: 'selfie_gps',
+        onClick: () => fetchTaskData(market.market_id, market.market_name, 'selfie_gps')
       },
       { 
         label: 'Today\'s Offer', 
