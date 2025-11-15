@@ -931,7 +931,9 @@ export default function AdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <img src={item.file_url} alt="Selfie" className="w-full rounded-md" />
+                  <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="block cursor-pointer hover:opacity-80 transition-opacity">
+                    <img src={item.file_url} alt="Selfie" className="w-full rounded-md" />
+                  </a>
                 </CardContent>
               </Card>
             ))}
