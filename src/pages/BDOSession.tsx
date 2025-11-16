@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, CheckCircle, Camera, MapPin, LogOut, X } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, Camera, MapPin, LogOut, X, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
@@ -36,7 +36,10 @@ export default function BDOSession() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     fetchSession();
@@ -121,19 +124,70 @@ export default function BDOSession() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      setSelfieFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' },
+        audio: false 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        setIsCameraActive(true);
+      }
+    } catch (error: any) {
+      console.error('Error accessing camera:', error);
+      toast.error('Unable to access camera. Please allow camera permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setSelfieFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.95);
+      }
     }
   };
 
   const clearPhoto = () => {
     setSelfieFile(null);
     setPreviewUrl(null);
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    stopCamera();
   };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const handleStartSession = async () => {
     if (!user || !location) {
@@ -349,43 +403,69 @@ export default function BDOSession() {
               <div className="space-y-3">
                 <label className="block text-sm font-medium">Selfie</label>
                 
-                {!selfieFile ? (
+                {!selfieFile && !isCameraActive && (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => cameraInputRef.current?.click()}
+                    onClick={startCamera}
                     className="w-full h-32 flex flex-col gap-2"
                   >
                     <Camera className="h-8 w-8" />
                     <span>Take Photo</span>
                   </Button>
-                ) : (
+                )}
+
+                {isCameraActive && (
+                  <div className="relative">
+                    <video 
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-64 object-cover rounded-lg border bg-black"
+                    />
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="lg"
+                        onClick={capturePhoto}
+                        className="rounded-full"
+                      >
+                        <Camera className="h-5 w-5 mr-2" />
+                        Capture
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        onClick={stopCamera}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                )}
+
+                {selfieFile && previewUrl && (
                   <div className="relative">
                     <img 
-                      src={previewUrl || ''} 
+                      src={previewUrl} 
                       alt="Selfie preview" 
-                      className="w-full h-48 object-cover rounded-lg border"
+                      className="w-full h-64 object-cover rounded-lg border"
                     />
                     <Button
                       type="button"
-                      variant="destructive"
+                      variant="outline"
                       size="icon"
                       className="absolute top-2 right-2"
                       onClick={clearPhoto}
                     >
-                      <X className="h-4 w-4" />
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
-
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
               </div>
 
               <Button 
