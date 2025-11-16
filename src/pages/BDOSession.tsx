@@ -154,8 +154,18 @@ export default function BDOSession() {
   };
 
   const capturePhoto = () => {
+    console.log('capturePhoto called');
     if (!videoRef.current) {
+      console.log('No video ref');
       toast.error('Camera not ready');
+      return;
+    }
+    
+    console.log('Video dimensions:', videoRef.current.videoWidth, videoRef.current.videoHeight);
+    
+    if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
+      console.log('Video not ready yet');
+      toast.error('Please wait for camera to load');
       return;
     }
     
@@ -163,18 +173,27 @@ export default function BDOSession() {
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
+    
     if (ctx) {
+      console.log('Drawing to canvas');
       ctx.drawImage(videoRef.current, 0, 0);
       canvas.toBlob((blob) => {
+        console.log('Blob created:', blob);
         if (blob) {
           const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          console.log('File created:', file);
           setSelfieFile(file);
-          setSelfiePreview(URL.createObjectURL(blob));
           setPreviewUrl(URL.createObjectURL(blob));
           stopCamera();
           toast.success('Photo captured successfully');
+        } else {
+          console.log('Blob creation failed');
+          toast.error('Failed to capture photo');
         }
       }, 'image/jpeg', 0.95);
+    } else {
+      console.log('No canvas context');
+      toast.error('Failed to initialize canvas');
     }
   };
 
