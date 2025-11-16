@@ -682,6 +682,9 @@ export default function BDODashboard() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Filters</CardTitle>
+            <CardDescription>
+              Filter dashboard data by date to view markets, sessions, and uploads for a specific day
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
@@ -698,8 +701,8 @@ export default function BDODashboard() {
           </CardContent>
         </Card>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Summary Cards - 2 columns on mobile, 4 on larger screens */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card 
             className="cursor-pointer hover:bg-accent transition-colors"
             onClick={() => navigate('/media-upload')}
