@@ -128,24 +128,23 @@ export default function LiveMarket() {
 
       const employeeData = await Promise.all(
         (sessions || []).map(async (session: any) => {
-          // Get task events count
-          const { count: taskCount } = await supabase
-            .from('task_events')
-            .select('*', { count: 'exact', head: true })
+          // Get completed tasks count from task_status
+          const { data: taskStatuses } = await supabase
+            .from('task_status')
+            .select('status')
             .eq('session_id', session.id);
 
-          // Get media count
-          const { count: mediaCount } = await supabase
-            .from('media')
-            .select('*', { count: 'exact', head: true })
-            .eq('session_id', session.id);
+          // Count tasks that are submitted
+          const tasksCompleted = (taskStatuses || []).filter(
+            (task: any) => task.status === 'submitted'
+          ).length;
 
-          // Get last activity from task_events
+          // Get last activity from task_status
           const { data: lastTask } = await supabase
-            .from('task_events')
-            .select('created_at')
+            .from('task_status')
+            .select('updated_at')
             .eq('session_id', session.id)
-            .order('created_at', { ascending: false })
+            .order('updated_at', { ascending: false })
             .limit(1)
             .single();
 
@@ -158,7 +157,7 @@ export default function LiveMarket() {
             .limit(1)
             .single();
 
-          const lastActivity = [lastTask?.created_at, lastMedia?.created_at]
+          const lastActivity = [lastTask?.updated_at, lastMedia?.created_at]
             .filter(Boolean)
             .sort()
             .reverse()[0] || null;
@@ -170,7 +169,7 @@ export default function LiveMarket() {
             punch_in: session.punch_in_time,
             punch_out: session.punch_out_time,
             last_activity: lastActivity,
-            tasks_done: (taskCount || 0) + (mediaCount || 0)
+            tasks_done: tasksCompleted
           };
         })
       );
