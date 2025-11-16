@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +29,10 @@ import {
   Phone,
   Mail,
   CalendarCheck,
+  MapPin,
+  CheckCircle,
+  X,
+  RefreshCw,
 } from 'lucide-react';
 
 interface DistrictStats {
@@ -112,6 +116,22 @@ export default function BDODashboard() {
     dateOfStartingMarkets: '',
   });
   
+  // Session management states
+  const [bdoSession, setBdoSession] = useState<any>(null);
+  const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionLocation, setSessionLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
+  
   const getISTDateString = (date: Date) => {
     const ist = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     const y = ist.getFullYear();
@@ -146,6 +166,8 @@ export default function BDODashboard() {
       // This page can be accessed via navigation but punch page is the entry point
       fetchDistrictStats();
       fetchMarketSummaries();
+      fetchBDOSession();
+      getSessionLocation();
     }
   }, [currentRole, navigate, selectedDate, authLoading]);
 
@@ -638,6 +660,222 @@ export default function BDODashboard() {
     }
   };
 
+  // BDO Session Functions
+  const fetchBDOSession = async () => {
+    if (!user) return;
+
+    try {
+      const today = getISTDateString(new Date());
+      
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('bdo_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('session_date', today)
+        .maybeSingle();
+
+      if (sessionError && sessionError.code !== 'PGRST116') throw sessionError;
+
+      if (sessionData) {
+        const { data: punchInData } = await supabase
+          .from('bdo_punchin')
+          .select('*')
+          .eq('session_id', sessionData.id)
+          .maybeSingle();
+
+        const { data: punchOutData } = await supabase
+          .from('bdo_punchout')
+          .select('*')
+          .eq('session_id', sessionData.id)
+          .maybeSingle();
+
+        setBdoSession({
+          ...sessionData,
+          punch_in: punchInData || undefined,
+          punch_out: punchOutData || undefined,
+        });
+      } else {
+        setBdoSession(null);
+      }
+    } catch (error: any) {
+      console.error('Error fetching session:', error);
+    }
+  };
+
+  const getSessionLocation = async () => {
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!('geolocation' in navigator)) {
+          reject(new Error('Geolocation not supported'));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos),
+          (err) => reject(err),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+
+      setSessionLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    } catch (error: any) {
+      console.error('Location error:', error);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast.error('Unable to access camera');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) {
+      toast.error('Camera not ready');
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setSelfieFile(file);
+          setSelfiePreview(URL.createObjectURL(blob));
+          stopCamera();
+          toast.success('Photo captured successfully');
+        } else {
+          toast.error('Failed to capture photo');
+        }
+      }, 'image/jpeg', 0.95);
+    } else {
+      toast.error('Failed to initialize canvas');
+    }
+  };
+
+  const clearPhoto = () => {
+    setSelfieFile(null);
+    setSelfiePreview(null);
+  };
+
+  const handlePunchIn = async () => {
+    if (!user || !sessionLocation || !selfieFile) {
+      toast.error('Please capture selfie and wait for location');
+      return;
+    }
+
+    setSessionLoading(true);
+    try {
+      const today = getISTDateString(new Date());
+
+      let sessionId = bdoSession?.id;
+      if (!sessionId) {
+        const { data: newSession, error: sessionError } = await supabase
+          .from('bdo_sessions')
+          .insert({
+            user_id: user.id,
+            session_date: today,
+            status: 'active',
+          })
+          .select()
+          .single();
+
+        if (sessionError) throw sessionError;
+        sessionId = newSession.id;
+      }
+
+      const fileExt = selfieFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `bdo-selfies/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, selfieFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      const { error: punchInError } = await supabase
+        .from('bdo_punchin')
+        .insert({
+          session_id: sessionId,
+          gps_lat: sessionLocation.lat,
+          gps_lng: sessionLocation.lng,
+          selfie_url: publicUrl,
+        });
+
+      if (punchInError) throw punchInError;
+
+      toast.success('Punched in successfully!');
+      clearPhoto();
+      fetchBDOSession();
+    } catch (error: any) {
+      console.error('Punch in error:', error);
+      toast.error('Failed to punch in');
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
+  const handlePunchOut = async () => {
+    if (!user || !sessionLocation || !bdoSession?.id) {
+      toast.error('Session not found or location unavailable');
+      return;
+    }
+
+    setSessionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('bdo_punchout')
+        .insert({
+          session_id: bdoSession.id,
+          gps_lat: sessionLocation.lat,
+          gps_lng: sessionLocation.lng,
+        });
+
+      if (error) throw error;
+
+      await supabase
+        .from('bdo_sessions')
+        .update({ status: 'completed' })
+        .eq('id', bdoSession.id);
+
+      toast.success('Punched out successfully!');
+      fetchBDOSession();
+    } catch (error: any) {
+      console.error('Punch out error:', error);
+      toast.error('Failed to punch out');
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -678,6 +916,114 @@ export default function BDODashboard() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* Session Status Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Today's Session
+            </CardTitle>
+            <CardDescription>
+              {bdoSession?.punch_in && !bdoSession?.punch_out && 'Session in progress'}
+              {bdoSession?.punch_out && 'Session completed for today'}
+              {!bdoSession?.punch_in && 'Start your session by punching in'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!bdoSession?.punch_in ? (
+              <div className="space-y-4">
+                {!selfiePreview ? (
+                  <>
+                    {showCamera ? (
+                      <div className="space-y-4">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          className="w-full max-w-md rounded-lg border mx-auto"
+                        />
+                        <div className="flex gap-2 justify-center">
+                          <Button onClick={capturePhoto}>
+                            <Camera className="h-4 w-4 mr-2" />
+                            Capture Photo
+                          </Button>
+                          <Button variant="outline" onClick={stopCamera}>
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Button onClick={startCamera} size="lg">
+                          <Camera className="h-5 w-5 mr-2" />
+                          Take Selfie to Punch In
+                        </Button>
+                        {sessionLocation && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            <MapPin className="h-4 w-4 inline mr-1" />
+                            Location captured
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <img src={selfiePreview} alt="Selfie" className="w-full max-w-md rounded-lg border mx-auto" />
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={handlePunchIn} disabled={sessionLoading || !sessionLocation}>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        {sessionLoading ? 'Punching In...' : 'Confirm Punch In'}
+                      </Button>
+                      <Button variant="outline" onClick={clearPhoto}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Retake
+                      </Button>
+                    </div>
+                    {!sessionLocation && (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Waiting for location...
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : bdoSession?.punch_out ? (
+              <div className="text-center py-8">
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Session Completed</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    <Clock className="h-4 w-4 inline mr-1" />
+                    Punched In: {new Date(bdoSession.punch_in.punched_at).toLocaleTimeString()}
+                  </p>
+                  <p>
+                    <Clock className="h-4 w-4 inline mr-1" />
+                    Punched Out: {new Date(bdoSession.punch_out.punched_at).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center space-y-4">
+                <Badge variant="default" className="mb-2">Session Active</Badge>
+                <p className="text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Punched In: {new Date(bdoSession.punch_in.punched_at).toLocaleTimeString()}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Location: {bdoSession.punch_in.gps_lat.toFixed(6)}, {bdoSession.punch_in.gps_lng.toFixed(6)}
+                </p>
+                <Button onClick={handlePunchOut} disabled={sessionLoading || !sessionLocation} size="lg">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {sessionLoading ? 'Punching Out...' : 'Punch Out'}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Summary Cards - 2 columns on mobile, 4 on larger screens */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card 
