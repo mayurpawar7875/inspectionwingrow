@@ -465,21 +465,25 @@ export default function BDOSession() {
                 )}
 
                 {selfieFile && previewUrl && (
-                  <div className="relative">
-                    <img 
-                      src={previewUrl} 
-                      alt="Selfie preview" 
-                      className="w-full h-64 object-cover rounded-lg border"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={clearPhoto}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Preview</label>
+                    <div className="relative">
+                      <img 
+                        src={previewUrl} 
+                        alt="Selfie preview" 
+                        className="w-full h-64 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={clearPhoto}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Retake
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
