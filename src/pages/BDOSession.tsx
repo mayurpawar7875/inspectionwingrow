@@ -5,29 +5,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, CheckCircle, Camera, MapPin, User, LogOut } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, Camera, MapPin, LogOut, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+
+interface BDOSessionData {
+  id: string;
+  session_date: string;
+  status: string;
+  created_at: string;
+  punch_in?: {
+    punched_at: string;
+    gps_lat: number;
+    gps_lng: number;
+    selfie_url: string;
+  };
+  punch_out?: {
+    punched_at: string;
+    gps_lat: number;
+    gps_lng: number;
+  };
+}
 
 export default function BDOSession() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<BDOSessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSession();
     getCurrentLocation();
-    
-    return () => {
-      stopCamera();
-    };
   }, [user]);
 
   const getISTDateString = (date: Date) => {
@@ -43,15 +56,40 @@ export default function BDOSession() {
 
     try {
       const today = getISTDateString(new Date());
-      const { data, error } = await (supabase as any)
-        .from('sessions')
-        .select('*, markets(name)')
+      
+      // Fetch BDO session
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('bdo_sessions')
+        .select('*')
         .eq('user_id', user.id)
         .eq('session_date', today)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      setSession(data);
+      if (sessionError && sessionError.code !== 'PGRST116') throw sessionError;
+
+      if (sessionData) {
+        // Fetch punch-in data
+        const { data: punchInData } = await supabase
+          .from('bdo_punchin')
+          .select('*')
+          .eq('session_id', sessionData.id)
+          .maybeSingle();
+
+        // Fetch punch-out data
+        const { data: punchOutData } = await supabase
+          .from('bdo_punchout')
+          .select('*')
+          .eq('session_id', sessionData.id)
+          .maybeSingle();
+
+        setSession({
+          ...sessionData,
+          punch_in: punchInData || undefined,
+          punch_out: punchOutData || undefined,
+        });
+      } else {
+        setSession(null);
+      }
     } catch (error: any) {
       console.error('Error fetching session:', error);
       toast.error('Failed to load session');
@@ -83,122 +121,73 @@ export default function BDOSession() {
     }
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' },
-        audio: false 
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setShowCamera(true);
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.error('Unable to access camera. Please grant camera permissions.');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setSelfieFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setShowCamera(false);
-  };
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(imageData);
-      stopCamera();
-      toast.success('Photo captured successfully!');
-    }
-  };
-
-  const uploadSelfie = async (imageData: string, type: 'punch_in' | 'punch_out') => {
-    try {
-      const blob = await (await fetch(imageData)).blob();
-      const fileName = `${user?.id}_${type}_${Date.now()}.jpg`;
-      const filePath = `bdo-selfies/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('employee-media')
-        .upload(filePath, blob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      return filePath; // Return path, not full URL
-    } catch (error) {
-      console.error('Error uploading selfie:', error);
-      throw error;
-    }
+  const clearPhoto = () => {
+    setSelfieFile(null);
+    setPreviewUrl(null);
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   const handleStartSession = async () => {
-    if (!location) {
-      toast.error('Please enable GPS to start session');
+    if (!user || !location) {
+      toast.error('Please enable GPS location');
       return;
     }
 
-    if (!capturedImage) {
-      toast.error('Please capture a selfie before starting session');
+    if (!selfieFile) {
+      toast.error('Please capture selfie');
       return;
     }
 
     setActionLoading(true);
+
     try {
-      const selfieUrl = await uploadSelfie(capturedImage, 'punch_in');
       const today = getISTDateString(new Date());
 
-      // Create a new session for BDO
-      const { data: newSession, error } = await (supabase as any)
-        .from('sessions')
+      // Create session
+      const { data: newSession, error: sessionError } = await supabase
+        .from('bdo_sessions')
         .insert({
-          user_id: user?.id,
+          user_id: user.id,
           session_date: today,
-          market_date: today,
-          punch_in_time: new Date().toISOString(),
           status: 'active',
-          market_id: null // BDO doesn't need a specific market
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (sessionError) throw sessionError;
 
-      // Store punch in selfie and GPS in media table
-      await (supabase as any)
-        .from('media')
+      // Upload selfie
+      const fileExt = selfieFile.name.split('.').pop();
+      const fileName = `${newSession.id}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('employee-media')
+        .upload(`bdo-punchin/${fileName}`, selfieFile);
+
+      if (uploadError) throw uploadError;
+
+      // Save punch-in record
+      const { error: punchInError } = await supabase
+        .from('bdo_punchin')
         .insert({
           session_id: newSession.id,
-          user_id: user?.id,
-          file_url: selfieUrl,
-          file_name: 'punch_in_selfie.jpg',
-          content_type: 'image/jpeg',
-          media_type: 'attendance',
+          selfie_url: `bdo-punchin/${fileName}`,
           gps_lat: location.lat,
           gps_lng: location.lng,
-          captured_at: new Date().toISOString()
         });
 
-      toast.success('Session started successfully!');
-      setCapturedImage(null);
+      if (punchInError) throw punchInError;
+
+      toast.success('Session started successfully');
       fetchSession();
+      clearPhoto();
     } catch (error: any) {
       console.error('Error starting session:', error);
       toast.error('Failed to start session');
@@ -208,51 +197,35 @@ export default function BDOSession() {
   };
 
   const handleEndSession = async () => {
-    if (!session) return;
-
-    if (!location) {
-      toast.error('Please enable GPS to end session');
-      return;
-    }
-
-    if (!capturedImage) {
-      toast.error('Please capture a selfie before ending session');
+    if (!session || !location) {
+      toast.error('Please enable GPS location');
       return;
     }
 
     setActionLoading(true);
-    try {
-      const selfieUrl = await uploadSelfie(capturedImage, 'punch_out');
 
-      // Update session with punch out time
-      const { error: updateError } = await (supabase as any)
-        .from('sessions')
-        .update({
-          punch_out_time: new Date().toISOString(),
-          status: 'completed'
-        })
+    try {
+      // Save punch-out record
+      const { error: punchOutError } = await supabase
+        .from('bdo_punchout')
+        .insert({
+          session_id: session.id,
+          gps_lat: location.lat,
+          gps_lng: location.lng,
+        });
+
+      if (punchOutError) throw punchOutError;
+
+      // Update session status
+      const { error: updateError } = await supabase
+        .from('bdo_sessions')
+        .update({ status: 'completed' })
         .eq('id', session.id);
 
       if (updateError) throw updateError;
 
-      // Store punch out selfie and GPS in media table
-      await (supabase as any)
-        .from('media')
-        .insert({
-          session_id: session.id,
-          user_id: user?.id,
-          file_url: selfieUrl,
-          file_name: 'punch_out_selfie.jpg',
-          content_type: 'image/jpeg',
-          media_type: 'attendance',
-          gps_lat: location.lat,
-          gps_lng: location.lng,
-          captured_at: new Date().toISOString()
-        });
-
-      toast.success('Session ended successfully!');
-      setCapturedImage(null);
-      fetchSession();
+      toast.success('Session ended successfully');
+      setTimeout(() => navigate('/bdo-dashboard'), 1500);
     } catch (error: any) {
       console.error('Error ending session:', error);
       toast.error('Failed to end session');
@@ -263,177 +236,202 @@ export default function BDOSession() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
+  const hasPunchedIn = session?.punch_in;
+  const hasPunchedOut = session?.punch_out;
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/bdo-dashboard')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">BDO Session</h1>
-              <p className="text-sm text-muted-foreground">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/bdo-dashboard')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">BDO Session</h1>
+          <Button variant="ghost" size="icon" onClick={signOut}>
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      {/* Main Content */}
+      <main className="container max-w-2xl px-4 py-6 space-y-6">
         {/* Session Status Card */}
-        <Card className="mb-6">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Session Status</CardTitle>
-              {session ? (
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Session Status
+              </CardTitle>
+              {session && (
                 <Badge variant={session.status === 'active' ? 'default' : 'secondary'}>
-                  {session.status === 'active' ? 'Active' : 'Completed'}
+                  {session.status}
                 </Badge>
-              ) : (
-                <Badge variant="outline">No Active Session</Badge>
               )}
             </div>
             <CardDescription>
-              {getISTDateString(new Date())}
+              {format(new Date(), 'EEEE, MMMM d, yyyy')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {session && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Punch In:</span>
-                  <span className="font-medium">
-                    {new Date(session.punch_in_time).toLocaleTimeString('en-IN', {
-                      timeZone: 'Asia/Kolkata',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+            {/* Punch In Status */}
+            <div className="flex items-center justify-between p-3 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Camera className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Punch In</span>
+              </div>
+              {hasPunchedIn ? (
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium">
+                    {format(new Date(hasPunchedIn.punched_at), 'HH:mm')}
                   </span>
                 </div>
-                {session.punch_out_time && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Punch Out:</span>
-                    <span className="font-medium">
-                      {new Date(session.punch_out_time).toLocaleTimeString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">GPS:</span>
-              {location ? (
-                <span className="font-medium text-green-600">Enabled</span>
               ) : (
-                <span className="font-medium text-red-600">Disabled</span>
+                <span className="text-sm text-muted-foreground">Not started</span>
+              )}
+            </div>
+
+            {/* Punch Out Status */}
+            <div className="flex items-center justify-between p-3 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Punch Out</span>
+              </div>
+              {hasPunchedOut ? (
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium">
+                    {format(new Date(hasPunchedOut.punched_at), 'HH:mm')}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">Pending</span>
+              )}
+            </div>
+
+            {/* GPS Status */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              {location ? (
+                <span>GPS: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}</span>
+              ) : (
+                <span>Acquiring GPS location...</span>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Camera Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Selfie Verification</CardTitle>
-            <CardDescription>
-              Capture a selfie for attendance verification
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showCamera ? (
-              <div className="space-y-4">
-                <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={capturePhoto} className="flex-1">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Capture Photo
+        {/* Punch In/Out Actions */}
+        {!hasPunchedIn ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Start Session
+              </CardTitle>
+              <CardDescription>
+                Take a selfie and enable GPS to punch in
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium">Selfie</label>
+                
+                {!selfieFile ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="w-full h-32 flex flex-col gap-2"
+                  >
+                    <Camera className="h-8 w-8" />
+                    <span>Take Photo</span>
                   </Button>
-                  <Button onClick={stopCamera} variant="outline">
-                    Cancel
-                  </Button>
-                </div>
+                ) : (
+                  <div className="relative">
+                    <img 
+                      src={previewUrl || ''} 
+                      alt="Selfie preview" 
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={clearPhoto}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
-            ) : capturedImage ? (
-              <div className="space-y-4">
-                <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-                  <img src={capturedImage} alt="Captured selfie" className="w-full h-full object-cover" />
-                </div>
-                <Button onClick={() => setCapturedImage(null)} variant="outline" className="w-full">
-                  Retake Photo
-                </Button>
-              </div>
-            ) : (
-              <Button onClick={startCamera} className="w-full">
-                <Camera className="h-4 w-4 mr-2" />
-                Open Camera
+
+              <Button 
+                onClick={handleStartSession} 
+                disabled={actionLoading || !selfieFile || !location} 
+                className="w-full"
+              >
+                {actionLoading ? 'Starting...' : 'Start Session'}
               </Button>
-            )}
-            <canvas ref={canvasRef} className="hidden" />
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          {!session || session.status === 'completed' ? (
-            <Button
-              onClick={handleStartSession}
-              disabled={actionLoading || !location || !capturedImage}
-              className="w-full"
-              size="lg"
-            >
-              <Clock className="h-5 w-5 mr-2" />
-              {actionLoading ? 'Starting Session...' : 'Start Session & Punch In'}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleEndSession}
-              disabled={actionLoading || !location || !capturedImage}
-              className="w-full"
-              size="lg"
-              variant="destructive"
-            >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              {actionLoading ? 'Ending Session...' : 'End Session & Punch Out'}
-            </Button>
-          )}
-
-          {(!location || !capturedImage) && (
-            <div className="text-sm text-muted-foreground text-center space-y-1">
-              {!location && <p>⚠️ GPS location required</p>}
-              {!capturedImage && <p>⚠️ Selfie verification required</p>}
-            </div>
-          )}
-        </div>
+            </CardContent>
+          </Card>
+        ) : !hasPunchedOut ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                End Session
+              </CardTitle>
+              <CardDescription>
+                Mark your session as complete
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleEndSession} 
+                disabled={actionLoading || !location} 
+                className="w-full"
+                variant="destructive"
+              >
+                {actionLoading ? 'Ending...' : 'End Session'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <CheckCircle className="h-12 w-12 text-green-600 mx-auto" />
+                <h3 className="font-semibold">Session Completed</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your session for today has been completed.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
