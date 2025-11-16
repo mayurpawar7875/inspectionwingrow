@@ -295,34 +295,64 @@ export default function AdminDashboard() {
               employeeDetailsMap = new Map(employeesData?.map(e => [e.id, e.full_name]) || []);
             }
 
-            // Fetch task status to accurately determine completion
+            // Fetch actual completion data from various tables
             const sessionIds = sessionsData?.map((s: any) => s.id) || [];
-            const { data: taskStatusData } = await supabase
-              .from('task_status')
-              .select('session_id, task_type, status')
-              .in('session_id', sessionIds);
+            
+            // Fetch stall confirmations
+            const { data: stallsData } = await supabase
+              .from('stall_confirmations')
+              .select('created_by, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
+            
+            // Fetch media uploads by type
+            const { data: mediaData } = await supabase
+              .from('media')
+              .select('user_id, media_type, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
+            
+            // Fetch collections
+            const { data: collectionsData } = await supabase
+              .from('collections')
+              .select('collected_by, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
 
             // All tasks that need to be completed
-            const allTaskTypes = [
-              'punch',
-              'stall_confirm',
-              'outside_rates',
-              'selfie_gps',
-              'rate_board',
-              'market_video',
-              'cleaning_video',
-              'collection',
-            ];
-            const totalTasksCount = allTaskTypes.length;
+            const totalTasksCount = 8;
 
             const employees: EmployeeStatus[] = (sessionsData || []).map((session: any) => {
               const fullName = employeeDetailsMap.get(session.user_id) || 'Unknown';
               const nameParts = fullName.split(' ');
               const initials = nameParts.map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
-              // Count completed tasks for this session
-              const sessionTasks = taskStatusData?.filter((t: any) => t.session_id === session.id) || [];
-              const completedTasks = sessionTasks.filter((t: any) => t.status === 'submitted').length;
+              // Count actual completed tasks for this user
+              let completedTasks = 0;
+              
+              // 1. Punch (if punched in)
+              if (session.punch_in_time) completedTasks++;
+              
+              // 2. Stall confirmations
+              if (stallsData?.some((s: any) => s.created_by === session.user_id)) completedTasks++;
+              
+              // 3. Outside rates photo
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'outside_rates')) completedTasks++;
+              
+              // 4. Selfie GPS
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'selfie_gps')) completedTasks++;
+              
+              // 5. Rate board photo
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'rate_board')) completedTasks++;
+              
+              // 6. Market video
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'market_video')) completedTasks++;
+              
+              // 7. Cleaning video
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'cleaning_video')) completedTasks++;
+              
+              // 8. Collection
+              if (collectionsData?.some((c: any) => c.collected_by === session.user_id)) completedTasks++;
 
               // Determine status based on task completion
               let status: 'active' | 'half_day' | 'completed' = 'active';
