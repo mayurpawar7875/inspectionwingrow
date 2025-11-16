@@ -849,14 +849,34 @@ export default function BDODashboard() {
       return;
     }
 
+    if (!selfieFile) {
+      toast.error('Please capture your selfie for punch-out');
+      return;
+    }
+
     setSessionLoading(true);
     try {
+      // Upload selfie
+      const fileExt = selfieFile.name.split('.').pop();
+      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('employee-media')
+        .upload(fileName, selfieFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('employee-media')
+        .getPublicUrl(fileName);
+
+      // Insert punch-out with selfie
       const { error } = await supabase
         .from('bdo_punchout')
         .insert({
           session_id: bdoSession.id,
           gps_lat: sessionLocation.lat,
           gps_lng: sessionLocation.lng,
+          selfie_url: publicUrl,
         });
 
       if (error) throw error;
@@ -867,6 +887,7 @@ export default function BDODashboard() {
         .eq('id', bdoSession.id);
 
       toast.success('Punched out successfully!');
+      clearPhoto();
       fetchBDOSession();
     } catch (error: any) {
       console.error('Punch out error:', error);
@@ -1005,7 +1026,7 @@ export default function BDODashboard() {
                 </div>
               </div>
             ) : (
-              <div className="text-center space-y-4">
+              <div className="space-y-4">
                 <Badge variant="default" className="mb-2">Session Active</Badge>
                 <p className="text-sm text-muted-foreground">
                   <Clock className="h-4 w-4 inline mr-1" />
@@ -1015,10 +1036,54 @@ export default function BDODashboard() {
                   <MapPin className="h-4 w-4 inline mr-1" />
                   Location: {bdoSession.punch_in.gps_lat.toFixed(6)}, {bdoSession.punch_in.gps_lng.toFixed(6)}
                 </p>
-                <Button onClick={handlePunchOut} disabled={sessionLoading || !sessionLocation} size="lg">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {sessionLoading ? 'Punching Out...' : 'Punch Out'}
-                </Button>
+
+                {!selfiePreview ? (
+                  <>
+                    {showCamera ? (
+                      <div className="space-y-4">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          className="w-full max-w-md rounded-lg border mx-auto"
+                        />
+                        <div className="flex gap-2 justify-center">
+                          <Button onClick={capturePhoto}>
+                            <Camera className="h-4 w-4 mr-2" />
+                            Capture Photo
+                          </Button>
+                          <Button variant="outline" onClick={stopCamera}>
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button onClick={startCamera} className="w-full">
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take Selfie for Punch Out
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <img
+                      src={selfiePreview}
+                      alt="Selfie preview"
+                      className="w-full max-w-md rounded-lg border mx-auto"
+                    />
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={clearPhoto} variant="outline">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Retake
+                      </Button>
+                      <Button onClick={handlePunchOut} disabled={sessionLoading || !sessionLocation}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {sessionLoading ? 'Punching Out...' : 'Confirm Punch Out'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
