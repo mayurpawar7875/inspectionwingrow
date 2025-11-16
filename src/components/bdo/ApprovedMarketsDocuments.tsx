@@ -155,8 +155,8 @@ export default function ApprovedMarketsDocuments() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-xl md:text-2xl">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
             Approved Markets - Document Upload
           </CardTitle>
           <CardDescription>Upload required documents for approved market locations</CardDescription>
@@ -174,8 +174,8 @@ export default function ApprovedMarketsDocuments() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-xl md:text-2xl">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
             Approved Markets - Document Upload
           </CardTitle>
           <CardDescription>
