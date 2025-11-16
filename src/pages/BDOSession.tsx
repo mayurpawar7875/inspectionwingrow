@@ -432,24 +432,24 @@ export default function BDOSession() {
                 )}
 
                 {isCameraActive && (
-                  <div className="relative">
+                  <div className="relative bg-black rounded-lg overflow-hidden">
                     <video 
                       ref={videoRef}
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-64 object-cover rounded-lg border bg-black"
+                      className="w-full h-64 object-cover"
                     />
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 px-4">
                       <Button
                         type="button"
                         variant="default"
                         size="lg"
                         onClick={capturePhoto}
-                        className="rounded-full"
+                        className="flex-1 max-w-[200px]"
                       >
                         <Camera className="h-5 w-5 mr-2" />
-                        Capture
+                        Capture Photo
                       </Button>
                       <Button
                         type="button"
