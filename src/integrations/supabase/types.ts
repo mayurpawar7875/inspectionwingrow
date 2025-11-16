@@ -528,6 +528,106 @@ export type Database = {
         }
         Relationships: []
       }
+      bdo_punchin: {
+        Row: {
+          created_at: string
+          gps_lat: number
+          gps_lng: number
+          id: string
+          punched_at: string
+          selfie_url: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          gps_lat: number
+          gps_lng: number
+          id?: string
+          punched_at?: string
+          selfie_url: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          gps_lat?: number
+          gps_lng?: number
+          id?: string
+          punched_at?: string
+          selfie_url?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bdo_punchin_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "bdo_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bdo_punchout: {
+        Row: {
+          created_at: string
+          gps_lat: number
+          gps_lng: number
+          id: string
+          punched_at: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          gps_lat: number
+          gps_lng: number
+          id?: string
+          punched_at?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          gps_lat?: number
+          gps_lng?: number
+          id?: string
+          punched_at?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bdo_punchout_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "bdo_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bdo_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          session_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bdo_stall_submissions: {
         Row: {
           address: string
