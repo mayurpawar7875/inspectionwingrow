@@ -573,6 +573,7 @@ export type Database = {
           gps_lng: number
           id: string
           punched_at: string
+          selfie_url: string
           session_id: string
         }
         Insert: {
@@ -581,6 +582,7 @@ export type Database = {
           gps_lng: number
           id?: string
           punched_at?: string
+          selfie_url?: string
           session_id: string
         }
         Update: {
@@ -589,6 +591,7 @@ export type Database = {
           gps_lng?: number
           id?: string
           punched_at?: string
+          selfie_url?: string
           session_id?: string
         }
         Relationships: [
