@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LiveMarketsWidget from '@/components/admin/LiveMarketsWidget';
 import TaskProgressWidget from '@/components/admin/TaskProgressWidget';
 import CollectionsWidget from '@/components/admin/CollectionsWidget';
@@ -919,18 +920,43 @@ export default function BDODashboard() {
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="default" size="sm" onClick={() => navigate('/bdo-session')}>
-              <Clock className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">My Session</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
-              <FileText className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">View Sessions</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="default" size="sm" onClick={() => navigate('/bdo-session')}>
+                    <Clock className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">My Session</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="sm:hidden">
+                  <p>My Session</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/my-sessions')}>
+                    <FileText className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">View Sessions</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="sm:hidden">
+                  <p>View Sessions</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="sm:hidden">
+                  <p>Sign Out</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </header>
