@@ -154,27 +154,43 @@ export default function BDOSession() {
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
-            setSelfieFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-            stopCamera();
-          }
-        }, 'image/jpeg', 0.95);
-      }
+    if (!videoRef.current || !canvasRef.current) {
+      toast.error('Camera not ready');
+      return;
     }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    // Check if video is actually streaming
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error('Video not ready. Please wait a moment.');
+      return;
+    }
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      toast.error('Failed to get canvas context');
+      return;
+    }
+
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        toast.error('Failed to capture photo');
+        return;
+      }
+      
+      const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setSelfieFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      stopCamera();
+      toast.success('Photo captured');
+    }, 'image/jpeg', 0.95);
   };
 
   const clearPhoto = () => {
