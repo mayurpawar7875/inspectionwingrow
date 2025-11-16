@@ -103,10 +103,16 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'market_schedule' }, fetchLiveMarkets)
       .subscribe();
 
+    const taskStatusChannel = supabase
+      .channel('live-markets-task-status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_status' }, fetchLiveMarkets)
+      .subscribe();
+
     return () => {
       supabase.removeChannel(statsChannel);
       supabase.removeChannel(stallsChannel);
       supabase.removeChannel(scheduleChannel);
+      supabase.removeChannel(taskStatusChannel);
     };
   }, [isAdmin, navigate]);
 
