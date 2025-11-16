@@ -36,9 +36,9 @@ export default function BDOSession() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
@@ -154,43 +154,28 @@ export default function BDOSession() {
   };
 
   const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) {
+    if (!videoRef.current) {
       toast.error('Camera not ready');
       return;
     }
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
     
-    // Check if video is actually streaming
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      toast.error('Video not ready. Please wait a moment.');
-      return;
-    }
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      toast.error('Failed to get canvas context');
-      return;
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setSelfieFile(file);
+          setSelfiePreview(URL.createObjectURL(blob));
+          setPreviewUrl(URL.createObjectURL(blob));
+          stopCamera();
+          toast.success('Photo captured successfully');
+        }
+      }, 'image/jpeg', 0.95);
     }
-
-    ctx.drawImage(video, 0, 0);
-    
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        toast.error('Failed to capture photo');
-        return;
-      }
-      
-      const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      setSelfieFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      stopCamera();
-      toast.success('Photo captured');
-    }, 'image/jpeg', 0.95);
   };
 
   const clearPhoto = () => {
@@ -460,7 +445,6 @@ export default function BDOSession() {
                         <X className="h-5 w-5" />
                       </Button>
                     </div>
-                    <canvas ref={canvasRef} className="hidden" />
                   </div>
                 )}
 
