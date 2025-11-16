@@ -35,11 +35,16 @@ export default function BDOSession() {
   const [actionLoading, setActionLoading] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
 
   useEffect(() => {
     fetchSession();
@@ -126,88 +131,59 @@ export default function BDOSession() {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
-        audio: false 
+        audio: false
       });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsCameraActive(true);
-      }
-    } catch (error: any) {
-      console.error('Error accessing camera:', error);
+      setCameraStream(stream);
+      setShowCamera(true);
+    } catch (error) {
       toast.error('Unable to access camera. Please allow camera permissions.');
+      console.error('Camera error:', error);
     }
   };
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraActive(false);
+    setShowCamera(false);
   };
 
   const capturePhoto = () => {
-    console.log('capturePhoto called');
-    if (!videoRef.current) {
-      console.log('No video ref');
-      toast.error('Camera not ready');
-      return;
-    }
-    
-    console.log('Video dimensions:', videoRef.current.videoWidth, videoRef.current.videoHeight);
-    
-    if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
-      console.log('Video not ready yet');
-      toast.error('Please wait for camera to load');
-      return;
-    }
+    if (!videoRef.current) return;
     
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext('2d');
-    
     if (ctx) {
-      console.log('Drawing to canvas');
       ctx.drawImage(videoRef.current, 0, 0);
       canvas.toBlob((blob) => {
-        console.log('Blob created:', blob);
         if (blob) {
-          const file = new File([blob], `selfie_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          console.log('File created:', file);
+          const file = new File([blob], `bdo-selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
           setSelfieFile(file);
-          setPreviewUrl(URL.createObjectURL(blob));
+          setSelfiePreview(URL.createObjectURL(blob));
           stopCamera();
-          toast.success('Photo captured successfully');
-        } else {
-          console.log('Blob creation failed');
-          toast.error('Failed to capture photo');
+          toast.success('Photo captured!');
         }
-      }, 'image/jpeg', 0.95);
-    } else {
-      console.log('No canvas context');
-      toast.error('Failed to initialize canvas');
+      }, 'image/jpeg');
     }
   };
 
   const clearPhoto = () => {
     setSelfieFile(null);
-    setPreviewUrl(null);
-    stopCamera();
+    setSelfiePreview(null);
   };
 
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, []);
+  }, [cameraStream]);
 
   const handleStartSession = async () => {
     if (!user || !location) {
@@ -423,7 +399,7 @@ export default function BDOSession() {
               <div className="space-y-3">
                 <label className="block text-sm font-medium">Selfie</label>
                 
-                {!selfieFile && !isCameraActive && (
+                {!selfieFile && !showCamera && (
                   <Button
                     type="button"
                     variant="outline"
@@ -431,11 +407,11 @@ export default function BDOSession() {
                     className="w-full h-32 flex flex-col gap-2"
                   >
                     <Camera className="h-8 w-8" />
-                    <span>Take Photo</span>
+                    <span>Take Selfie</span>
                   </Button>
                 )}
 
-                {isCameraActive && (
+                {showCamera && (
                   <div className="relative bg-black rounded-lg overflow-hidden">
                     <video 
                       ref={videoRef}
@@ -453,7 +429,7 @@ export default function BDOSession() {
                         className="flex-1 max-w-[200px]"
                       >
                         <Camera className="h-5 w-5 mr-2" />
-                        Capture Photo
+                        Capture
                       </Button>
                       <Button
                         type="button"
@@ -467,12 +443,12 @@ export default function BDOSession() {
                   </div>
                 )}
 
-                {selfieFile && previewUrl && (
+                {selfieFile && selfiePreview && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium">Preview</label>
                     <div className="relative">
                       <img 
-                        src={previewUrl} 
+                        src={selfiePreview} 
                         alt="Selfie preview" 
                         className="w-full h-64 object-cover rounded-lg border"
                       />
