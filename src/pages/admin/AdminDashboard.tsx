@@ -312,15 +312,36 @@ export default function AdminDashboard() {
               .eq('market_id', market.market_id)
               .eq('market_date', todayDate);
             
-            // Fetch collections
-            const { data: collectionsData } = await supabase
-              .from('collections')
-              .select('collected_by, market_date')
+            // Fetch offers
+            const { data: offersData } = await supabase
+              .from('offers')
+              .select('user_id, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
+            
+            // Fetch non-available commodities
+            const { data: commoditiesData } = await supabase
+              .from('non_available_commodities')
+              .select('user_id, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
+            
+            // Fetch organiser feedback
+            const { data: feedbackData } = await supabase
+              .from('organiser_feedback')
+              .select('user_id, market_date')
+              .eq('market_id', market.market_id)
+              .eq('market_date', todayDate);
+            
+            // Fetch stall inspections
+            const { data: inspectionsData } = await supabase
+              .from('stall_inspections')
+              .select('user_id, market_date')
               .eq('market_id', market.market_id)
               .eq('market_date', todayDate);
 
-            // All tasks that need to be completed
-            const totalTasksCount = 8;
+            // All 11 tasks that need to be completed
+            const totalTasksCount = 11;
 
             const employees: EmployeeStatus[] = (sessionsData || []).map((session: any) => {
               const fullName = employeeDetailsMap.get(session.user_id) || 'Unknown';
@@ -339,20 +360,29 @@ export default function AdminDashboard() {
               // 3. Outside rates photo
               if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'outside_rates')) completedTasks++;
               
-              // 4. Selfie GPS
-              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'selfie_gps')) completedTasks++;
-              
-              // 5. Rate board photo
+              // 4. Rate board photo
               if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'rate_board')) completedTasks++;
               
-              // 6. Market video
+              // 5. Market video
               if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'market_video')) completedTasks++;
               
-              // 7. Cleaning video
+              // 6. Cleaning video
               if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'cleaning_video')) completedTasks++;
               
-              // 8. Collection
-              if (collectionsData?.some((c: any) => c.collected_by === session.user_id)) completedTasks++;
+              // 7. Customer feedback video
+              if (mediaData?.some((m: any) => m.user_id === session.user_id && m.media_type === 'customer_feedback')) completedTasks++;
+              
+              // 8. Today's offers
+              if (offersData?.some((o: any) => o.user_id === session.user_id)) completedTasks++;
+              
+              // 9. Non-available commodities
+              if (commoditiesData?.some((c: any) => c.user_id === session.user_id)) completedTasks++;
+              
+              // 10. Organiser feedback
+              if (feedbackData?.some((f: any) => f.user_id === session.user_id)) completedTasks++;
+              
+              // 11. Stall inspection
+              if (inspectionsData?.some((i: any) => i.user_id === session.user_id)) completedTasks++;
 
               // Determine status based on task completion
               let status: 'active' | 'half_day' | 'completed' = 'active';
