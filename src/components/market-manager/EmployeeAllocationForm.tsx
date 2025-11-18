@@ -113,10 +113,9 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!selectedMarket || !employeeName.trim()) {
-      toast.error('Please fill all fields');
+      toast.error('Please select both market and employee');
       return;
     }
 
@@ -133,7 +132,7 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
       return;
     }
 
-    toast.success('Employee allocated successfully');
+    toast.success('Employee allocated to market successfully');
     setEmployeeName('');
     setSelectedMarket('');
     onComplete();
@@ -145,47 +144,91 @@ export function EmployeeAllocationForm({ sessionId, onComplete }: EmployeeAlloca
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Employee Allocation
+            Manpower Allocation
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="market">Live Market</Label>
-              <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-                <SelectTrigger id="market">
-                  <SelectValue placeholder="Select market" />
-                </SelectTrigger>
-                <SelectContent>
-                  {markets.map((market) => (
-                    <SelectItem key={market.id} value={market.id}>
-                      {market.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="space-y-6">
+          {/* Live Markets List */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Live Markets Today ({markets.length})</Label>
+            {markets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No markets scheduled for today</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {markets.map((market) => (
+                  <div
+                    key={market.id}
+                    onClick={() => setSelectedMarket(market.id)}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedMarket === market.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <p className="font-medium">{market.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Available Employees List */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Available Employees ({employees.length})</Label>
+            {employees.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No active employees found</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                {employees.map((employee) => (
+                  <div
+                    key={employee.id}
+                    onClick={() => setEmployeeName(employee.full_name || employee.email)}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      employeeName === (employee.full_name || employee.email)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <p className="font-medium text-sm">{employee.full_name || employee.email}</p>
+                    {employee.full_name && (
+                      <p className="text-xs text-muted-foreground">{employee.email}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Selection Summary and Submit */}
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <p className="text-sm font-medium">Current Selection:</p>
+              <div className="space-y-1 text-sm">
+                <p>
+                  <span className="text-muted-foreground">Market:</span>{' '}
+                  <span className="font-medium">
+                    {selectedMarket ? markets.find(m => m.id === selectedMarket)?.name : 'Not selected'}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Employee:</span>{' '}
+                  <span className="font-medium">{employeeName || 'Not selected'}</span>
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="employee-name">Employee Name</Label>
-              <Select value={employeeName} onValueChange={setEmployeeName}>
-                <SelectTrigger id="employee-name">
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.full_name || employee.email}>
-                      {employee.full_name || employee.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Saving...' : 'Allocate Employee'}
+            <Button 
+              onClick={handleSubmit} 
+              disabled={loading || !selectedMarket || !employeeName} 
+              className="w-full"
+            >
+              {loading ? 'Allocating...' : 'Allocate Employee to Market'}
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
