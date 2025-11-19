@@ -1,24 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
-import { validateImage, generateUploadPath } from '@/lib/fileValidation';
-
-type PaymentMode = 'cash' | 'online';
 
 interface StallRow {
   id: string;
   farmer_name: string;
   stall_name: string;
-  amount: string; // keep as string for input control
-  mode: PaymentMode;
+  expected_rent: number;
+  actual_rent: string; // keep as string for input control
 }
 
 export default function Collections() {
@@ -29,15 +25,6 @@ export default function Collections() {
   const [sessionDate, setSessionDate] = useState<string | null>(null);
   const [rows, setRows] = useState<StallRow[]>([]);
   const [saving, setSaving] = useState(false);
-  const [manualFarmer, setManualFarmer] = useState('');
-  const [manualStallName, setManualStallName] = useState('');
-  const [manualStallNo, setManualStallNo] = useState('');
-  const [manualAmount, setManualAmount] = useState('');
-  const [manualMode, setManualMode] = useState<PaymentMode>('cash');
-  const [addingManual, setAddingManual] = useState(false);
-  const [depositFile, setDepositFile] = useState<File | null>(null);
-  const [uploadingDeposit, setUploadingDeposit] = useState(false);
-  const [submittedCollections, setSubmittedCollections] = useState<any[]>([]);
 
   // Get IST date string for today
   const getISTDateString = (date: Date) => {
@@ -70,41 +57,44 @@ export default function Collections() {
         }
 
         const marketId = session.market_id;
-        const dateStr = getISTDateString(new Date()); // use IST calendar date for stall confirmations
+        const dateStr = getISTDateString(new Date());
         setSessionMarketId(marketId);
         setSessionDate(dateStr);
 
-        // Fetch today's confirmed stalls for that market
+        // Fetch today's confirmed stalls with rent amounts
         const { data: stalls, error: stErr } = await supabase
           .from('stall_confirmations')
-          .select('id, farmer_name, stall_name')
+          .select('id, farmer_name, stall_name, rent_amount')
           .eq('market_id', marketId)
           .eq('market_date', dateStr)
+          .eq('created_by', user.id)
           .order('created_at', { ascending: true });
 
         if (stErr) throw stErr;
 
+        // Fetch existing collections for these stalls
+        const stallIds = (stalls || []).map(s => s.id);
+        const { data: existingCollections } = await supabase
+          .from('collections')
+          .select('stall_confirmation_id, amount')
+          .in('stall_confirmation_id', stallIds)
+          .eq('collected_by', user.id);
+
+        // Create a map of stall_confirmation_id -> actual rent collected
+        const collectionsMap = new Map(
+          (existingCollections || []).map(c => [c.stall_confirmation_id, c.amount])
+        );
+
+        // Build rows with expected and actual rent
         setRows(
           (stalls || []).map((s) => ({
             id: s.id,
             farmer_name: s.farmer_name,
             stall_name: s.stall_name,
-            amount: '',
-            mode: 'cash',
+            expected_rent: s.rent_amount || 0,
+            actual_rent: collectionsMap.get(s.id)?.toString() || '',
           }))
         );
-
-        // Fetch already submitted collections for today
-        const { data: collections, error: collErr } = await supabase
-          .from('collections')
-          .select('*')
-          .eq('market_id', marketId)
-          .eq('market_date', dateStr)
-          .eq('collected_by', user.id)
-          .order('created_at', { ascending: false });
-
-        if (collErr) throw collErr;
-        setSubmittedCollections(collections || []);
       } catch (e) {
         console.error(e);
         toast.error('Failed to load collections data');
@@ -116,64 +106,47 @@ export default function Collections() {
     load();
   }, [user]);
 
-  const totals = useMemo(() => {
-    let cash = 0;
-    let online = 0;
-    rows.forEach((r) => {
-      const val = Number(r.amount || 0);
-      if (!isNaN(val) && val > 0) {
-        if (r.mode === 'cash') cash += val;
-        else online += val;
-      }
-    });
-    return { cash, online, grand: cash + online };
-  }, [rows]);
-
-  const submittedTotals = useMemo(() => {
-    let cash = 0;
-    let online = 0;
-    submittedCollections.forEach((c) => {
-      const val = Number(c.amount || 0);
-      if (!isNaN(val) && val > 0) {
-        if (c.mode === 'cash') cash += val;
-        else online += val;
-      }
-    });
-    return { cash, online, grand: cash + online };
-  }, [submittedCollections]);
-
-  const setRowValue = (id: string, key: keyof StallRow, value: string | PaymentMode) => {
+  const setRowValue = (id: string, value: string) => {
     setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [key]: value } : r))
+      prev.map((r) => (r.id === id ? { ...r, actual_rent: value } : r))
     );
   };
 
-  const finalize = async () => {
+  const handleSave = async () => {
     if (!user || !sessionMarketId || !sessionDate) return;
+
+    // Filter rows with actual rent entered
     const entries = rows
       .map((r) => ({
-        amount: Number(r.amount || 0),
-        mode: r.mode === 'cash' ? 'cash' : 'upi', // map Online -> 'upi'
+        stall_confirmation_id: r.id,
+        amount: Number(r.actual_rent || 0),
         farmer_name: r.farmer_name,
         stall_name: r.stall_name,
-        stall_confirmation_id: r.id,
       }))
       .filter((e) => !isNaN(e.amount) && e.amount > 0);
 
     if (entries.length === 0) {
-      toast.error('Please enter at least one amount');
+      toast.error('Please enter at least one rent amount');
       return;
     }
 
     setSaving(true);
     try {
-      // Insert into collections table
-      // Schema: id, market_id, market_date, amount, mode, collected_by, farmer_name, stall_name, created_at
+      // Delete existing collections for these stalls (to update)
+      const stallIds = entries.map(e => e.stall_confirmation_id);
+      await supabase
+        .from('collections')
+        .delete()
+        .in('stall_confirmation_id', stallIds)
+        .eq('collected_by', user.id);
+
+      // Insert new collections
       const payload = entries.map((e) => ({
+        stall_confirmation_id: e.stall_confirmation_id,
         market_id: sessionMarketId,
         market_date: sessionDate,
         amount: e.amount,
-        mode: e.mode, // 'cash' | 'upi'
+        mode: 'rent', // Use 'rent' mode to distinguish from cash/online collections
         collected_by: user.id,
         farmer_name: e.farmer_name,
         stall_name: e.stall_name,
@@ -182,20 +155,7 @@ export default function Collections() {
       const { error } = await supabase.from('collections').insert(payload);
       if (error) throw error;
 
-      toast.success('Collections saved successfully!');
-      
-      // Clear filled amounts after save
-      setRows((prev) => prev.map((r) => ({ ...r, amount: '', mode: 'cash' })));
-      
-      // Reload submitted collections
-      const { data: collections } = await supabase
-        .from('collections')
-        .select('*')
-        .eq('market_id', sessionMarketId)
-        .eq('market_date', sessionDate)
-        .eq('collected_by', user.id)
-        .order('created_at', { ascending: false });
-      setSubmittedCollections(collections || []);
+      toast.success('Rent collections saved successfully!');
     } catch (e) {
       console.error(e);
       toast.error('Failed to save collections');
@@ -204,110 +164,17 @@ export default function Collections() {
     }
   };
 
-  const handleAddManualStall = async () => {
-    if (!user || !sessionMarketId || !sessionDate) return;
-    if (!manualFarmer.trim() || !manualStallName.trim()) {
-      toast.error('Enter farmer and stall name');
-      return;
-    }
+  // Calculate totals
+  const totalExpected = rows.reduce((sum, r) => sum + r.expected_rent, 0);
+  const totalActual = rows.reduce((sum, r) => {
+    const val = Number(r.actual_rent || 0);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
 
-    setAddingManual(true);
-    try {
-      const { data, error } = await supabase
-        .from('stall_confirmations')
-        .insert({
-          farmer_name: manualFarmer.trim(),
-          stall_name: manualStallName.trim(),
-          stall_no: manualStallNo.trim() || null,
-          created_by: user.id,
-          market_id: sessionMarketId,
-          market_date: sessionDate,
-        } as any)
-        .select('id, farmer_name, stall_name')
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data?.id) {
-        setRows((prev) => [
-          {
-            id: data.id,
-            farmer_name: data.farmer_name,
-            stall_name: data.stall_name,
-            amount: manualAmount,
-            mode: manualMode,
-          },
-          ...prev,
-        ]);
-      }
-
-      setManualFarmer('');
-      setManualStallName('');
-      setManualStallNo('');
-      setManualAmount('');
-      setManualMode('cash');
-      toast.success('Stall added');
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to add stall');
-    } finally {
-      setAddingManual(false);
-    }
-  };
-
-  const handleDepositFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    setDepositFile(f);
-  };
-
-  const uploadCashDepositProof = async () => {
-    if (!user || !sessionMarketId || !sessionDate) return;
-    if (!depositFile) {
-      toast.error('Please choose an image first');
-      return;
-    }
-
-    setUploadingDeposit(true);
-    try {
-      // Validate image file
-      try {
-        validateImage(depositFile);
-      } catch (validationError) {
-        setUploadingDeposit(false);
-        return;
-      }
-
-      const fileName = generateUploadPath(user.id, depositFile.name, 'cash-deposits');
-      const { error: uploadError } = await supabase.storage
-        .from('employee-media')
-        .upload(fileName, depositFile);
-      if (uploadError) throw uploadError;
-
-      const { error: insertError } = await supabase.from('media').insert({
-        user_id: user.id,
-        market_id: sessionMarketId,
-        market_date: sessionDate,
-        media_type: 'cash_deposit' as any,
-        file_url: fileName, // Store path, not full URL
-        file_name: depositFile.name,
-        content_type: depositFile.type,
-        captured_at: new Date().toISOString(),
-      } as any);
-      if (insertError) throw insertError;
-
-      toast.success('Cash deposit proof uploaded');
-      setDepositFile(null);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to upload cash deposit proof');
-    } finally {
-      setUploadingDeposit(false);
-    }
-  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-muted-foreground">Loading collections…</div>
       </div>
     );
@@ -315,7 +182,7 @@ export default function Collections() {
 
   if (!sessionMarketId || !sessionDate) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-muted-foreground">No active session found for today</div>
       </div>
     );
@@ -334,7 +201,7 @@ export default function Collections() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-base font-bold">Market Collections</h1>
+            <h1 className="text-base font-bold">Rent Collections</h1>
           </div>
           <p className="text-xs text-muted-foreground ml-9">Date: {sessionDate}</p>
         </div>
@@ -343,209 +210,79 @@ export default function Collections() {
       <main className="container-responsive py-3 space-y-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Stall Confirmations (Today)</CardTitle>
+            <CardTitle className="text-base">Stall Rent Collection</CardTitle>
           </CardHeader>
           <CardContent className="card-padding-responsive pt-0">
-            <div className="mb-3 p-2 rounded border space-y-2">
-              <div className="text-xs font-medium">Add Stall & Collection</div>
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                <Input
-                  placeholder="Farmer name"
-                  value={manualFarmer}
-                  onChange={(e) => setManualFarmer(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <Input
-                  placeholder="Stall name"
-                  value={manualStallName}
-                  onChange={(e) => setManualStallName(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <Input
-                  placeholder="Stall no (optional)"
-                  value={manualStallNo}
-                  onChange={(e) => setManualStallNo(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  inputMode="decimal"
-                  placeholder="Amount"
-                  value={manualAmount}
-                  onChange={(e) => setManualAmount(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <div className="flex gap-2">
-                  <Select value={manualMode} onValueChange={(v) => setManualMode(v as PaymentMode)}>
-                    <SelectTrigger className="w-[140px] h-8 text-xs">
-                      <SelectValue placeholder="Mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash" className="text-xs">Cash</SelectItem>
-                      <SelectItem value="online" className="text-xs">Online</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleAddManualStall} disabled={addingManual} className="h-8 text-xs px-3">
-                    {addingManual ? 'Adding…' : 'Add'}
-                  </Button>
+            {rows.length === 0 ? (
+              <div className="text-center text-muted-foreground text-sm py-8">
+                No stall confirmations found for today
+              </div>
+            ) : (
+              <>
+                <div className="scroll-x-touch">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs py-2">Stall Name</TableHead>
+                        <TableHead className="text-xs py-2">Farmer Name</TableHead>
+                        <TableHead className="text-xs py-2 text-right">Expected Rent (₹)</TableHead>
+                        <TableHead className="w-[140px] text-xs py-2">Actual Rent (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium text-xs py-2">{r.stall_name}</TableCell>
+                          <TableCell className="text-xs py-2">{r.farmer_name}</TableCell>
+                          <TableCell className="text-xs py-2 text-right">
+                            ₹{r.expected_rent.toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              inputMode="decimal"
+                              value={r.actual_rent}
+                              onChange={(e) => setRowValue(r.id, e.target.value)}
+                              placeholder="0"
+                              className="h-7 text-xs"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
-            </div>
-            <div className="scroll-x-touch">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs py-2">Farmer</TableHead>
-                    <TableHead className="text-xs py-2">Stall</TableHead>
-                    <TableHead className="w-[120px] text-xs py-2">Amount (₹)</TableHead>
-                    <TableHead className="w-[120px] text-xs py-2">Mode</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground text-xs py-3">
-                        No stall confirmations found for today
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    rows.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium text-xs py-2">{r.farmer_name}</TableCell>
-                        <TableCell className="text-xs py-2">{r.stall_name}</TableCell>
-                        <TableCell className="py-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            inputMode="decimal"
-                            value={r.amount}
-                            onChange={(e) => setRowValue(r.id, 'amount', e.target.value)}
-                            placeholder="0"
-                            className="h-7 text-xs"
-                          />
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <Select
-                            value={r.mode}
-                            onValueChange={(v) => setRowValue(r.id, 'mode', v as PaymentMode)}
-                          >
-                            <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="cash" className="text-xs">Cash</SelectItem>
-                              <SelectItem value="online" className="text-xs">Online</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
 
-        {submittedCollections.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Submitted Collections Today</CardTitle>
-            </CardHeader>
-            <CardContent className="card-padding-responsive pt-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs py-2">Time</TableHead>
-                      <TableHead className="text-xs py-2">Farmer</TableHead>
-                      <TableHead className="text-xs py-2">Stall</TableHead>
-                      <TableHead className="text-xs py-2">Amount (₹)</TableHead>
-                      <TableHead className="text-xs py-2">Mode</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {submittedCollections.map((collection) => (
-                      <TableRow key={collection.id}>
-                        <TableCell className="text-xs py-2">
-                          {new Date(collection.created_at).toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </TableCell>
-                        <TableCell className="text-xs py-2">{collection.farmer_name || '-'}</TableCell>
-                        <TableCell className="text-xs py-2">{collection.stall_name || '-'}</TableCell>
-                        <TableCell className="text-xs py-2">₹{collection.amount}</TableCell>
-                        <TableCell className="text-xs py-2 capitalize">{collection.mode}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {submittedCollections.length > 0 && (
+                {/* Totals Summary */}
                 <div className="mt-4 pt-4 border-t space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">Cash Total:</span>
-                    <span className="font-semibold">₹{submittedTotals.cash.toFixed(2)}</span>
+                    <span className="font-medium">Total Expected Rent:</span>
+                    <span className="font-semibold">₹{totalExpected.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="font-medium">Online Total:</span>
-                    <span className="font-semibold">₹{submittedTotals.online.toFixed(2)}</span>
+                    <span className="font-medium">Total Actual Rent Collected:</span>
+                    <span className="font-semibold text-primary">₹{totalActual.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between text-base border-t pt-2">
-                    <span className="font-bold">Grand Total:</span>
-                    <span className="font-bold text-primary">₹{submittedTotals.grand.toFixed(2)}</span>
-                  </div>
+                  {totalExpected !== totalActual && (
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Difference:</span>
+                      <span className={`font-semibold ${totalActual > totalExpected ? 'text-green-600' : 'text-amber-600'}`}>
+                        ₹{Math.abs(totalExpected - totalActual).toLocaleString('en-IN')}
+                        {totalActual > totalExpected ? ' (Over)' : ' (Under)'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Totals</CardTitle>
-          </CardHeader>
-          <CardContent className="card-padding-responsive pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-2 rounded border">
-                <div className="text-xs text-muted-foreground">Total Cash</div>
-                <div className="text-base font-semibold">₹{totals.cash.toLocaleString('en-IN')}</div>
-              </div>
-              <div className="p-2 rounded border">
-                <div className="text-xs text-muted-foreground">Total Online</div>
-                <div className="text-base font-semibold">₹{totals.online.toLocaleString('en-IN')}</div>
-              </div>
-              <div className="p-2 rounded border">
-                <div className="text-xs text-muted-foreground">Grand Total</div>
-                <div className="text-base font-semibold">₹{totals.grand.toLocaleString('en-IN')}</div>
-              </div>
-            </div>
-
-            <div className="mt-4 p-2 rounded border space-y-2">
-              <div className="text-xs font-medium">Cash Deposit Proof (optional)</div>
-              <div className="text-xs text-muted-foreground">
-                Upload the bank cash deposit slip/screenshot for today.
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                <Input type="file" accept="image/*" onChange={handleDepositFileChange} className="h-8 text-xs" />
-                <Button variant="secondary" onClick={uploadCashDepositProof} disabled={uploadingDeposit || !depositFile} className="h-8 text-xs px-3">
-                  {uploadingDeposit ? 'Uploading…' : 'Upload Proof'}
-                </Button>
-              </div>
-              {depositFile && (
-                <div className="text-xs text-muted-foreground break-all">
-                  Selected: {depositFile.name}
+                {/* Save Button */}
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={handleSave} disabled={saving || rows.length === 0} className="h-8 text-xs px-4">
+                    {saving ? 'Saving…' : 'Save Collections'}
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            <div className="mt-3 flex justify-end">
-              <Button onClick={finalize} disabled={saving || rows.length === 0} className="h-8 text-xs px-4">
-                {saving ? 'Saving…' : 'Finalize & Save'}
-              </Button>
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </main>
