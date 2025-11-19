@@ -750,6 +750,7 @@ export type Database = {
           market_date: string
           market_id: string
           mode: string
+          stall_confirmation_id: string | null
           stall_name: string | null
         }
         Insert: {
@@ -761,6 +762,7 @@ export type Database = {
           market_date: string
           market_id: string
           mode: string
+          stall_confirmation_id?: string | null
           stall_name?: string | null
         }
         Update: {
@@ -772,6 +774,7 @@ export type Database = {
           market_date?: string
           market_id?: string
           mode?: string
+          stall_confirmation_id?: string | null
           stall_name?: string | null
         }
         Relationships: [
@@ -787,6 +790,13 @@ export type Database = {
             columns: ["market_id"]
             isOneToOne: false
             referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_stall_confirmation_id_fkey"
+            columns: ["stall_confirmation_id"]
+            isOneToOne: false
+            referencedRelation: "stall_confirmations"
             referencedColumns: ["id"]
           },
         ]
