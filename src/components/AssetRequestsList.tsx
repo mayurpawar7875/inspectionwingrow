@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
+import { validateImage, validateDocument, generateUploadPath } from '@/lib/fileValidation';
 
 export function AssetRequestsList() {
   const { user } = useAuth();
@@ -76,8 +77,19 @@ export function AssetRequestsList() {
       let proofUrl = null;
 
       if (paymentData.proofFile) {
-        const fileExt = paymentData.proofFile.name.split('.').pop();
-        const fileName = `${user?.id}/${selectedRequest.id}_${Date.now()}.${fileExt}`;
+        // Validate file
+        try {
+          if (paymentData.proofFile.type.startsWith('image/')) {
+            validateImage(paymentData.proofFile);
+          } else {
+            validateDocument(paymentData.proofFile);
+          }
+        } catch (validationError) {
+          setUploading(false);
+          return;
+        }
+
+        const fileName = generateUploadPath(user?.id || '', paymentData.proofFile.name);
         
         const { error: uploadError, data } = await supabase.storage
           .from('employee-media')
@@ -85,11 +97,8 @@ export function AssetRequestsList() {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('employee-media')
-          .getPublicUrl(fileName);
-
-        proofUrl = publicUrl;
+        // Store just the path, not full URL
+        proofUrl = fileName;
       }
 
       const { error } = await supabase.from('asset_payments').insert({

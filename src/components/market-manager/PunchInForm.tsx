@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Camera, MapPin, X } from 'lucide-react';
+import { validateImage, generateUploadPath } from '@/lib/fileValidation';
 
 interface PunchInFormProps {
   sessionId: string;
@@ -43,12 +44,19 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
       async (position) => {
         const { latitude, longitude } = position.coords;
 
-        // Upload selfie
-        const fileExt = selfieFile.name.split('.').pop();
-        const fileName = `${sessionId}_${Date.now()}.${fileExt}`;
+        // Validate selfie file
+        try {
+          validateImage(selfieFile);
+        } catch (validationError) {
+          setLoading(false);
+          return;
+        }
+
+        // Generate safe upload path
+        const fileName = generateUploadPath(sessionId, 'selfie.jpg', 'punchin');
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('employee-media')
-          .upload(`punchin/${fileName}`, selfieFile);
+          .upload(fileName, selfieFile);
 
         if (uploadError) {
           toast.error('Failed to upload selfie');
@@ -59,7 +67,7 @@ export function PunchInForm({ sessionId, onComplete }: PunchInFormProps) {
         // Save punch-in record with file path (not full URL)
         const { error } = await supabase.from('market_manager_punchin').insert({
           session_id: sessionId,
-          selfie_url: `punchin/${fileName}`,
+          selfie_url: fileName,
           gps_lat: latitude,
           gps_lng: longitude,
         });

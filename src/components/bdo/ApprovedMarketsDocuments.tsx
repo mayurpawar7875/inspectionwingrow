@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { validateDocument, generateUploadPath } from '@/lib/fileValidation';
 
 interface ApprovedMarket {
   id: string;
@@ -89,18 +90,27 @@ export default function ApprovedMarketsDocuments() {
 
       // Upload service agreement if provided
       if (serviceAgreementFile) {
-        const fileName = `service-agreement-${selectedMarket.id}-${Date.now()}.${serviceAgreementFile.name.split('.').pop()}`;
+        // Validate document
+        try {
+          validateDocument(serviceAgreementFile);
+        } catch (validationError) {
+          setUploading(false);
+          return;
+        }
+
+        const fileName = generateUploadPath(
+          selectedMarket.id,
+          serviceAgreementFile.name,
+          'bdo-documents'
+        );
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('employee-media')
-          .upload(`bdo-documents/${fileName}`, serviceAgreementFile);
+          .upload(fileName, serviceAgreementFile);
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('employee-media')
-          .getPublicUrl(`bdo-documents/${fileName}`);
-
-        serviceAgreementUrl = publicUrl;
+        // Store just the path
+        serviceAgreementUrl = fileName;
       }
 
       // Update stalls count if provided

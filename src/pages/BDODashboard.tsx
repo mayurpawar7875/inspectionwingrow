@@ -17,6 +17,7 @@ import TaskProgressWidget from '@/components/admin/TaskProgressWidget';
 import CollectionsWidget from '@/components/admin/CollectionsWidget';
 import ApprovedMarketsDocuments from '@/components/bdo/ApprovedMarketsDocuments';
 import { toast } from 'sonner';
+import { validateImage, generateUploadPath } from '@/lib/fileValidation';
 import {
   LogOut,
   Calendar,
@@ -453,7 +454,15 @@ export default function BDODashboard() {
           
           // Upload photo if provided
           if (market.photoFile) {
-            const fileName = `market-locations/${user.id}/${Date.now()}-${market.photoFile.name}`;
+            // Validate image file
+            try {
+              validateImage(market.photoFile);
+            } catch (validationError) {
+              errorCount++;
+              continue;
+            }
+
+            const fileName = generateUploadPath(user.id, market.photoFile.name, 'market-locations');
             const { error: uploadError } = await supabase.storage
               .from('employee-media')
               .upload(fileName, market.photoFile);
@@ -858,26 +867,28 @@ export default function BDODashboard() {
     setSessionLoading(true);
     try {
       // Upload selfie
-      const fileExt = selfieFile.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      try {
+        validateImage(selfieFile);
+      } catch (validationError) {
+        setSessionLoading(false);
+        return;
+      }
+
+      const fileName = generateUploadPath(user?.id || '', selfieFile.name);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-media')
         .upload(fileName, selfieFile);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('employee-media')
-        .getPublicUrl(fileName);
-
-      // Insert punch-out with selfie
+      // Insert punch-out with selfie (store path, not full URL)
       const { error } = await supabase
         .from('bdo_punchout')
         .insert({
           session_id: bdoSession.id,
           gps_lat: sessionLocation.lat,
           gps_lng: sessionLocation.lng,
-          selfie_url: publicUrl,
+          selfie_url: fileName,
         });
 
       if (error) throw error;

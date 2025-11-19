@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { MessageSquare, Video, X, Circle } from 'lucide-react';
 import { TaskHistoryView } from './TaskHistoryView';
 import { PreviewDialog } from './PreviewDialog';
+import { validateVideo, generateUploadPath } from '@/lib/fileValidation';
 
 interface StallFeedbackFormProps {
   sessionId: string;
@@ -92,11 +93,18 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
 
     let videoUrl = null;
     if (videoFile) {
-      const fileExt = videoFile.name.split('.').pop();
-      const fileName = `${sessionId}_${Date.now()}.${fileExt}`;
+      // Validate video file
+      try {
+        validateVideo(videoFile);
+      } catch (validationError) {
+        setLoading(false);
+        return;
+      }
+
+      const fileName = generateUploadPath(sessionId, videoFile.name, 'feedbacks');
       const { error: uploadError } = await supabase.storage
         .from('employee-media')
-        .upload(`feedbacks/${fileName}`, videoFile);
+        .upload(fileName, videoFile);
 
       if (uploadError) {
         toast.error('Failed to upload video');
@@ -105,7 +113,7 @@ export function StallFeedbackForm({ sessionId, onComplete }: StallFeedbackFormPr
       }
 
       // Store just the path, not the full URL
-      videoUrl = `feedbacks/${fileName}`;
+      videoUrl = fileName;
     }
 
     const { error } = await supabase.from('bms_stall_feedbacks').insert({

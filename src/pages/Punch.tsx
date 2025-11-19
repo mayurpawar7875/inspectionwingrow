@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, CheckCircle, Camera, MapPin } from 'lucide-react';
+import { validateImage, generateUploadPath } from '@/lib/fileValidation';
 
 export default function Punch() {
   const { user } = useAuth();
@@ -158,7 +159,17 @@ export default function Punch() {
       
       // 1) Upload selfie to storage and create media entry with gps
       setUploadingSelfie(true);
-      const fileName = `${user!.id}/${Date.now()}-${selfieFile.name}`;
+      
+      // Validate selfie before upload
+      try {
+        validateImage(selfieFile);
+      } catch (validationError) {
+        setActionLoading(false);
+        setUploadingSelfie(false);
+        return;
+      }
+
+      const fileName = generateUploadPath(user!.id, selfieFile.name);
       console.log('Uploading selfie:', fileName);
       
       const { error: uploadError } = await supabase.storage
