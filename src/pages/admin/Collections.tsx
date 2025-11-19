@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
+import { validateImage, generateUploadPath } from '@/lib/fileValidation';
 
 type PaymentMode = 'cash' | 'online';
 
@@ -268,7 +269,15 @@ export default function Collections() {
 
     setUploadingDeposit(true);
     try {
-      const fileName = `${user.id}/${Date.now()}-cash-deposit-${depositFile.name}`;
+      // Validate image file
+      try {
+        validateImage(depositFile);
+      } catch (validationError) {
+        setUploadingDeposit(false);
+        return;
+      }
+
+      const fileName = generateUploadPath(user.id, depositFile.name, 'cash-deposits');
       const { error: uploadError } = await supabase.storage
         .from('employee-media')
         .upload(fileName, depositFile);

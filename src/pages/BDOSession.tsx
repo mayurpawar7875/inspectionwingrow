@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Clock, CheckCircle, Camera, MapPin, LogOut, X, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { validateImage, generateUploadPath } from '@/lib/fileValidation';
 
 interface BDOSessionData {
   id: string;
@@ -215,11 +216,17 @@ export default function BDOSession() {
       if (sessionError) throw sessionError;
 
       // Upload selfie
-      const fileExt = selfieFile.name.split('.').pop();
-      const fileName = `${newSession.id}_${Date.now()}.${fileExt}`;
+      try {
+        validateImage(selfieFile);
+      } catch (validationError) {
+        setActionLoading(false);
+        return;
+      }
+
+      const fileName = generateUploadPath(newSession.id, selfieFile.name, 'bdo-punchin');
       const { error: uploadError } = await supabase.storage
         .from('employee-media')
-        .upload(`bdo-punchin/${fileName}`, selfieFile);
+        .upload(fileName, selfieFile);
 
       if (uploadError) throw uploadError;
 
@@ -228,7 +235,7 @@ export default function BDOSession() {
         .from('bdo_punchin')
         .insert({
           session_id: newSession.id,
-          selfie_url: `bdo-punchin/${fileName}`,
+          selfie_url: fileName,
           gps_lat: location.lat,
           gps_lng: location.lng,
         });

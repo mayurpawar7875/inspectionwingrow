@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload } from 'lucide-react';
+import { validateImage, validateVideo, generateUploadPath } from '@/lib/fileValidation';
+import { getSignedUrl } from '@/lib/storageHelpers';
 
 interface MediaFile {
   id: string;
@@ -149,7 +151,16 @@ export default function MediaUpload() {
         return;
       }
 
-      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+      // Validate file based on media type
+      const isVideo = mediaType === 'market_video' || mediaType === 'cleaning_video' || mediaType === 'customer_feedback';
+      if (isVideo) {
+        validateVideo(file);
+      } else {
+        validateImage(file);
+      }
+
+      // Generate safe upload path
+      const fileName = generateUploadPath(user.id, file.name);
       const { error: uploadError } = await supabase.storage
         .from('employee-media')
         .upload(fileName, file);
