@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 
 interface StallRow {
   id: string;
@@ -15,6 +17,9 @@ interface StallRow {
   stall_name: string;
   expected_rent: number;
   actual_rent: string; // keep as string for input control
+  payment_mode: 'cash' | 'online';
+  screenshot_file: File | null;
+  screenshot_url?: string;
 }
 
 interface ManualEntry {
@@ -22,6 +27,8 @@ interface ManualEntry {
   stall_name: string;
   farmer_name: string;
   amount: string;
+  payment_mode: 'cash' | 'online';
+  screenshot_file: File | null;
 }
 
 export default function Collections() {
@@ -101,6 +108,8 @@ export default function Collections() {
             stall_name: s.stall_name,
             expected_rent: s.rent_amount || 0,
             actual_rent: collectionsMap.get(s.id)?.toString() || '',
+            payment_mode: 'cash' as const,
+            screenshot_file: null,
           }))
         );
       } catch (e) {
@@ -120,19 +129,41 @@ export default function Collections() {
     );
   };
 
+  const setRowPaymentMode = (id: string, mode: 'cash' | 'online') => {
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, payment_mode: mode, screenshot_file: mode === 'cash' ? null : r.screenshot_file } : r))
+    );
+  };
+
+  const setRowScreenshot = (id: string, file: File | null) => {
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, screenshot_file: file } : r))
+    );
+  };
+
   const addManualEntry = () => {
     const newEntry: ManualEntry = {
       id: `manual-${Date.now()}`,
       stall_name: '',
       farmer_name: '',
       amount: '',
+      payment_mode: 'cash',
+      screenshot_file: null,
     };
     setManualEntries((prev) => [...prev, newEntry]);
   };
 
-  const updateManualEntry = (id: string, field: keyof Omit<ManualEntry, 'id'>, value: string) => {
+  const updateManualEntry = (id: string, field: keyof Omit<ManualEntry, 'id'>, value: string | File | null) => {
     setManualEntries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, [field]: value } : e))
+      prev.map((e) => {
+        if (e.id === id) {
+          if (field === 'payment_mode' && value === 'cash') {
+            return { ...e, [field]: value, screenshot_file: null };
+          }
+          return { ...e, [field]: value };
+        }
+        return e;
+      })
     );
   };
 
@@ -150,6 +181,8 @@ export default function Collections() {
         amount: Number(r.actual_rent || 0),
         farmer_name: r.farmer_name,
         stall_name: r.stall_name,
+        payment_mode: r.payment_mode,
+        screenshot_file: r.screenshot_file,
       }))
       .filter((e) => !isNaN(e.amount) && e.amount > 0);
 
@@ -161,6 +194,8 @@ export default function Collections() {
         amount: Number(e.amount || 0),
         farmer_name: e.farmer_name.trim(),
         stall_name: e.stall_name.trim(),
+        payment_mode: e.payment_mode,
+        screenshot_file: e.screenshot_file,
       }))
       .filter((e) => !isNaN(e.amount) && e.amount > 0);
 
@@ -171,8 +206,41 @@ export default function Collections() {
       return;
     }
 
+    // Validate online payments have screenshots
+    const onlineWithoutScreenshot = [...confirmedEntries, ...validManualEntries].filter(
+      e => e.payment_mode === 'online' && !e.screenshot_file
+    );
+    if (onlineWithoutScreenshot.length > 0) {
+      toast.error('Please upload payment screenshots for all online payments');
+      return;
+    }
+
     setSaving(true);
     try {
+      // Upload screenshots for online payments
+      const allEntries = [...confirmedEntries, ...validManualEntries];
+      const screenshotUrls = await Promise.all(
+        allEntries.map(async (entry) => {
+          if (entry.payment_mode === 'online' && entry.screenshot_file) {
+            const fileExt = entry.screenshot_file.name.split('.').pop();
+            const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            
+            const { error: uploadError, data } = await supabase.storage
+              .from('payment-screenshots')
+              .upload(fileName, entry.screenshot_file);
+
+            if (uploadError) throw uploadError;
+            
+            const { data: { publicUrl } } = supabase.storage
+              .from('payment-screenshots')
+              .getPublicUrl(fileName);
+            
+            return publicUrl;
+          }
+          return null;
+        })
+      );
+
       // Delete existing collections for confirmed stalls (to update)
       const stallIds = confirmedEntries.map(e => e.stall_confirmation_id);
       if (stallIds.length > 0) {
@@ -192,29 +260,18 @@ export default function Collections() {
         .eq('market_date', sessionDate)
         .eq('market_id', sessionMarketId);
 
-      // Prepare all collections
-      const allPayload = [
-        ...confirmedEntries.map((e) => ({
-          stall_confirmation_id: e.stall_confirmation_id,
-          market_id: sessionMarketId,
-          market_date: sessionDate,
-          amount: e.amount,
-          mode: 'rent',
-          collected_by: user.id,
-          farmer_name: e.farmer_name,
-          stall_name: e.stall_name,
-        })),
-        ...validManualEntries.map((e) => ({
-          stall_confirmation_id: null,
-          market_id: sessionMarketId,
-          market_date: sessionDate,
-          amount: e.amount,
-          mode: 'rent',
-          collected_by: user.id,
-          farmer_name: e.farmer_name,
-          stall_name: e.stall_name,
-        })),
-      ];
+      // Prepare all collections with screenshot URLs
+      const allPayload = allEntries.map((e, idx) => ({
+        stall_confirmation_id: e.stall_confirmation_id || null,
+        market_id: sessionMarketId,
+        market_date: sessionDate,
+        amount: e.amount,
+        mode: e.payment_mode,
+        collected_by: user.id,
+        farmer_name: e.farmer_name,
+        stall_name: e.stall_name,
+        screenshot_url: screenshotUrls[idx],
+      }));
 
       const { error } = await supabase.from('collections').insert(allPayload);
       if (error) throw error;
@@ -222,6 +279,8 @@ export default function Collections() {
       toast.success('Rent collections saved successfully!');
       // Clear manual entries after successful save
       setManualEntries([]);
+      // Reset screenshot files for confirmed stalls
+      setRows(prev => prev.map(r => ({ ...r, actual_rent: '', screenshot_file: null, payment_mode: 'cash' as const })));
     } catch (e) {
       console.error(e);
       toast.error('Failed to save collections');
@@ -298,6 +357,8 @@ export default function Collections() {
                         <TableHead className="text-xs py-2">Farmer Name</TableHead>
                         <TableHead className="text-xs py-2 text-right">Expected Rent (₹)</TableHead>
                         <TableHead className="w-[140px] text-xs py-2">Actual Rent (₹)</TableHead>
+                        <TableHead className="w-[120px] text-xs py-2">Payment Mode</TableHead>
+                        <TableHead className="w-[140px] text-xs py-2">Screenshot</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -318,6 +379,49 @@ export default function Collections() {
                               placeholder="0"
                               className="h-7 text-xs"
                             />
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Select
+                              value={r.payment_mode}
+                              onValueChange={(value: 'cash' | 'online') => setRowPaymentMode(r.id, value)}
+                            >
+                              <SelectTrigger className="h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cash">Cash</SelectItem>
+                                <SelectItem value="online">Online</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            {r.payment_mode === 'online' && (
+                              <div className="flex items-center gap-1">
+                                <Label htmlFor={`screenshot-${r.id}`} className="cursor-pointer">
+                                  <div className="flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                                    <Upload className="h-3 w-3" />
+                                    {r.screenshot_file ? r.screenshot_file.name.slice(0, 10) + '...' : 'Upload'}
+                                  </div>
+                                </Label>
+                                <Input
+                                  id={`screenshot-${r.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => setRowScreenshot(r.id, e.target.files?.[0] || null)}
+                                />
+                                {r.screenshot_file && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setRowScreenshot(r.id, null)}
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -347,6 +451,8 @@ export default function Collections() {
                             <TableHead className="text-xs py-2">Stall Name</TableHead>
                             <TableHead className="text-xs py-2">Farmer Name</TableHead>
                             <TableHead className="w-[140px] text-xs py-2">Rent Amount (₹)</TableHead>
+                            <TableHead className="w-[120px] text-xs py-2">Payment Mode</TableHead>
+                            <TableHead className="w-[140px] text-xs py-2">Screenshot</TableHead>
                             <TableHead className="w-[60px] text-xs py-2"></TableHead>
                           </TableRow>
                         </TableHeader>
@@ -381,6 +487,49 @@ export default function Collections() {
                                   placeholder="0"
                                   className="h-7 text-xs"
                                 />
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Select
+                                  value={entry.payment_mode}
+                                  onValueChange={(value: 'cash' | 'online') => updateManualEntry(entry.id, 'payment_mode', value)}
+                                >
+                                  <SelectTrigger className="h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="online">Online</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="py-2">
+                                {entry.payment_mode === 'online' && (
+                                  <div className="flex items-center gap-1">
+                                    <Label htmlFor={`manual-screenshot-${entry.id}`} className="cursor-pointer">
+                                      <div className="flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                                        <Upload className="h-3 w-3" />
+                                        {entry.screenshot_file ? entry.screenshot_file.name.slice(0, 10) + '...' : 'Upload'}
+                                      </div>
+                                    </Label>
+                                    <Input
+                                      id={`manual-screenshot-${entry.id}`}
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => updateManualEntry(entry.id, 'screenshot_file', e.target.files?.[0] || null)}
+                                    />
+                                    {entry.screenshot_file && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => updateManualEntry(entry.id, 'screenshot_file', null)}
+                                        className="h-5 w-5 p-0"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
                               </TableCell>
                               <TableCell className="py-2">
                                 <Button

@@ -750,6 +750,7 @@ export type Database = {
           market_date: string
           market_id: string
           mode: string
+          screenshot_url: string | null
           stall_confirmation_id: string | null
           stall_name: string | null
         }
@@ -762,6 +763,7 @@ export type Database = {
           market_date: string
           market_id: string
           mode: string
+          screenshot_url?: string | null
           stall_confirmation_id?: string | null
           stall_name?: string | null
         }
@@ -774,6 +776,7 @@ export type Database = {
           market_date?: string
           market_id?: string
           mode?: string
+          screenshot_url?: string | null
           stall_confirmation_id?: string | null
           stall_name?: string | null
         }
